@@ -1,0 +1,157 @@
+{
+  "duration": 40,
+  "license": "CC BY-SA 4.0",
+  "poster": 3,
+  "shots": [
+    {
+      "start": 0,
+      "end": 3,
+      "place": "Godomey, Benin",
+      "event": "Storm front",
+      "date": "Apr 2023",
+      "credit": "KODJOME Romaric",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:D%C3%A9but_d'orage.webm"
+    },
+    {
+      "start": 3,
+      "end": 5.6,
+      "place": "Bangui, Central African Republic",
+      "event": "Rain floods a compound",
+      "date": "Apr 2023",
+      "credit": "Kondotikodro",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Inondation_walingba.webm"
+    },
+    {
+      "start": 5.6,
+      "end": 8.22,
+      "place": "Bepanda, Douala, Cameroon",
+      "event": "Flooded bridge",
+      "date": "Apr 2020",
+      "credit": "Minette Lontsie",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Un_pont_inond%C3%A9_%C3%A0_Bepanda.webm"
+    },
+    {
+      "start": 8.22,
+      "end": 10.7,
+      "place": "Mbale, Uganda",
+      "event": "Floods",
+      "date": "Jul 2022",
+      "credit": "Dixon099",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Mbale_Floods_2022.webm"
+    },
+    {
+      "start": 10.7,
+      "end": 13.47,
+      "place": "Chad",
+      "event": "Rainy-season road",
+      "date": "Mar 2020",
+      "credit": "Abakar B",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Voiture_pendant_la_saison_de_pluie_au_Tchad.webm"
+    },
+    {
+      "start": 13.47,
+      "end": 16.07,
+      "place": "Zambia",
+      "event": "Worst floods in fifty years",
+      "date": "Mar 2023",
+      "credit": "VOA Africa",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:%E2%80%98Floods_Have_Left_Over_400,000_Homeless%E2%80%99-_Zambian_Authorities.webm"
+    },
+    {
+      "start": 16.07,
+      "end": 18.48,
+      "place": "Fort Myers, Florida, USA",
+      "event": "Hurricane Ian",
+      "date": "Sep 2022",
+      "credit": "Voice of America",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Hurricane_Ian_Leaves_Trail_of_Destruction_in_Florida.webm"
+    },
+    {
+      "start": 18.48,
+      "end": 21.07,
+      "place": "Zambia",
+      "event": "Worst floods in fifty years",
+      "date": "Mar 2023",
+      "credit": "VOA Africa",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:%E2%80%98Floods_Have_Left_Over_400,000_Homeless%E2%80%99-_Zambian_Authorities.webm"
+    },
+    {
+      "start": 21.07,
+      "end": 23.73,
+      "place": "Mbale, Uganda",
+      "event": "Floods",
+      "date": "Jul 2022",
+      "credit": "Dixon099",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Mbale_Floods_2022.webm"
+    },
+    {
+      "start": 23.73,
+      "end": 26.53,
+      "place": "Luzon, Philippines",
+      "event": "Typhoon Mangkhut",
+      "date": "Sep 2018",
+      "credit": "VOA News",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Ferocious_Typhoon_Barrels_Through_Rain-Soaked_Philippines.webm"
+    },
+    {
+      "start": 26.53,
+      "end": 29.2,
+      "place": "Somaliland, Somalia",
+      "event": "Drought and livestock die-off",
+      "date": "Feb 2017",
+      "credit": "VOA Africa",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Somalia_Drought.webm"
+    },
+    {
+      "start": 29.2,
+      "end": 31.98,
+      "place": "Mundakkai, Wayanad, India",
+      "event": "Landslide",
+      "date": "Jul 2024",
+      "credit": "Makks2010",
+      "license": "CC0",
+      "source": "https://commons.wikimedia.org/wiki/File:Rescue_work_after_Mundakkai_devastation.webm"
+    },
+    {
+      "start": 31.98,
+      "end": 34.4,
+      "place": "Itogon, Philippines",
+      "event": "Landslide rescue",
+      "date": "Sep 2018",
+      "credit": "VOA News",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:Philippines_Landslide.webm"
+    },
+    {
+      "start": 34.4,
+      "end": 37.2,
+      "place": "Zambia",
+      "event": "Worst floods in fifty years",
+      "date": "Mar 2023",
+      "credit": "VOA Africa",
+      "license": "Public domain",
+      "source": "https://commons.wikimedia.org/wiki/File:%E2%80%98Floods_Have_Left_Over_400,000_Homeless%E2%80%99-_Zambian_Authorities.webm"
+    },
+    {
+      "start": 37.2,
+      "end": 40,
+      "place": "Mbale, Uganda",
+      "event": "Floods",
+      "date": "Jul 2022",
+      "credit": "Dixon099",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Mbale_Floods_2022.webm"
+    }
+  ]
+}

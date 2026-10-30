@@ -1,0 +1,29 @@
+{
+  "name": "mtaasense-hero-reel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "clips": "node scripts/fetch-clips.ts",
+    "studio": "remotion studio",
+    "render": "node scripts/render.ts",
+    "encode": "node scripts/render.ts --encode-only",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.535",
+    "@remotion/transitions": "4.0.535",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "remotion": "4.0.535"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "@types/react": "^19",
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22.18"
+  }
+}

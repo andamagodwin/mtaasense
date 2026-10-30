@@ -41,6 +41,7 @@
   --animate-fade-in: fade-in 220ms ease-out both;
   --animate-rise: rise 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-mask-in: mask-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-grain: grain 900ms steps(6) infinite;
 
   @keyframes fade-in {
     from { opacity: 0; }
@@ -62,6 +63,16 @@
   @keyframes scan {
     0% { transform: translateY(-100%); }
     100% { transform: translateY(300%); }
+  }
+  /* Film grain jitter for the home-page reel; kept in CSS because baked-in noise bloats the video file. */
+  @keyframes grain {
+    0% { transform: translate(0, 0); }
+    17% { transform: translate(-4%, 3%); }
+    33% { transform: translate(3%, -5%); }
+    50% { transform: translate(-6%, -2%); }
+    67% { transform: translate(5%, 4%); }
+    83% { transform: translate(-2%, 6%); }
+    100% { transform: translate(0, 0); }
   }
 }
 

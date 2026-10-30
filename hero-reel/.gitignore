@@ -1,0 +1,4 @@
+node_modules/
+# Downloaded source footage and the full-quality master — regenerate with `pnpm clips` / `pnpm render`
+public/clips/
+out/

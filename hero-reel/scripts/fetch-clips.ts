@@ -1,0 +1,137 @@
+/**
+ * Download the source window of every shot in src/shotlist.ts from Wikimedia Commons.
+ *
+ *     pnpm clips
+ *
+ * Checks each clip's licence against Commons before downloading, pulls only the seconds a shot needs
+ * (plus a handle) over HTTP range requests with Remotion's bundled ffmpeg, normalises them to 30 fps
+ * H.264 in public/clips/, and regenerates ATTRIBUTION.md. Existing files are kept.
+ */
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { type ClipId, clipFile, clips, fps, handle, leadIn, shots } from "../src/shotlist.ts";
+
+const root = fileURLToPath(new URL("..", import.meta.url));
+const remotion = `${root}node_modules/.bin/remotion`;
+const UA = "MtaaSense/0.1 (hero reel; https://github.com/andamagodwin/mtaasense)";
+
+type Derivative = { src: string; transcodekey?: string; width?: number; height?: number };
+type VideoInfo = {
+  url: string;
+  descriptionurl: string;
+  width: number;
+  height: number;
+  extmetadata: Record<string, { value: string } | undefined>;
+  derivatives: Derivative[];
+};
+
+const plain = (html = "") => html.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+
+async function lookup(titles: string[]): Promise<Map<string, VideoInfo>> {
+  const params = new URLSearchParams({
+    action: "query",
+    titles: titles.join("|"),
+    prop: "videoinfo",
+    viprop: "url|size|extmetadata|derivatives",
+    format: "json",
+    formatversion: "2",
+  });
+  const res = await fetch(`https://commons.wikimedia.org/w/api.php?${params}`, { headers: { "User-Agent": UA } });
+  if (!res.ok) throw new Error(`Commons API: HTTP ${res.status}`);
+  const body = (await res.json()) as {
+    query: { normalized?: { from: string; to: string }[]; pages: { title: string; videoinfo?: VideoInfo[] }[] };
+  };
+  const byTitle = new Map(body.query.pages.map((p) => [p.title, p.videoinfo?.[0]]));
+  const renamed = new Map((body.query.normalized ?? []).map((n) => [n.from, n.to]));
+  const found = new Map<string, VideoInfo>();
+  for (const title of titles) {
+    const info = byTitle.get(renamed.get(title) ?? title);
+    if (!info) throw new Error(`Not found on Commons: ${title}`);
+    found.set(title, info);
+  }
+  return found;
+}
+
+/** The 1080p transcode when there is one; otherwise the original if it is no larger, else the largest transcode. */
+function pickSource(info: VideoInfo): string {
+  const hd = info.derivatives.find((d) => d.transcodekey === "1080p.vp9.webm");
+  if (hd) return hd.src;
+  if (info.height <= 1080) return info.url;
+  const sized = info.derivatives.filter((d) => d.height && d.height <= 1080);
+  return sized.sort((a, b) => b.height! - a.height!)[0]?.src ?? info.url;
+}
+
+const used = [...new Set(shots.map((s) => s.clip))] as ClipId[];
+const info = await lookup(used.map((id) => clips[id].title));
+
+for (const id of used) {
+  const declared = clips[id].license;
+  const actual = plain(info.get(clips[id].title)!.extmetadata.LicenseShortName?.value);
+  if (actual !== declared) {
+    throw new Error(`${id}: shotlist.ts says "${declared}" but Commons says "${actual}". Fix shotlist.ts before using it.`);
+  }
+}
+
+mkdirSync(`${root}public/clips`, { recursive: true });
+const wanted = new Set(shots.map((s) => clipFile(s).slice("clips/".length)));
+for (const stale of readdirSync(`${root}public/clips`).filter((f) => !wanted.has(f))) {
+  unlinkSync(`${root}public/clips/${stale}`);
+}
+
+for (const shot of shots) {
+  const out = `${root}public/${clipFile(shot)}`;
+  if (existsSync(out)) continue;
+  const lead = leadIn(shot);
+  const src = pickSource(info.get(clips[shot.clip].title)!);
+  console.log(`${clipFile(shot)}  ←  ${src.split("/").pop()} @ ${shot.at}s`);
+  const ffmpeg = spawnSync(
+    remotion,
+    [
+      "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+      "-user_agent", UA,
+      "-ss", String(shot.at - lead),
+      "-i", src,
+      "-t", String(lead + shot.seconds + handle),
+      "-an",
+      // Remotion's ffmpeg is a minimal build: no fps filter, so the rate is converted with -r.
+      "-vf", "scale=-2:min(1080\\,ih):flags=lanczos", "-r", String(fps),
+      "-c:v", "libx264", "-preset", "medium", "-crf", "14", "-pix_fmt", "yuv420p", "-g", String(fps),
+      out,
+    ],
+    { stdio: "inherit" },
+  );
+  if (ffmpeg.status !== 0) throw new Error(`ffmpeg failed for ${clipFile(shot)}`);
+}
+
+const credits = used.map((id) => {
+  const clip = clips[id];
+  const v = info.get(clip.title)!;
+  const licenseUrl = plain(v.extmetadata.LicenseUrl?.value);
+  return [
+    `### ${clip.place} — ${clip.event} (${clip.date})`,
+    "",
+    `- Source: [${clip.title.slice(5)}](${v.descriptionurl})`,
+    `- Author: ${clip.author}`,
+    `- Licence: ${licenseUrl ? `[${clip.license}](${licenseUrl})` : clip.license}`,
+    "",
+  ].join("\n");
+});
+
+writeFileSync(
+  `${root}ATTRIBUTION.md`,
+  `<!-- Generated by scripts/fetch-clips.ts from src/shotlist.ts — edit those, not this file. -->
+
+# Hero reel footage
+
+The MtaaSense home-page reel (\`frontend/public/hero/\`) is a montage of the openly licensed clips below,
+all hosted on Wikimedia Commons. Footage has been trimmed, reframed (including cropping broadcaster
+logos), colour-graded and cut together with transitions.
+
+Because several sources are licensed CC BY-SA 4.0, the reel itself is licensed
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Voice of America material is a work of the
+U.S. Government and in the public domain; its use does not imply endorsement by VOA.
+
+${credits.join("\n")}`,
+);
+console.log(`\n${shots.length} shots ready in public/clips; ATTRIBUTION.md updated.`);

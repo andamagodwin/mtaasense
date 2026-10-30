@@ -452,5 +452,7 @@ Prep: seed samples, run the worker, `--confirm-incidents`, sign in as a reviewer
 ## Credits
 
 Sample photos: Wikimedia Commons contributors under CC BY / CC BY-SA licences — see
-[`ATTRIBUTION.md`](backend/seed/images/ATTRIBUTION.md). Map tiles: OpenFreeMap; map data © OpenStreetMap
-contributors. SAM output parsing: Meta's `meta-sam-parser` (SAM License).
+[`ATTRIBUTION.md`](backend/seed/images/ATTRIBUTION.md). Home-page reel: public-domain Voice of America news
+footage and Wikimedia Commons contributors (CC0, CC BY-SA), cut with Remotion in [`hero-reel/`](hero-reel/);
+the reel is CC BY-SA 4.0 — see [`hero-reel/ATTRIBUTION.md`](hero-reel/ATTRIBUTION.md). Map tiles: OpenFreeMap;
+map data © OpenStreetMap contributors. SAM output parsing: Meta's `meta-sam-parser` (SAM License).

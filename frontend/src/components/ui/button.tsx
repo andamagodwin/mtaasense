@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { Spinner } from "./feedback";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger" | "subtle";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "subtle" | "glass";
 type Size = "sm" | "md" | "lg";
 
 const base =
@@ -15,6 +15,8 @@ const variants: Record<Variant, string> = {
   ghost: "text-ink-2 hover:bg-sunken hover:text-ink",
   subtle: "bg-accent-soft text-accent-ink hover:bg-[#d8e6dd]",
   danger: "border border-[#e7c6bd] bg-surface text-danger hover:bg-danger-soft",
+  /** For use over imagery or video. */
+  glass: "border border-white/25 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20",
 };
 
 const sizes: Record<Size, string> = {

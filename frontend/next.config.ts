@@ -3,7 +3,8 @@ import type { NextConfig } from "next";
 // Public base URL of the FastAPI backend, e.g. https://api.mtaasense.example (no trailing slash).
 // The browser calls same-origin /api/v1/*; Next rewrites those requests to the backend so the
 // reviewer session cookie stays first-party. No secrets ever live in NEXT_PUBLIC_* variables.
-const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000").replace(/\/$/, "");
+// `||` rather than `??`: CI passes an empty string when the variable is unset.
+const apiBase = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -14,17 +15,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
-  partialPrefetching: true,
   poweredByHeader: false,
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
-  },
   async rewrites() {
     return [{ source: "/api/v1/:path*", destination: `${apiBase}/api/v1/:path*` }];
   },

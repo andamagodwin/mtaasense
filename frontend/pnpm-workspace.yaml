@@ -1,3 +1,7 @@
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+
+# workerd (Cloudflare's Workers runtime) downloads its platform binary on install.
+onlyBuiltDependencies:
+  - workerd

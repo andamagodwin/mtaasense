@@ -21,10 +21,10 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 | Muse Voice Transcribe (`muse-voice-transcribe-1.0`, `/v1/asr/transcribe`) | **Verified live (English, 1 synthetic clip)** | Not tested on real Ugandan speakers or Luganda |
 | Model-assisted duplicate comparison (Muse Spark, two+ images) | **Verified live** | Labels restricted to backend-supplied IDs |
 | Backend tests | **52 passing** | `uv run pytest` (real PostGIS, mocked Meta transport) |
-| Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build` |
+| Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build && pnpm build:vinext` |
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
-| Contabo VPS deployment | **Not deployed** | Artifacts in [`deploy/`](deploy/); no server access was provided |
-| Vercel frontend deployment | **Not deployed** | Instructions below |
+| Contabo VPS deployment | **Not deployed** | Artifacts in [`deploy/`](deploy/); the target VPS already hosts another app on ports 80/443 (see [Deploying](#deploying)) |
+| Frontend on Cloudflare Workers (vinext) | **Deployed** — <https://mtaasense.mtaasense.workers.dev> | Pages load; API calls fail until the backend is deployed and the frontend is rebuilt with its URL |
 
 ---
 
@@ -61,7 +61,7 @@ Every AI result carries its **provenance**: *Live model call*, *Cached result*, 
 ## Architecture
 
 ```
- Browser (Next.js 16 App Router, React 19, Tailwind 4, MapLibre GL 6)
+ Browser (Next.js 16 App Router on Cloudflare Workers via vinext, React 19, Tailwind 4, MapLibre GL 6)
    │  same-origin /api/v1/*  ── next.config rewrites ──▶  NEXT_PUBLIC_API_BASE_URL
    ▼
  Caddy (HTTPS, 20 MB body limit) ─▶ FastAPI (uvicorn)        Worker (python -m app.workers.runner)
@@ -370,16 +370,43 @@ Schedule it (`15 2 * * * /opt/mtaasense/deploy/backup.sh >> /var/log/mtaasense-b
 directory off the server. Restore with `deploy/restore.sh <db.dump> <media.tar.gz>` (asks for confirmation, stops
 API/worker, restores, restarts). Test a restore on a scratch machine before relying on it.
 
-### Frontend on Vercel
+### Frontend on Cloudflare Workers
+
+The frontend is a normal Next.js app that also builds with [vinext](https://github.com/cloudflare/vinext)
+(Cloudflare's Vite-based implementation of the Next.js API) and runs as a Worker. `next.config.ts` stays the single
+source for rewrites and headers; `vite.config.ts` and `cloudflare.config.ts` hold the Workers setup.
 
 ```bash
 cd frontend
-vercel link
-vercel env add NEXT_PUBLIC_API_BASE_URL production    # https://<API_DOMAIN>
-vercel deploy --prod
+npx cf auth login                                      # once, opens a device-code login
+NEXT_PUBLIC_API_BASE_URL=https://<API_DOMAIN> pnpm deploy:vinext
 ```
 
-Then add the Vercel URL to `CORS_ORIGINS` on the server and restart the API.
+The API base URL is baked into the `/api/v1/*` rewrite at build time, so redeploy whenever it changes. Then add the
+frontend origin (e.g. `https://mtaasense.mtaasense.workers.dev`) to `CORS_ORIGINS` on the server and restart the API
+— cookie-authenticated writes from any other origin are refused. `pnpm dev:vinext` runs the Workers build locally
+on port 3001 (inside `workerd`); `pnpm dev` is still the plain Next.js dev server.
+
+### Continuous integration and deployment
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and pull request:
+
+- **Backend:** ruff (lint + format), mypy strict, the pytest suite against a PostGIS service container, and
+  `alembic check` (migrations match the models).
+- **Frontend:** typecheck, lint, the Next.js build and the vinext/Workers build.
+- **Deploy frontend:** on pushes to `main`, after both check jobs pass, builds and deploys to Cloudflare Workers.
+  Only this job receives secrets, so pull requests from forks cannot read them.
+
+Repository settings it uses:
+
+| Name | Kind | Value |
+|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | secret | Account API token with **Workers Scripts: Edit** (dashboard → Manage account → API tokens) |
+| `NEXT_PUBLIC_API_BASE_URL` | variable | `https://<API_DOMAIN>` once the backend is deployed |
+
+The account ID is set in `frontend/cloudflare.config.ts` (it identifies the account; it is not a credential).
+
+Without `CLOUDFLARE_API_TOKEN` the deploy job skips itself with a warning. The backend is not deployed by CI yet.
 
 ---
 
@@ -405,8 +432,11 @@ Prep: seed samples, run the worker, `--confirm-incidents`, sign in as a reviewer
 
 ## Limitations and honest notes
 
-- Not deployed yet (no VPS or Vercel access was provided during the build); deployment artifacts are tested only
-  locally (image builds, compose config validates).
+- The frontend is deployed on Cloudflare Workers; the backend is not deployed yet, so the live frontend cannot load
+  data. Backend deployment artifacts are tested only locally (image builds, compose config validates).
+- vinext is not bug-for-bug Next.js; the app was verified on it (all routes, reviewer login, map, a full resident
+  submission through the Worker's API proxy), and Next's partial prerendering (`cacheComponents`) is turned off
+  because vinext does not support it.
 - Voice transcription is verified on one synthetic English clip; Luganda and other local languages are untested.
 - Evaluation sets are small (see sample sizes above); metrics are indicative, not statistically robust.
 - Segmentation quality is not measured against ground-truth masks; SAM is sensitive to phrasing ("blocked drain"

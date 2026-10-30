@@ -45,8 +45,7 @@ export function useApi<T>(fetcher: (signal: AbortSignal) => Promise<T>, key: str
 }
 
 /**
- * Poll while `active` is true. Pauses when the tab is hidden; stops on unmount
- * (including when Next hides the route with <Activity>).
+ * Poll while `active` is true. Pauses when the tab is hidden; stops on unmount.
  */
 export function usePolling(callback: () => void, intervalMs: number, active: boolean): void {
   const cb = useRef(callback);

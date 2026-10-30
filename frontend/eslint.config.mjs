@@ -14,6 +14,10 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Vendored third-party build output.
     "public/vendor/**",
+    // vinext / Cloudflare Workers build output and generated types.
+    "dist/**",
+    ".vinext/**",
+    ".cloudflare/**",
   ]),
 ]);
 

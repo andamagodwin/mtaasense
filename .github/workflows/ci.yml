@@ -1,0 +1,130 @@
+# Checks every push and pull request; deploys the frontend to Cloudflare Workers on pushes to main
+# once both check jobs pass. Only the deploy job sees secrets, so pull requests from forks are safe.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  backend:
+    name: Backend (lint, types, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      db:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: mtaasense
+          POSTGRES_PASSWORD: mtaasense_ci_only
+          POSTGRES_DB: mtaasense_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U mtaasense -d mtaasense_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://mtaasense:mtaasense_ci_only@localhost:5432/mtaasense_test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy app
+      - run: uv run pytest
+      - name: Migrations match the models
+        run: uv run alembic check
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+
+  frontend:
+    name: Frontend (types, lint, builds)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      CF_SEND_TELEMETRY: "false"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - name: Next.js build
+        run: pnpm build
+      - name: Cloudflare Workers build (vinext)
+        run: pnpm build:vinext
+
+  deploy-frontend:
+    name: Deploy frontend to Cloudflare
+    needs: [backend, frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://mtaasense.mtaasense.workers.dev
+    concurrency:
+      group: deploy-frontend
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      CF_SEND_TELEMETRY: "false"
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Public backend URL baked into the /api/v1 rewrite (a repository variable, not a secret).
+      NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+    steps:
+      - name: Check Cloudflare credentials
+        id: creds
+        working-directory: .
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::CLOUDFLARE_API_TOKEN is not set; skipping the Cloudflare deploy."
+          fi
+      - if: steps.creds.outputs.ok == 'true'
+        uses: actions/checkout@v7
+      - if: steps.creds.outputs.ok == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+      - if: steps.creds.outputs.ok == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - if: steps.creds.outputs.ok == 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.creds.outputs.ok == 'true'
+        name: Build and deploy
+        run: pnpm deploy:vinext
+        env:
+          # The account ID comes from cloudflare.config.ts.
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}

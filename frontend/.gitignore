@@ -43,3 +43,6 @@ next-env.d.ts
 # Copied from node_modules at build time
 /public/vendor/
 !.env.example
+/dist/
+.vinext/
+.cloudflare/

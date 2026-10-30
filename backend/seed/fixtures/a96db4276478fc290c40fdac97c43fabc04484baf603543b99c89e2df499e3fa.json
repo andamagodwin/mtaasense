@@ -1,0 +1,45 @@
+{
+ "image": "sample-chapati-irrelevant",
+ "analysis": {
+  "result": {
+   "summary": "Photo shows food items on a table outdoors; no pothole or road damage is visible despite pothole report.",
+   "severity": "undetermined",
+   "confidence": "high",
+   "observations": [
+    {
+     "text": "Several cooked flatbreads and raw dough balls displayed on paper on a table",
+     "source": "image"
+    },
+    {
+     "text": "Reddish dirt ground visible beside the table",
+     "source": "image"
+    },
+    {
+     "text": "Lower legs and feet of persons standing near the table",
+     "source": "image"
+    },
+    {
+     "text": "Resident reports a huge pothole on Bombo road near the roundabout",
+     "source": "description"
+    }
+   ],
+   "image_quality": "good",
+   "uncertainties": [
+    "Whether a pothole exists at the reported location",
+    "Road surface condition cannot be determined from this photo"
+   ],
+   "hazard_category": "not_applicable",
+   "consistency_note": "Resident describes a huge pothole, but the photo shows prepared food items on a table with only dirt ground visible and no pothole or paved road.",
+   "severity_rationale": "No road damage or drainage problem is visible in the photo, so severity cannot be assessed.",
+   "missing_information": [
+    "Photo showing the reported pothole and surrounding road",
+    "Location context to verify Bombo road roundabout area"
+   ],
+   "segmentation_concept": "none",
+   "description_consistency": "inconsistent",
+   "is_infrastructure_hazard": false,
+   "suggested_review_priority": "routine"
+  },
+  "note": "Recorded from a live muse-spark-1.3 call on 2026-10-30 (response resp_6ae4af6c24178ad72c024cc9)."
+ }
+}

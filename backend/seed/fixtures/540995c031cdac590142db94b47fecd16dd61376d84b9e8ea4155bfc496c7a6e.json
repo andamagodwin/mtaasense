@@ -1,0 +1,59 @@
+{
+ "image": "sample-wetland-road-flood",
+ "analysis": {
+  "result": {
+   "summary": "Standing brown water ponds along a paved road by an industrial building, matching a report of flooding with slow traffic.",
+   "severity": "moderate",
+   "confidence": "medium",
+   "observations": [
+    {
+     "text": "Brownish standing water covers a long section along the edge of a paved road",
+     "source": "image"
+    },
+    {
+     "text": "Road surface appears wet with reflections indicating recent rain or ponding",
+     "source": "image"
+    },
+    {
+     "text": "Large industrial building and fenced compound visible beside the road",
+     "source": "image"
+    },
+    {
+     "text": "Road stated to be next to a wetland",
+     "source": "description"
+    },
+    {
+     "text": "Cars stated to be driving through slowly, though no vehicles are visible in the photo",
+     "source": "description"
+    }
+   ],
+   "image_quality": "good",
+   "uncertainties": [
+    "Water depth cannot be determined",
+    "Full extent of flooding outside frame unknown",
+    "Presence of cars or wetland cannot be confirmed from photo",
+    "Road damage under water, if any, is not visible"
+   ],
+   "hazard_category": "flooding",
+   "consistency_note": "Photo shows standing water on roadside consistent with flooding report, but no cars or wetland are visible in the frame to confirm those parts of the description.",
+   "severity_rationale": "Standing water appears to span a long roadside section and part of the lane, which could affect passage, but depth and full blockage cannot be determined.",
+   "missing_information": [
+    "precise location of road",
+    "water depth and full extent beyond frame",
+    "whether road remains passable",
+    "time and duration of flooding"
+   ],
+   "segmentation_concept": "standing water",
+   "description_consistency": "partially_consistent",
+   "is_infrastructure_hazard": true,
+   "suggested_review_priority": "elevated"
+  },
+  "note": "Recorded from a live muse-spark-1.3 call on 2026-10-30 (response resp_6ae4af0d60a1474290964843)."
+ },
+ "segmentation:standing water": {
+  "regions": [],
+  "image_width": 1536,
+  "image_height": 2048,
+  "note": "Recorded from a live sam-3.1 call."
+ }
+}

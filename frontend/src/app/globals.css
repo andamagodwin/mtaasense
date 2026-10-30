@@ -1,0 +1,111 @@
+@import "tailwindcss";
+/* In the base layer so Tailwind utilities (e.g. `absolute inset-0`) can override MapLibre defaults. */
+@import "maplibre-gl/dist/maplibre-gl.css" layer(base);
+
+/* MtaaSense design tokens: warm neutral paper, dark ink, restrained forest green. */
+@theme {
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --color-paper: #f7f5f0;
+  --color-surface: #ffffff;
+  --color-sunken: #f1eee7;
+  --color-line: #e4dfd4;
+  --color-line-strong: #d1c9ba;
+  --color-ink: #1d1b17;
+  --color-ink-2: #555046;
+  --color-ink-3: #878174;
+
+  --color-accent: #2f6b4f;
+  --color-accent-hover: #265a42;
+  --color-accent-soft: #e5eee8;
+  --color-accent-ink: #1e4a36;
+
+  --color-warn: #a86b12;
+  --color-warn-soft: #faf0dc;
+  --color-danger: #a8402e;
+  --color-danger-soft: #f7e5e0;
+  --color-info: #355f93;
+  --color-info-soft: #e5edf6;
+
+  /* Hazard categories — used consistently on badges, map markers and overlays. */
+  --color-cat-pothole: #b4562f;
+  --color-cat-road: #8a6a3c;
+  --color-cat-drain: #2b6f78;
+  --color-cat-flood: #3b5fa3;
+
+  --radius-card: 14px;
+  --shadow-card: 0 1px 2px rgb(29 27 23 / 0.04), 0 1px 1px rgb(29 27 23 / 0.03);
+  --shadow-pop: 0 12px 32px -12px rgb(29 27 23 / 0.22), 0 2px 6px rgb(29 27 23 / 0.06);
+
+  --animate-fade-in: fade-in 220ms ease-out both;
+  --animate-rise: rise 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-mask-in: mask-in 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes mask-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes draw {
+    from { stroke-dashoffset: 1; fill-opacity: 0; }
+    60% { fill-opacity: 0; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes scan {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(300%); }
+  }
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: var(--color-accent-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+/* MapLibre controls in the house style */
+.maplibregl-ctrl-group {
+  border-radius: 10px !important;
+  box-shadow: var(--shadow-card) !important;
+  border: 1px solid var(--color-line);
+}
+.maplibregl-ctrl-attrib {
+  font-family: var(--font-sans);
+  font-size: 11px;
+}
+.maplibregl-popup-content {
+  border-radius: 12px;
+  box-shadow: var(--shadow-pop);
+  padding: 0;
+}

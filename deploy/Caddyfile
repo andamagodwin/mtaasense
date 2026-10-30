@@ -1,0 +1,33 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$API_DOMAIN} {
+	encode zstd gzip
+
+	# Photos are ≤15 MB and voice notes ≤12 MB; leave headroom for multipart overhead.
+	request_body {
+		max_size 20MB
+	}
+
+	# The API docs and admin routes are protected by the app itself; only the API is exposed here.
+	reverse_proxy api:8000 {
+		# Pass the client chain through so the app can rate-limit per client (TRUSTED_PROXY_HOPS).
+		trusted_proxies static 0.0.0.0/0 ::/0
+		transport http {
+			read_timeout 120s
+			write_timeout 120s
+		}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		-Server
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

@@ -1,0 +1,56 @@
+# Local development stack. Production uses deploy/docker-compose.prod.yml.
+#
+#   docker compose up -d db          # PostGIS only (run API/worker with uv)
+#   docker compose --profile app up  # PostGIS + API + worker in containers
+services:
+  db:
+    # Multi-arch PostGIS build (arm64 + amd64) maintained by a docker-postgis
+    # maintainer; production uses the official amd64 postgis/postgis image.
+    image: imresamu/postgis:17-3.5
+    environment:
+      POSTGRES_DB: mtaasense
+      POSTGRES_USER: mtaasense
+      POSTGRES_PASSWORD: mtaasense_dev_only
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mtaasense -d mtaasense"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    profiles: ["app"]
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://mtaasense:mtaasense_dev_only@db:5432/mtaasense
+      MEDIA_STORAGE_PATH: /data/media
+    command: ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - media:/data/media
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    profiles: ["app"]
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://mtaasense:mtaasense_dev_only@db:5432/mtaasense
+      MEDIA_STORAGE_PATH: /data/media
+    command: ["python", "-m", "app.workers.runner"]
+    volumes:
+      - media:/data/media
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  media:

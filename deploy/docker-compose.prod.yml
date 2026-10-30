@@ -1,0 +1,106 @@
+# Production stack for the Contabo VPS.
+#
+#   cd /opt/mtaasense/deploy
+#   cp .env.production.example .env.production   # fill in secrets; chmod 600
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# Only Caddy publishes ports (80/443). PostgreSQL is reachable only on the internal network.
+name: mtaasense
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mtaasense
+      POSTGRES_USER: mtaasense
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mtaasense -d mtaasense"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    shm_size: 256mb
+
+  migrate:
+    build: ../backend
+    image: mtaasense-backend:latest
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgresql+psycopg://mtaasense:${POSTGRES_PASSWORD}@db:5432/mtaasense
+    command: ["alembic", "upgrade", "head"]
+    networks: [internal]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    image: mtaasense-backend:latest
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgresql+psycopg://mtaasense:${POSTGRES_PASSWORD}@db:5432/mtaasense
+      MEDIA_STORAGE_PATH: /data/media
+    volumes:
+      - media:/data/media
+    networks: [internal]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  worker:
+    image: mtaasense-backend:latest
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgresql+psycopg://mtaasense:${POSTGRES_PASSWORD}@db:5432/mtaasense
+      MEDIA_STORAGE_PATH: /data/media
+    command: ["python", "-m", "app.workers.runner"]
+    volumes:
+      - media:/data/media
+    networks: [internal]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    stop_grace_period: 60s
+    healthcheck:
+      disable: true
+    deploy:
+      resources:
+        limits:
+          memory: 768m
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [internal]
+    depends_on:
+      - api
+
+networks:
+  internal:
+
+volumes:
+  pgdata:
+  media:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,52 @@
+{
+ "image": "sample-truck-road-unclear",
+ "analysis": {
+  "result": {
+   "summary": "Photo shows large missing pavement section on a rural main road with pickup and heavy trucks present. Resident reports serious potholes affecting trucks.",
+   "severity": "high",
+   "confidence": "high",
+   "observations": [
+    {
+     "text": "Large area of missing paved surface exposing dirt that appears to span much of the travel lane",
+     "source": "image"
+    },
+    {
+     "text": "Multiple vehicles including a pickup and large covered trucks on or beside the damaged section",
+     "source": "image"
+    },
+    {
+     "text": "Two-lane rural road with dry vegetation alongside under clear daylight",
+     "source": "image"
+    },
+    {
+     "text": "Resident states serious potholes on the main road and that trucks are struggling",
+     "source": "description"
+    }
+   ],
+   "image_quality": "good",
+   "uncertainties": [
+    "Depth of the damaged area cannot be determined",
+    "Full length of affected road beyond the photo cannot be determined",
+    "Whether traffic flow is blocked cannot be determined"
+   ],
+   "hazard_category": "pothole",
+   "consistency_note": "Photo shows a large damaged road section with trucks and pickup present, matching the resident's description of serious potholes and trucks struggling.",
+   "severity_rationale": "Large loss of road surface affecting the travel lane on what is described as a main road, with heavy trucks visible navigating the section.",
+   "missing_information": [
+    "Extent of damage beyond the visible frame",
+    "Whether the lane remains passable for all vehicle types"
+   ],
+   "segmentation_concept": "pothole",
+   "description_consistency": "consistent",
+   "is_infrastructure_hazard": true,
+   "suggested_review_priority": "elevated"
+  },
+  "note": "Recorded from a live muse-spark-1.3 call on 2026-10-30 (response resp_6ae4af66cef622abbd434ce5)."
+ },
+ "segmentation:pothole": {
+  "regions": [],
+  "image_width": 1920,
+  "image_height": 1081,
+  "note": "Recorded from a live sam-3.1 call."
+ }
+}

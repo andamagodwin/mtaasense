@@ -394,7 +394,8 @@ on port 3001 (inside `workerd`); `pnpm dev` is still the plain Next.js dev serve
 - **Backend:** ruff (lint + format), mypy strict, the pytest suite against a PostGIS service container, and
   `alembic check` (migrations match the models).
 - **Frontend:** typecheck, lint, the Next.js build and the vinext/Workers build.
-- **Deploy frontend:** on pushes to `main`, after both check jobs pass, builds and deploys to Cloudflare Workers.
+- **Deploy frontend:** on pushes to `main` (or *Run workflow* on `main` in the Actions tab), after both check jobs
+  pass, builds and deploys to Cloudflare Workers.
   Only this job receives secrets, so pull requests from forks cannot read them.
 
 Repository settings it uses:

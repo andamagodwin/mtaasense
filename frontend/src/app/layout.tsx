@@ -1,17 +1,18 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Mono, Manrope } from "next/font/google";
 import { SessionProvider } from "@/components/session";
 import { SiteHeader, SiteHeaderFallback } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
-const plexSans = IBM_Plex_Sans({
-  variable: "--font-plex-sans",
+// Variable font: one file covers every weight the UI uses.
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
 });
 
+// Manrope has no monospace cut, so timecodes, IDs and coordinates stay in Plex Mono.
 const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
   subsets: ["latin"],
@@ -32,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${plexMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${manrope.variable} ${plexMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <a
           href="#main"

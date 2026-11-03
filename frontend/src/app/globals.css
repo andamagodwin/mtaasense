@@ -4,7 +4,7 @@
 
 /* MtaaSense design tokens: warm neutral paper, dark ink, restrained forest green. */
 @theme {
-  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
 
   --color-paper: #f7f5f0;

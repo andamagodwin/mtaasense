@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { ArrowLeft, ArrowRight, Camera, Check, ImagePlus, LocateFixed, MapPin, Pencil, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Edit2, GalleryAdd, Gps, Location as LocationIcon, MagicStar, TickCircle } from "iconsax-reactjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
@@ -14,7 +14,7 @@ import { LocationPicker } from "../map/location-picker";
 import { Button } from "../ui/button";
 import { Callout, ProgressBar } from "../ui/feedback";
 import { Field, Input, Textarea } from "../ui/field";
-import { Page, PageHeader } from "../ui/page";
+import { Page } from "../ui/page";
 import { VoiceNote, type VoiceNoteValue } from "./voice-note";
 
 const STEPS = ["Photo", "Describe", "Location", "Review"] as const;
@@ -98,6 +98,8 @@ export function ReportForm() {
   const textLength = description.trim().length;
   const transcriptLength = voice?.transcript.trim().length ?? 0;
   const canContinue = [!!photo, textLength >= 5 || transcriptLength >= 5, true, true][step];
+  // The steps and the navigation bar appear once a photo is chosen: until then the only decision is the photo.
+  const started = photo !== null;
 
   function go(next: number) {
     setStep(next);
@@ -137,19 +139,22 @@ export function ReportForm() {
   }
 
   return (
-    <Page width="narrow" className="pb-28 sm:pb-10">
-      <PageHeader title="Report a hazard" description="A photo and a few words are enough. Voice notes and location are optional." />
+    <Page width="narrow" className={started ? "pb-28 sm:pb-10" : undefined}>
+      {/* The photo choice is the whole first screen; the heading stays for screen readers. */}
+      <h1 className="sr-only">Report a hazard</h1>
 
-      <ol className="mb-6 grid grid-cols-4 gap-1.5" aria-label="Progress">
-        {STEPS.map((label, i) => (
-          <li key={label} aria-current={i === step ? "step" : undefined}>
-            <div className={clsx("h-1 rounded-full transition-colors", i <= step ? "bg-accent" : "bg-line")} />
-            <span className={clsx("mt-1.5 block text-[12px]", i === step ? "font-medium text-ink" : "text-ink-3")}>
-              {i + 1}. {label}
-            </span>
-          </li>
-        ))}
-      </ol>
+      {started && (
+        <ol className="mb-6 grid grid-cols-4 gap-1.5" aria-label="Progress">
+          {STEPS.map((label, i) => (
+            <li key={label} aria-current={i === step ? "step" : undefined}>
+              <div className={clsx("h-1 rounded-full transition-colors", i <= step ? "bg-accent" : "bg-line")} />
+              <span className={clsx("mt-1.5 block text-[12px]", i === step ? "font-medium text-ink" : "text-ink-3")}>
+                {i + 1}. {label}
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
 
       <div key={step} className="animate-rise space-y-5">
         {step === 0 && (
@@ -185,7 +190,7 @@ export function ReportForm() {
                   className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-line-strong bg-surface px-4 py-8 text-center transition-colors hover:border-accent hover:bg-accent-soft/40"
                 >
                   <span className="grid size-11 place-items-center rounded-full bg-sunken text-ink-2">
-                    <ImagePlus className="size-5" />
+                    <GalleryAdd className="size-5" />
                   </span>
                   <span className="font-medium">Choose a photo</span>
                   <span className="text-[12.5px] text-ink-3">JPEG, PNG or WebP, up to {maxImageMb} MB</span>
@@ -215,7 +220,7 @@ export function ReportForm() {
                   onClick={() => setCategory("auto")}
                   title="Not sure"
                   hint="Let Muse Spark suggest a category"
-                  dot={<Sparkles className="size-3.5 text-accent" />}
+                  dot={<MagicStar className="size-3.5 text-accent" />}
                   className="sm:col-span-2"
                 />
                 {CATEGORIES.map((c) => (
@@ -251,7 +256,7 @@ export function ReportForm() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" onClick={useMyLocation} loading={geoState === "locating"} icon={<LocateFixed className="size-4" />}>
+              <Button variant="secondary" onClick={useMyLocation} loading={geoState === "locating"} icon={<Gps className="size-4" />}>
                 Use my current location
               </Button>
               {location && (
@@ -269,7 +274,7 @@ export function ReportForm() {
             />
             <p className="text-[12px] text-ink-3">Faint dots are hazards others have already reported. Reporting the same one again still helps.</p>
             <p className="flex items-center gap-1.5 text-[13px] text-ink-2">
-              <MapPin className="size-4 text-ink-3" />
+              <LocationIcon className="size-4 text-ink-3" />
               {location
                 ? <>{formatCoords(location.lat, location.lon)} · {locationSource === "device_gps" ? `device location${accuracy ? ` (±${accuracy} m)` : ""}` : "pin placed on map"}</>
                 : "No location set"}
@@ -320,25 +325,27 @@ export function ReportForm() {
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-paper/92 backdrop-blur-md sm:static sm:mt-8 sm:border-0 sm:bg-transparent sm:backdrop-blur-none">
-        <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3 sm:px-0">
-          {step > 0 ? (
-            <Button variant="ghost" onClick={() => go(step - 1)} disabled={submitting} icon={<ArrowLeft className="size-4" />}>
-              Back
-            </Button>
-          ) : <span />}
-          {step < 3 ? (
-            <Button onClick={() => go(step + 1)} disabled={!canContinue} size="lg">
-              {step === 2 && !location ? "Skip location" : "Continue"}
-              <ArrowRight className="size-4" />
-            </Button>
-          ) : (
-            <Button onClick={() => void submit()} loading={submitting} size="lg" icon={<Check className="size-4" />}>
-              {submitError ? "Try again" : "Submit report"}
-            </Button>
-          )}
+      {started && (
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-paper/92 backdrop-blur-md sm:static sm:mt-8 sm:border-0 sm:bg-transparent sm:backdrop-blur-none">
+          <div className="mx-auto flex max-w-xl items-center justify-between gap-3 px-4 py-3 sm:px-0">
+            {step > 0 ? (
+              <Button variant="ghost" onClick={() => go(step - 1)} disabled={submitting} icon={<ArrowLeft className="size-4" />}>
+                Back
+              </Button>
+            ) : <span />}
+            {step < 3 ? (
+              <Button onClick={() => go(step + 1)} disabled={!canContinue} size="lg">
+                {step === 2 && !location ? "Skip location" : "Continue"}
+                <ArrowRight className="size-4" />
+              </Button>
+            ) : (
+              <Button onClick={() => void submit()} loading={submitting} size="lg" icon={<TickCircle className="size-4" />}>
+                {submitError ? "Try again" : "Submit report"}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </Page>
   );
 }
@@ -372,7 +379,7 @@ function ReviewRow({ label, children, onEdit }: { label: string; children: React
       <dt className="w-24 shrink-0 text-ink-3">{label}</dt>
       <dd className="min-w-0 flex-1 break-words text-ink">{children}</dd>
       <button type="button" onClick={onEdit} className="text-ink-3 hover:text-ink" aria-label={`Edit ${label.toLowerCase()}`}>
-        <Pencil className="size-3.5" />
+        <Edit2 className="size-3.5" />
       </button>
     </div>
   );

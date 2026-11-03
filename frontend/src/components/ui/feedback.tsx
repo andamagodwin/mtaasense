@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
+import { CloseCircle, Danger, InfoCircle, TickCircle } from "iconsax-reactjs";
 import type { ReactNode } from "react";
 
 export function Spinner({ className }: { className?: string }) {
@@ -26,11 +26,11 @@ const toneStyles: Record<Tone, string> = {
 };
 
 const toneIcon: Record<Tone, ReactNode> = {
-  info: <Info className="size-4 shrink-0" />,
-  warn: <AlertTriangle className="size-4 shrink-0" />,
-  danger: <XCircle className="size-4 shrink-0" />,
-  success: <CheckCircle2 className="size-4 shrink-0" />,
-  neutral: <Info className="size-4 shrink-0" />,
+  info: <InfoCircle className="size-4 shrink-0" />,
+  warn: <Danger className="size-4 shrink-0" />,
+  danger: <CloseCircle className="size-4 shrink-0" />,
+  success: <TickCircle className="size-4 shrink-0" />,
+  neutral: <InfoCircle className="size-4 shrink-0" />,
 };
 
 export function Callout({

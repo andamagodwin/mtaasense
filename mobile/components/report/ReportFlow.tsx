@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { router } from 'expo-router';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react-native';
+import { ArrowLeft, ArrowRight, TickCircle } from 'iconsax-react-nativejs';
 import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -14,8 +14,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/Button';
-import { SCREEN_CONTENT, ScreenHeader } from '@/components/ui/Screen';
+import { SCREEN_CONTENT } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { api, ApiError, appendFile } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -65,6 +66,8 @@ export function ReportFlow() {
 
   const textLength = description.trim().length;
   const transcriptLength = voice?.transcript.trim().length ?? 0;
+  // The steps and the navigation bar appear once a photo is chosen: until then the only decision is the photo.
+  const started = photo !== null || preparing;
   const canContinue = [!!photo && !preparing, textLength >= 5 || transcriptLength >= 5, true, true][
     step
   ];
@@ -239,29 +242,27 @@ export function ReportFlow() {
           scrollEnabled={!mapTouched}
           keyboardShouldPersistTaps="handled"
           contentContainerClassName={SCREEN_CONTENT}>
-          <ScreenHeader
-            brand
-            title="Report a hazard"
-            description="A photo and a few words are enough. Voice notes and location are optional."
-          />
+          <Logo />
 
-          <View
-            className="flex-row gap-1.5"
-            accessibilityLabel={`Step ${step + 1} of ${STEPS.length}`}>
-            {STEPS.map((label, i) => (
-              <View key={label} className="flex-1 gap-1.5">
-                <View className={cn('h-1 rounded-full', i <= step ? 'bg-accent' : 'bg-line')} />
-                <Text
-                  className={cn(
-                    'text-[12px]',
-                    i === step ? 'font-semibold text-ink' : 'text-ink-3'
-                  )}
-                  numberOfLines={1}>
-                  {i + 1}. {label}
-                </Text>
-              </View>
-            ))}
-          </View>
+          {started && (
+            <View
+              className="flex-row gap-1.5"
+              accessibilityLabel={`Step ${step + 1} of ${STEPS.length}`}>
+              {STEPS.map((label, i) => (
+                <View key={label} className="flex-1 gap-1.5">
+                  <View className={cn('h-1 rounded-full', i <= step ? 'bg-accent' : 'bg-line')} />
+                  <Text
+                    className={cn(
+                      'text-[12px]',
+                      i === step ? 'font-semibold text-ink' : 'text-ink-3'
+                    )}
+                    numberOfLines={1}>
+                    {i + 1}. {label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           {step === 0 && (
             <PhotoStep
@@ -324,36 +325,38 @@ export function ReportFlow() {
           )}
         </ScrollView>
 
-        <View className="flex-row items-center justify-between gap-3 border-t border-line bg-paper px-4 py-3">
-          {step > 0 ? (
-            <Button
-              title="Back"
-              variant="ghost"
-              icon={ArrowLeft}
-              disabled={submitting}
-              onPress={() => go(step - 1)}
-            />
-          ) : (
-            <View />
-          )}
-          {step < 3 ? (
-            <Button
-              title={step === 2 && !location ? 'Skip location' : 'Continue'}
-              size="lg"
-              iconRight={ArrowRight}
-              disabled={!canContinue}
-              onPress={() => go(step + 1)}
-            />
-          ) : (
-            <Button
-              title={submitError ? 'Try again' : 'Submit report'}
-              size="lg"
-              icon={Check}
-              loading={submitting}
-              onPress={() => void submit()}
-            />
-          )}
-        </View>
+        {started && (
+          <View className="flex-row items-center justify-between gap-3 border-t border-line bg-paper px-4 py-3">
+            {step > 0 ? (
+              <Button
+                title="Back"
+                variant="ghost"
+                icon={ArrowLeft}
+                disabled={submitting}
+                onPress={() => go(step - 1)}
+              />
+            ) : (
+              <View />
+            )}
+            {step < 3 ? (
+              <Button
+                title={step === 2 && !location ? 'Skip location' : 'Continue'}
+                size="lg"
+                iconRight={ArrowRight}
+                disabled={!canContinue}
+                onPress={() => go(step + 1)}
+              />
+            ) : (
+              <Button
+                title={submitError ? 'Try again' : 'Submit report'}
+                size="lg"
+                icon={TickCircle}
+                loading={submitting}
+                onPress={() => void submit()}
+              />
+            )}
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

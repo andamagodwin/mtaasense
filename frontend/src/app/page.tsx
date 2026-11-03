@@ -1,4 +1,4 @@
-import { Camera, GitMerge, ScanSearch, ShieldCheck, Sparkles, UserCheck } from "lucide-react";
+import { Camera, Hierarchy, MagicStar, Scanning, ShieldTick, UserTick } from "iconsax-reactjs";
 import { HeroReel } from "@/components/hero/hero-reel";
 import { LiveStats } from "@/components/live-stats";
 import { LinkButton } from "@/components/ui/button";
@@ -10,17 +10,17 @@ const steps = [
     body: "A photo, a few words or a voice note, and an optional map pin. The original evidence is stored unchanged.",
   },
   {
-    icon: <Sparkles className="size-4" />,
+    icon: <MagicStar className="size-4" />,
     title: "Muse Spark structures it",
     body: "Category, visible conditions, a preliminary severity and what remains unknown, with each observation tagged by its source.",
   },
   {
-    icon: <ScanSearch className="size-4" />,
+    icon: <Scanning className="size-4" />,
     title: "SAM 3.1 outlines the hazard",
     body: "A pixel mask over the pothole, blocked drain or standing water, drawn on the original photo.",
   },
   {
-    icon: <GitMerge className="size-4" />,
+    icon: <Hierarchy className="size-4" />,
     title: "Reports become one incident",
     body: "Nearby reports of the same kind are matched, and a reviewer compares the evidence before linking them.",
   },
@@ -28,17 +28,17 @@ const steps = [
 
 const principles = [
   {
-    icon: <ShieldCheck className="size-4" />,
+    icon: <ShieldTick className="size-4" />,
     title: "Evidence first",
     body: "Original photos, descriptions and timestamps are never overwritten. Every decision is in the audit log.",
   },
   {
-    icon: <Sparkles className="size-4" />,
+    icon: <MagicStar className="size-4" />,
     title: "AI kept distinct",
     body: "Model output is labelled as interpretation, with its provenance, and never presented as resident fact or official verification.",
   },
   {
-    icon: <UserCheck className="size-4" />,
+    icon: <UserTick className="size-4" />,
     title: "People decide",
     body: "Duplicates are suggestions. Only a reviewer links reports, corrects categories or marks an incident resolved.",
   },

@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { ArrowRight, GitMerge, Inbox, MapPinOff, Search } from "lucide-react";
+import { ArrowRight, DirectInbox, Hierarchy, LocationSlash, SearchNormal1 } from "iconsax-reactjs";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -122,14 +122,14 @@ function ReportTable({ statuses, hasLocation, searchable, empty }: { statuses?: 
       {searchable && (
         <div className="border-b border-line px-5 py-3">
           <div className="relative max-w-sm">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
+            <SearchNormal1 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
             <Input value={q} onChange={(e) => { setQ(e.target.value); setOffset(0); }} placeholder="Search reference or description" className="pl-9" aria-label="Search reports" />
           </div>
         </div>
       )}
       {reports.error && <Callout tone="danger" className="m-5">{reports.error.message}</Callout>}
       {!page && <div className="space-y-2 p-5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16" />)}</div>}
-      {page && page.items.length === 0 && <EmptyState icon={<Inbox className="size-5" />} title={empty} />}
+      {page && page.items.length === 0 && <EmptyState icon={<DirectInbox className="size-5" />} title={empty} />}
       {page && page.items.length > 0 && (
         <>
           <ul className="divide-y divide-line">
@@ -175,7 +175,7 @@ function ReportRow({ report: r }: { report: ReportSummary }) {
           {r.ai_priority && r.ai_priority !== "routine" && <PriorityBadge priority={r.ai_priority} />}
           {r.open_duplicate_suggestions > 0 && (
             <span className="inline-flex h-[22px] items-center gap-1 rounded-md border border-warn-line bg-warn-soft px-1.5 text-[12px] font-medium text-warn-ink">
-              <GitMerge className="size-3" /> {r.open_duplicate_suggestions} possible duplicate{r.open_duplicate_suggestions === 1 ? "" : "s"}
+              <Hierarchy className="size-3" /> {r.open_duplicate_suggestions} possible duplicate{r.open_duplicate_suggestions === 1 ? "" : "s"}
             </span>
           )}
         </div>
@@ -191,7 +191,7 @@ function DuplicateList() {
   if (list.error) return <Callout tone="danger">{list.error.message}</Callout>;
   if (!list.data) return <Skeleton className="h-40" />;
   if (list.data.items.length === 0)
-    return <Card><EmptyState icon={<GitMerge className="size-5" />} title="No open duplicate suggestions">New reports are matched automatically against nearby reports of the same kind.</EmptyState></Card>;
+    return <Card><EmptyState icon={<Hierarchy className="size-5" />} title="No open duplicate suggestions">New reports are matched automatically against nearby reports of the same kind.</EmptyState></Card>;
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {list.data.items.map((s) => (
@@ -206,7 +206,7 @@ function DuplicateList() {
           </div>
           <div className="flex items-center gap-3">
             <PairSide report={s.source} label="New report" />
-            <GitMerge className="size-4 shrink-0 text-ink-3" />
+            <Hierarchy className="size-4 shrink-0 text-ink-3" />
             <PairSide report={s.candidate} label={s.candidate.incident ? s.candidate.incident.reference : "Existing report"} />
           </div>
           <p className="mt-3 text-[12.5px] text-ink-3">
@@ -237,7 +237,7 @@ function IncidentTable() {
   if (list.error) return <Callout tone="danger">{list.error.message}</Callout>;
   if (!list.data) return <Skeleton className="h-40" />;
   if (list.data.items.length === 0)
-    return <Card><EmptyState icon={<MapPinOff className="size-5" />} title="No incidents yet">Confirm a report (or a duplicate pair) to create the first canonical incident.</EmptyState></Card>;
+    return <Card><EmptyState icon={<LocationSlash className="size-5" />} title="No incidents yet">Confirm a report (or a duplicate pair) to create the first canonical incident.</EmptyState></Card>;
   return (
     <Card>
       <ul className="divide-y divide-line">

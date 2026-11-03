@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Ban, CheckCircle2, GitMerge, RefreshCw, RotateCcw } from "lucide-react";
+import { ArrowRight, Forbidden, Hierarchy, Refresh, Refresh2, TickCircle } from "iconsax-reactjs";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -107,7 +107,7 @@ export function ReportWorkspace() {
               title="Possible duplicates"
               description="Retrieved by distance, hazard type, time and wording. A reviewer decides."
               action={
-                <Button variant="ghost" size="sm" onClick={() => void api.rematch(r.id).then(() => setTimeout(duplicates.reload, 2500))} icon={<RefreshCw className="size-3.5" />}>
+                <Button variant="ghost" size="sm" onClick={() => void api.rematch(r.id).then(() => setTimeout(duplicates.reload, 2500))} icon={<Refresh className="size-3.5" />}>
                   Re-run
                 </Button>
               }
@@ -115,7 +115,7 @@ export function ReportWorkspace() {
             <div>
               {!duplicates.data && <div className="p-5"><Skeleton className="h-16" /></div>}
               {duplicates.data?.length === 0 && (
-                <EmptyState icon={<GitMerge className="size-5" />} title="No likely duplicates" className="py-8">
+                <EmptyState icon={<Hierarchy className="size-5" />} title="No likely duplicates" className="py-8">
                   {r.location ? "No similar reports nearby in the last 45 days." : "Without a location, only reports with very similar wording are compared."}
                 </EmptyState>
               )}
@@ -149,7 +149,7 @@ export function ReportWorkspace() {
               eyebrow="Model interpretation"
               title="AI assessment"
               action={
-                <Button variant="ghost" size="sm" onClick={() => void api.reanalyze(r.id).then(() => refresh())} icon={<RotateCcw className="size-3.5" />} disabled={processing}>
+                <Button variant="ghost" size="sm" onClick={() => void api.reanalyze(r.id).then(() => refresh())} icon={<Refresh2 className="size-3.5" />} disabled={processing}>
                   Re-analyse
                 </Button>
               }
@@ -203,9 +203,9 @@ function ReviewActions({ report, onDone }: { report: ReportDetail; onDone: (r?: 
 
   return (
     <div className="flex flex-wrap gap-2">
-      {can("reject") && <Button variant="danger" onClick={() => setDialog("reject")} icon={<Ban className="size-4" />}>Reject</Button>}
-      {can("confirm_incident") && <Button onClick={() => { setTitle(defaultTitle); setDialog("confirm"); }} icon={<CheckCircle2 className="size-4" />}>Confirm as new incident</Button>}
-      {can("reopen") && <Button variant="secondary" onClick={() => void run("reopen")} loading={busy} icon={<RotateCcw className="size-4" />}>Reopen for review</Button>}
+      {can("reject") && <Button variant="danger" onClick={() => setDialog("reject")} icon={<Forbidden className="size-4" />}>Reject</Button>}
+      {can("confirm_incident") && <Button onClick={() => { setTitle(defaultTitle); setDialog("confirm"); }} icon={<TickCircle className="size-4" />}>Confirm as new incident</Button>}
+      {can("reopen") && <Button variant="secondary" onClick={() => void run("reopen")} loading={busy} icon={<Refresh2 className="size-4" />}>Reopen for review</Button>}
 
       <Dialog
         open={dialog === "confirm"}

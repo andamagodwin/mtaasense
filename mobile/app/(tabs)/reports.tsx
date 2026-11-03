@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
-import { Camera, ChevronRight, Inbox } from 'lucide-react-native';
+import { ArrowRight2, Camera, DirectInbox } from 'iconsax-react-nativejs';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -108,7 +108,7 @@ function ReceiptRow({ receipt, thumbnail }: { receipt: Receipt; thumbnail: Media
               (receipt.locationNote ? ` · ${receipt.locationNote}` : '')}
         </Text>
       </View>
-      <ChevronRight size={18} color={colors.ink[3]} />
+      <ArrowRight2 size={18} color={colors.ink[3]} />
     </Pressable>
   );
 }
@@ -117,7 +117,7 @@ function Empty() {
   return (
     <View className="items-center gap-3 rounded-[14px] border border-dashed border-line-strong px-4 py-10">
       <View className="size-12 items-center justify-center rounded-full bg-sunken">
-        <Inbox size={22} color={colors.ink[3]} />
+        <DirectInbox size={22} color={colors.ink[3]} />
       </View>
       <Text className="font-semibold text-[16px]">No reports yet</Text>
       <Text className="text-center text-[13.5px] leading-5 text-ink-3">

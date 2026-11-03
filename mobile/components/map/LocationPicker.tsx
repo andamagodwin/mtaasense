@@ -6,7 +6,7 @@ import {
   Map,
   Marker,
 } from '@maplibre/maplibre-react-native';
-import { MapPin } from 'lucide-react-native';
+import { Location } from 'iconsax-react-nativejs';
 import { useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
 
@@ -89,12 +89,7 @@ export function LocationPicker({
         )}
         {value && (
           <Marker lngLat={[value.lon, value.lat]} anchor="bottom">
-            <MapPin
-              size={40}
-              color={colors.surface}
-              fill={colors.highlight.DEFAULT}
-              strokeWidth={1.5}
-            />
+            <Location size={40} color={colors.highlight.DEFAULT} variant="Bold" />
           </Marker>
         )}
       </Map>

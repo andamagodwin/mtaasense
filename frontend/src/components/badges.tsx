@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { Bot, Database, FlaskConical, History } from "lucide-react";
+import { Box, Cpu, Driver, Repeat } from "iconsax-reactjs";
 import type { ReactNode } from "react";
 import {
   CATEGORY_COLOR,
@@ -86,9 +86,9 @@ export function CategoryBadge({ category, suffix }: { category: HazardCategory |
 }
 
 const provenanceIcon: Record<Provenance, ReactNode> = {
-  live: <Bot className="size-3" />,
-  cached: <History className="size-3" />,
-  fixture: <FlaskConical className="size-3" />,
+  live: <Cpu className="size-3" />,
+  cached: <Repeat className="size-3" />,
+  fixture: <Box className="size-3" />,
 };
 
 const provenanceTone: Record<Provenance, string> = {
@@ -138,7 +138,7 @@ export function PriorityBadge({ priority }: { priority: Priority }) {
 export function SampleBadge() {
   return (
     <Badge className="border-dashed border-line-strong bg-paper text-ink-3" title="Seeded demonstration record, not a real submission">
-      <Database className="size-3" />
+      <Driver className="size-3" />
       Sample data
     </Badge>
   );
@@ -154,7 +154,7 @@ const verdictTone: Record<ModelVerdict, string> = {
 export function VerdictBadge({ verdict }: { verdict: ModelVerdict }) {
   return (
     <Badge className={verdictTone[verdict]}>
-      <Bot className="size-3" />
+      <Cpu className="size-3" />
       {VERDICT_LABEL[verdict]}
     </Badge>
   );

@@ -1,12 +1,12 @@
 import { clsx } from "clsx";
-import { ImageOff } from "lucide-react";
+import { GallerySlash } from "iconsax-reactjs";
 import type { MediaRef } from "@/lib/types";
 
 export function Thumb({ media, className }: { media: MediaRef | null; className?: string }) {
   if (!media) {
     return (
       <span className={clsx("grid shrink-0 place-items-center rounded-lg bg-sunken text-ink-3", className)}>
-        <ImageOff className="size-4" />
+        <GallerySlash className="size-4" />
       </span>
     );
   }

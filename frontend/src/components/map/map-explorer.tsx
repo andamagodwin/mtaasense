@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { ArrowUpRight, Layers, MapPinOff, X } from "lucide-react";
+import { ArrowRight, CloseCircle, Layer, LocationSlash } from "iconsax-reactjs";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { api } from "@/lib/api";
@@ -86,7 +86,7 @@ export function MapExplorer() {
                 {selectedIncident ? "Canonical incident" : "Individual report · not yet reviewed"}
               </p>
               <button type="button" onClick={() => setSelection(null)} className="text-ink-3 hover:text-ink" aria-label="Clear selection">
-                <X className="size-4" />
+                <CloseCircle className="size-4" />
               </button>
             </div>
             {selectedIncident && (
@@ -107,7 +107,7 @@ export function MapExplorer() {
                 </p>
                 {user ? (
                   <Link href={`/review/incidents/${selectedIncident.id}`} className="inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:text-accent-hover">
-                    Open evidence <ArrowUpRight className="size-3.5" />
+                    Open evidence <ArrowRight className="size-3.5" />
                   </Link>
                 ) : (
                   <p className="text-[12px] text-ink-3">Photos are visible to reviewers only.</p>
@@ -124,7 +124,7 @@ export function MapExplorer() {
                 <p className="text-[12.5px] text-ink-3">Submitted {timeAgo(selectedReport.created_at)} · awaiting a reviewer</p>
                 {user && (
                   <Link href={`/review/reports/${selectedReport.id}`} className="inline-flex items-center gap-1 text-[13px] font-medium text-accent hover:text-accent-hover">
-                    Review this report <ArrowUpRight className="size-3.5" />
+                    Review this report <ArrowRight className="size-3.5" />
                   </Link>
                 )}
               </div>
@@ -140,7 +140,7 @@ export function MapExplorer() {
             </div>
           )}
           {data && total === 0 && (
-            <EmptyState icon={<Layers className="size-5" />} title="Nothing to show yet">
+            <EmptyState icon={<Layer className="size-5" />} title="Nothing to show yet">
               {category || !includeResolved ? "No incidents match these filters." : "Once residents report hazards with a location, they appear here."}
             </EmptyState>
           )}
@@ -174,7 +174,7 @@ export function MapExplorer() {
           )}
           {data && (data.unlocated_incidents > 0 || data.unlocated_reports > 0) && (
             <p className="flex items-start gap-2 border-t border-line px-5 py-3 text-[12.5px] leading-relaxed text-ink-3">
-              <MapPinOff className="mt-0.5 size-3.5 shrink-0" />
+              <LocationSlash className="mt-0.5 size-3.5 shrink-0" />
               {data.unlocated_incidents + data.unlocated_reports} record{data.unlocated_incidents + data.unlocated_reports === 1 ? " has" : "s have"} no location and {data.unlocated_incidents + data.unlocated_reports === 1 ? "isn’t" : "aren’t"} plotted. We never guess coordinates.
               {user && <Link href="/review?tab=unlocated" className="underline">See them</Link>}
             </p>

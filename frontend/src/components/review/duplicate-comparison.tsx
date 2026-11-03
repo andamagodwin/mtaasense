@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Bot, CheckCircle2, CircleSlash, Clock, GitMerge, PauseCircle } from "lucide-react";
+import { Clock, Cpu, Hierarchy, PauseCircle, Slash, TickCircle } from "iconsax-reactjs";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -177,7 +177,7 @@ function EvidencePanel({ s }: { s: DuplicateSuggestionView }) {
         </ul>
         <div className="rounded-lg border border-line bg-paper p-3">
           <p className="mb-1.5 flex flex-wrap items-center gap-2 text-[13px] font-medium">
-            <Bot className="size-4 text-accent" />
+            <Cpu className="size-4 text-accent" />
             Visual comparison by Muse Spark
             {s.model_verdict && <VerdictBadge verdict={s.model_verdict} />}
             <ProvenanceBadge provenance={s.model_provenance} />
@@ -223,7 +223,7 @@ function DecisionPanel({ s, disabled, onDone }: { s: DuplicateSuggestionView; di
       <Card>
         <CardBody className="space-y-2">
           <p className="flex items-center gap-2 font-medium">
-            {s.status === "confirmed" ? <CheckCircle2 className="size-4 text-accent" /> : <CircleSlash className="size-4 text-ink-3" />}
+            {s.status === "confirmed" ? <TickCircle className="size-4 text-accent" /> : <Slash className="size-4 text-ink-3" />}
             {s.status === "confirmed" ? "Confirmed as the same incident" : "Marked as different incidents"}
           </p>
           <p className="text-[13px] text-ink-3">
@@ -232,7 +232,7 @@ function DecisionPanel({ s, disabled, onDone }: { s: DuplicateSuggestionView; di
           </p>
           {s.status === "confirmed" && (
             <Link href={`/review/reports/${s.source.id}`} className="inline-flex items-center gap-1 text-[13px] font-medium text-accent">
-              <GitMerge className="size-3.5" /> View the linked report and incident
+              <Hierarchy className="size-3.5" /> View the linked report and incident
             </Link>
           )}
           <p className="text-[12px] text-ink-3">Both original reports and their evidence are preserved.</p>
@@ -248,10 +248,10 @@ function DecisionPanel({ s, disabled, onDone }: { s: DuplicateSuggestionView; di
         <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note, e.g. “Same kerb and power pole visible in both photos.”" className="min-h-20" aria-label="Decision note" />
         {error && <Callout tone="danger">{error}</Callout>}
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Button onClick={() => void decide("confirm")} loading={busy === "confirm"} disabled={!!busy} icon={<CheckCircle2 className="size-4" />}>
+          <Button onClick={() => void decide("confirm")} loading={busy === "confirm"} disabled={!!busy} icon={<TickCircle className="size-4" />}>
             Same incident: link A to {s.candidate.incident ? s.candidate.incident.reference : "B"}
           </Button>
-          <Button variant="secondary" onClick={() => void decide("reject")} loading={busy === "reject"} disabled={!!busy} icon={<CircleSlash className="size-4" />}>
+          <Button variant="secondary" onClick={() => void decide("reject")} loading={busy === "reject"} disabled={!!busy} icon={<Slash className="size-4" />}>
             Different incidents
           </Button>
           <Button variant="ghost" onClick={() => void decide("defer")} loading={busy === "defer"} disabled={!!busy} icon={<PauseCircle className="size-4" />}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, CheckCircle2, RotateCcw, Save } from "lucide-react";
+import { ArchiveTick, ArrowRight, Refresh2, TickCircle } from "iconsax-reactjs";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -135,11 +135,11 @@ function StatusAction({ incident, onDone }: { incident: IncidentDetail; onDone: 
   }
 
   if (incident.status === "resolved") {
-    return <Button variant="secondary" onClick={() => void change("confirmed")} loading={busy} icon={<RotateCcw className="size-4" />}>Reopen incident</Button>;
+    return <Button variant="secondary" onClick={() => void change("confirmed")} loading={busy} icon={<Refresh2 className="size-4" />}>Reopen incident</Button>;
   }
   return (
     <>
-      <Button onClick={() => setOpen(true)} icon={<CheckCircle2 className="size-4" />}>Mark resolved</Button>
+      <Button onClick={() => setOpen(true)} icon={<TickCircle className="size-4" />}>Mark resolved</Button>
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
@@ -194,7 +194,7 @@ function EditIncident({ incident, onDone }: { incident: IncidentDetail; onDone: 
             size="sm"
             disabled={!dirty}
             loading={busy}
-            icon={<Save className="size-3.5" />}
+            icon={<ArchiveTick className="size-3.5" />}
             onClick={async () => {
               setBusy(true);
               setError(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { CloseCircle } from "iconsax-reactjs";
 import { useEffect, useRef, type ReactNode } from "react";
 
 /** Native <dialog>: focus trapping, Escape and inert background come from the platform. */
@@ -46,7 +46,7 @@ export function Dialog({
           className="-mr-1 grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-sunken hover:text-ink"
           aria-label="Close"
         >
-          <X className="size-4" />
+          <CloseCircle className="size-4" />
         </button>
       </div>
       {children && <div className="px-5 py-4">{children}</div>}

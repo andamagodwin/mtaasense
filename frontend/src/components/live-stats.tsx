@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity } from "lucide-react";
+import { Activity } from "iconsax-reactjs";
 import { api } from "@/lib/api";
 import { useApi } from "@/lib/hooks";
 import { Card } from "./ui/card";

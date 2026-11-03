@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Check, Copy, Link2 } from "lucide-react";
+import { Copy, CopySuccess, Link2, TickCircle } from "iconsax-reactjs";
 import { useParams } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { api, ApiError } from "@/lib/api";
@@ -159,7 +159,7 @@ function CopyLink() {
       }}
       className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-line-strong bg-surface px-3 text-[13px] font-medium hover:bg-sunken"
     >
-      {copied ? <Check className="size-4 text-accent" /> : <Copy className="size-4" />}
+      {copied ? <CopySuccess className="size-4 text-accent" /> : <Copy className="size-4" />}
       {copied ? "Link copied" : "Copy tracking link"}
       <Link2 className="hidden size-3.5 text-ink-3 sm:block" />
     </button>
@@ -191,17 +191,18 @@ function Timeline({ report }: { report: ReportDetail }) {
       {steps.map((s) => (
         <li key={s.label} className={clsx("rounded-xl border px-3 py-2.5", s.state === "active" ? "border-accent/40 bg-accent-soft/40" : "border-line bg-surface")}>
           <p className="flex items-center gap-1.5 text-[13px] font-medium">
-            <span
-              className={clsx(
-                "grid size-4 place-items-center rounded-full",
-                s.state === "done" && "bg-accent text-white",
-                s.state === "active" && "border-2 border-accent border-t-transparent animate-spin",
-                s.state === "todo" && "border border-line-strong",
-                s.state === "skipped" && "border border-dashed border-ink-3",
-              )}
-            >
-              {s.state === "done" && <Check className="size-2.5" strokeWidth={3} />}
-            </span>
+            {s.state === "done" ? (
+              <TickCircle variant="Bold" className="size-4 shrink-0 text-accent" />
+            ) : (
+              <span
+                className={clsx(
+                  "size-4 shrink-0 rounded-full",
+                  s.state === "active" && "border-2 border-accent border-t-transparent animate-spin",
+                  s.state === "todo" && "border border-line-strong",
+                  s.state === "skipped" && "border border-dashed border-ink-3",
+                )}
+              />
+            )}
             {s.label}
           </p>
           <p className="mt-0.5 pl-5.5 text-[12px] text-ink-3">{s.detail}</p>

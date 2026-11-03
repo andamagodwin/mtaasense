@@ -1,6 +1,6 @@
 "use client";
 
-import { Pause, Play } from "lucide-react";
+import { Pause, Play } from "iconsax-reactjs";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import reel from "./reel-timeline.json";
 

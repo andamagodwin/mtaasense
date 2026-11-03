@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react-native';
+import { TickCircle } from 'iconsax-react-nativejs';
 import { ActivityIndicator, View } from 'react-native';
 
 import { Text } from '@/components/ui/Text';
@@ -73,11 +73,7 @@ export function Timeline({ report }: { report: ReportDetail }) {
 
 function StepMark({ state }: { state: StepState }) {
   if (state === 'done') {
-    return (
-      <View className="size-6 items-center justify-center rounded-full bg-accent">
-        <Check size={13} color="#fff" strokeWidth={3} />
-      </View>
-    );
+    return <TickCircle size={24} color={colors.accent.DEFAULT} variant="Bold" />;
   }
   if (state === 'active') {
     return (

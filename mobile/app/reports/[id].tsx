@@ -1,5 +1,5 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { Share2, Trash2 } from 'lucide-react-native';
+import { Share as ShareIcon, Trash } from 'iconsax-react-nativejs';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, Share, View } from 'react-native';
 
@@ -141,12 +141,17 @@ export default function TrackReportScreen() {
         <ResidentFacts report={report} />
 
         <View className="gap-2">
-          <Button title="Share tracking link" variant="secondary" icon={Share2} onPress={share} />
+          <Button
+            title="Share tracking link"
+            variant="secondary"
+            icon={ShareIcon}
+            onPress={share}
+          />
           <Text className="text-center text-[12px] text-ink-3">
             Anyone with the link can see this report and its photo.
           </Text>
         </View>
-        <Button title="Remove from this phone" variant="ghost" icon={Trash2} onPress={forget} />
+        <Button title="Remove from this phone" variant="ghost" icon={Trash} onPress={forget} />
       </ScrollView>
     </>
   );

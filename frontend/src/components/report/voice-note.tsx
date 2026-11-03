@@ -1,6 +1,6 @@
 "use client";
 
-import { Mic, Square, Trash2, Upload } from "lucide-react";
+import { DocumentUpload, Microphone2, Stop as StopIcon, Trash } from "iconsax-reactjs";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { api, ApiError } from "@/lib/api";
 import { errorLabel } from "@/lib/format";
@@ -149,7 +149,7 @@ export function VoiceNote({
       <div className="space-y-3 rounded-xl border border-line bg-paper/60 p-3">
         <div className="flex items-center gap-3">
           <audio src={value.previewUrl} controls className="h-9 min-w-0 flex-1" />
-          <Button variant="ghost" size="sm" onClick={clear} icon={<Trash2 className="size-4" />} aria-label="Remove voice note">
+          <Button variant="ghost" size="sm" onClick={clear} icon={<Trash className="size-4" />} aria-label="Remove voice note">
             Remove
           </Button>
         </div>
@@ -177,12 +177,12 @@ export function VoiceNote({
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
         {phase === "recording" ? (
-          <Button variant="danger" onClick={stop} icon={<Square className="size-3.5 fill-current" />}>
+          <Button variant="danger" onClick={stop} icon={<StopIcon variant="Bold" className="size-3.5" />}>
             Stop · {mmss(elapsed)} / {mmss(maxSeconds)}
           </Button>
         ) : (
           canRecord && (
-            <Button variant="secondary" onClick={() => void start()} disabled={phase === "uploading"} icon={<Mic className="size-4" />}>
+            <Button variant="secondary" onClick={() => void start()} disabled={phase === "uploading"} icon={<Microphone2 className="size-4" />}>
               Record a voice note
             </Button>
           )
@@ -191,7 +191,7 @@ export function VoiceNote({
           variant="ghost"
           onClick={() => fileInput.current?.click()}
           disabled={phase !== "idle"}
-          icon={<Upload className="size-4" />}
+          icon={<DocumentUpload className="size-4" />}
         >
           Upload audio
         </Button>

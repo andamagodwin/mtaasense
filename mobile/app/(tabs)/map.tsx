@@ -1,5 +1,5 @@
 import { Camera, GeoJSONSource, Layer, Map } from '@maplibre/maplibre-react-native';
-import { X } from 'lucide-react-native';
+import { CloseCircle } from 'iconsax-react-nativejs';
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -180,7 +180,7 @@ function SelectedCard({
           accessibilityLabel="Close"
           hitSlop={10}
           onPress={onClose}>
-          <X size={18} color={colors.ink[3]} />
+          <CloseCircle size={18} color={colors.ink[3]} />
         </Pressable>
       </View>
       <Text className="text-[13px] text-ink-2">

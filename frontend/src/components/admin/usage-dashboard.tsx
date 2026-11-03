@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { CloseCircle, Danger, TickCircle } from "iconsax-reactjs";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
@@ -116,7 +116,7 @@ function Tile({ label, value, warn }: { label: string; value: string; warn?: boo
   return (
     <Card className="p-5">
       <p className="flex items-center gap-1.5 text-[12.5px] text-ink-3">
-        {warn && <AlertTriangle className="size-3.5 text-warn" aria-label="Warning" />}
+        {warn && <Danger className="size-3.5 text-warn" aria-label="Warning" />}
         {label}
       </p>
       <p className="mt-1 text-[26px] font-semibold tracking-tight tabular-nums">{value}</p>
@@ -249,7 +249,7 @@ function RecentCalls({ report }: { report: UsageReport }) {
                   <td className="px-3 py-2.5 font-mono">{c.model}</td>
                   <td className="px-3 py-2.5">
                     <span className="inline-flex items-center gap-1.5">
-                      {c.success ? <CheckCircle2 className="size-3.5 text-accent" /> : <XCircle className="size-3.5 text-danger" />}
+                      {c.success ? <TickCircle className="size-3.5 text-accent" /> : <CloseCircle className="size-3.5 text-danger" />}
                       {c.success ? "OK" : c.error_code ?? `HTTP ${c.http_status}`}
                       {c.provenance !== "live" && <ProvenanceBadge provenance={c.provenance} />}
                     </span>

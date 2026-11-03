@@ -1,5 +1,12 @@
 import { Image } from 'expo-image';
-import { Camera, ImagePlus, LocateFixed, MapPin, Pencil, Sparkles } from 'lucide-react-native';
+import {
+  Camera,
+  Edit2,
+  GalleryAdd,
+  Gps,
+  Location as LocationIcon,
+  MagicStar,
+} from 'iconsax-react-nativejs';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, Pressable, View } from 'react-native';
 
@@ -80,7 +87,7 @@ export function PhotoStep({
                 title="Change"
                 variant="ghost"
                 size="sm"
-                icon={ImagePlus}
+                icon={GalleryAdd}
                 onPress={() => onPick('library')}
               />
             </View>
@@ -96,7 +103,7 @@ export function PhotoStep({
             onPress={() => onPick('camera')}
           />
           <PickTile
-            icon={<ImagePlus size={22} color={colors.ink[2]} />}
+            icon={<GalleryAdd size={22} color={colors.ink[2]} />}
             title="Choose a photo"
             hint={`From your library, up to ${maxImageMb} MB`}
             onPress={() => onPick('library')}
@@ -174,7 +181,7 @@ export function DescribeStep({
           onPress={() => onCategory('auto')}
           title="Not sure"
           hint="Let Muse Spark suggest a category"
-          mark={<Sparkles size={14} color={colors.accent.DEFAULT} />}
+          mark={<MagicStar size={14} color={colors.accent.DEFAULT} />}
         />
         {CATEGORIES.map((c) => (
           <CategoryTile
@@ -286,7 +293,7 @@ export function LocationStep({
         <Button
           title="Use my current location"
           variant="secondary"
-          icon={LocateFixed}
+          icon={Gps}
           loading={geoState === 'locating'}
           onPress={onLocateMe}
         />
@@ -306,7 +313,7 @@ export function LocationStep({
         helps.
       </Text>
       <View className="flex-row items-center gap-1.5">
-        <MapPin size={16} color={colors.ink[3]} />
+        <LocationIcon size={16} color={colors.ink[3]} />
         <Text className="flex-1 text-[13px] text-ink-2">
           {location
             ? `${formatCoords(location.lat, location.lon)} · ${
@@ -428,7 +435,7 @@ function ReviewRow({
         accessibilityLabel={`Edit ${label.toLowerCase()}`}
         hitSlop={10}
         onPress={onEdit}>
-        <Pencil size={15} color={colors.ink[3]} />
+        <Edit2 size={15} color={colors.ink[3]} />
       </Pressable>
     </View>
   );

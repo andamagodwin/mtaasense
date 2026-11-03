@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { Eye, EyeOff, ExternalLink, Layers, ScanSearch, SquareDashed } from "lucide-react";
+import { ExportSquare, Eye, EyeSlash, Layer, Scan, Scanning } from "iconsax-reactjs";
 import { useMemo, useState } from "react";
 import { colors } from "@/lib/colors";
 import { errorLabel, formatDateTime, pct } from "@/lib/format";
@@ -158,7 +158,7 @@ export function SegmentationViewer({
       {/* Concept chooser */}
       <div className={clsx("flex flex-wrap items-center gap-1.5", concepts.length === 0 && "hidden")}>
         <span className="mr-1 inline-flex items-center gap-1.5 text-[13px] text-ink-3">
-          <ScanSearch className="size-4" /> SAM 3.1 concept
+          <Scanning className="size-4" /> SAM 3.1 concept
         </span>
         {concepts.map((c) => {
           const seg = byPrompt.get(c);
@@ -208,7 +208,7 @@ export function SegmentationViewer({
         <div className="rounded-xl border border-line bg-surface">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-3.5 py-2.5">
             <div className="flex flex-wrap items-center gap-2 text-[13px]">
-              <Layers className="size-4 text-ink-3" />
+              <Layer className="size-4 text-ink-3" />
               <span className="font-medium">
                 {regions.length} region{regions.length === 1 ? "" : "s"} · “{active.prompt}”
               </span>
@@ -237,7 +237,7 @@ export function SegmentationViewer({
                   showBoxes ? "bg-sunken text-ink" : "text-ink-3 hover:text-ink",
                 )}
               >
-                <SquareDashed className="size-3.5" /> Boxes
+                <Scan className="size-3.5" /> Boxes
               </button>
             </div>
           </div>
@@ -282,7 +282,7 @@ export function SegmentationViewer({
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 text-[13px] text-ink-3 hover:text-ink"
         >
-          <ExternalLink className="size-3.5" /> Open original upload ({original.width}×{original.height})
+          <ExportSquare className="size-3.5" /> Open original upload ({original.width}×{original.height})
         </a>
       )}
     </div>
@@ -302,7 +302,7 @@ function OverlayToggle({ on, onClick }: { on: boolean; onClick: () => void }) {
       aria-pressed={on}
       className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-surface/95 px-2.5 text-[12.5px] font-medium text-ink shadow-[var(--shadow-card)] backdrop-blur hover:bg-surface"
     >
-      {on ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+      {on ? <EyeSlash className="size-3.5" /> : <Eye className="size-3.5" />}
       {on ? "Show original" : "Show overlay"}
     </button>
   );
@@ -310,7 +310,7 @@ function OverlayToggle({ on, onClick }: { on: boolean; onClick: () => void }) {
 
 export function SegmentPlaceholderButton({ onClick, loading }: { onClick: () => void; loading?: boolean }) {
   return (
-    <Button variant="secondary" size="sm" onClick={onClick} loading={loading} icon={<ScanSearch className="size-4" />}>
+    <Button variant="secondary" size="sm" onClick={onClick} loading={loading} icon={<Scanning className="size-4" />}>
       Segment with SAM 3.1
     </Button>
   );

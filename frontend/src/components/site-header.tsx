@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { LogOut } from "lucide-react";
+import { Logout } from "iconsax-reactjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "./brand";
@@ -64,7 +64,7 @@ export function SiteHeader() {
             aria-label="Sign out"
             title="Sign out"
           >
-            <LogOut className="size-4" />
+            <Logout className="size-4" />
           </button>
         </div>
       ) : (

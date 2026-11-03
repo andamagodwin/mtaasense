@@ -8,7 +8,7 @@ import {
   useAudioRecorderState,
   type RecordingStatus,
 } from 'expo-audio';
-import { Mic, Pause, Play, Square, Trash2 } from 'lucide-react-native';
+import { Microphone2, Pause, Play, Stop as StopIcon, Trash } from 'iconsax-react-nativejs';
 import { useEffect, useRef, useState } from 'react';
 import { Linking, Pressable, View } from 'react-native';
 
@@ -140,7 +140,7 @@ export function VoiceNote({
             title="Remove"
             variant="ghost"
             size="sm"
-            icon={Trash2}
+            icon={Trash}
             onPress={() => {
               onChange(null);
               setNotice(null);
@@ -179,7 +179,7 @@ export function VoiceNote({
           <Button
             title={`Stop · ${mmss(elapsed)} / ${mmss(maxSeconds)}`}
             variant="danger"
-            icon={Square}
+            icon={StopIcon}
             onPress={() => void stop()}
           />
           <View className="flex-row items-center gap-1.5">
@@ -191,7 +191,7 @@ export function VoiceNote({
         <Button
           title="Record a voice note"
           variant="secondary"
-          icon={Mic}
+          icon={Microphone2}
           className="self-start"
           disabled={phase === 'uploading'}
           onPress={() => void start()}
@@ -241,9 +241,9 @@ function Playback({ uri, durationMs }: { uri: string; durationMs: number }) {
       className="h-11 flex-1 flex-row items-center gap-2.5 rounded-xl bg-sunken px-3 active:opacity-80">
       <View className="size-7 items-center justify-center rounded-full bg-accent">
         {playing ? (
-          <Pause size={13} color="#fff" fill="#fff" />
+          <Pause size={13} color="#fff" variant="Bold" />
         ) : (
-          <Play size={13} color="#fff" fill="#fff" />
+          <Play size={13} color="#fff" variant="Bold" />
         )}
       </View>
       <View className="h-1 flex-1 overflow-hidden rounded-full bg-line">

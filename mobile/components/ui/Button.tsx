@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react-native';
+import type { Icon as IconComponent } from 'iconsax-react-nativejs';
 import { ActivityIndicator, Pressable, type PressableProps, View } from 'react-native';
 
 import { cn } from '@/lib/cn';
@@ -40,8 +40,8 @@ interface ButtonProps extends Omit<PressableProps, 'children'> {
   title: string;
   variant?: Variant;
   size?: Size;
-  icon?: LucideIcon;
-  iconRight?: LucideIcon;
+  icon?: IconComponent;
+  iconRight?: IconComponent;
   loading?: boolean;
   className?: string;
 }
@@ -75,12 +75,12 @@ export function Button({
       {loading ? (
         <ActivityIndicator size="small" color={tint[variant]} />
       ) : (
-        Icon && <Icon size={s.icon} color={tint[variant]} strokeWidth={2.1} />
+        Icon && <Icon size={s.icon} color={tint[variant]} />
       )}
       <Text className={cn('font-semibold', s.text, label[variant])}>{title}</Text>
       {IconRight && (
         <View>
-          <IconRight size={s.icon} color={tint[variant]} strokeWidth={2.1} />
+          <IconRight size={s.icon} color={tint[variant]} />
         </View>
       )}
     </Pressable>

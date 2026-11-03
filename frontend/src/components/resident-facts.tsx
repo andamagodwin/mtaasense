@@ -1,4 +1,4 @@
-import { MapPin, MessageSquareQuote, Mic } from "lucide-react";
+import { Location as LocationIcon, Microphone2, QuoteUp } from "iconsax-reactjs";
 import { CATEGORY_LABEL, formatCoords, formatDateTime } from "@/lib/format";
 import type { ReportDetail } from "@/lib/types";
 
@@ -12,7 +12,7 @@ export function ResidentFacts({ report, showMachineTranscript = false }: { repor
     <dl className="space-y-4 text-sm">
       <div>
         <dt className="mb-1 flex items-center gap-1.5 text-[12px] text-ink-3">
-          <MessageSquareQuote className="size-3.5" /> Description
+          <QuoteUp className="size-3.5" /> Description
         </dt>
         <dd className="whitespace-pre-wrap leading-relaxed text-ink">
           {report.description || <span className="text-ink-3">No written description.</span>}
@@ -21,7 +21,7 @@ export function ResidentFacts({ report, showMachineTranscript = false }: { repor
       {report.voice_transcript && (
         <div>
           <dt className="mb-1 flex items-center gap-1.5 text-[12px] text-ink-3">
-            <Mic className="size-3.5" /> Voice note transcript {transcriptEdited ? "(corrected by resident)" : ""}
+            <Microphone2 className="size-3.5" /> Voice note transcript {transcriptEdited ? "(corrected by resident)" : ""}
           </dt>
           <dd className="leading-relaxed text-ink">“{report.voice_transcript}”</dd>
           {report.audio && <audio src={report.audio.url} controls className="mt-2 h-9 w-full" />}
@@ -42,7 +42,7 @@ export function ResidentFacts({ report, showMachineTranscript = false }: { repor
       </div>
       <div>
         <dt className="mb-1 flex items-center gap-1.5 text-[12px] text-ink-3">
-          <MapPin className="size-3.5" /> Location
+          <LocationIcon className="size-3.5" /> Location
         </dt>
         <dd className="text-ink">
           {report.location ? (

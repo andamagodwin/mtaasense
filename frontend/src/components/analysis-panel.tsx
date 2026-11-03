@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { Camera, CircleHelp, MessageSquareQuote, Sparkles } from "lucide-react";
+import { Camera, MagicStar, MessageQuestion, QuoteUp } from "iconsax-reactjs";
 import type { ReactNode } from "react";
 import { ANALYSIS_STATUS_LABEL, CATEGORY_LABEL, errorLabel, formatDateTime, PRIORITY_LABEL } from "@/lib/format";
 import type { AnalysisView, HazardAssessment, HazardCategory, Observation } from "@/lib/types";
@@ -9,7 +9,7 @@ import { SectionLabel } from "./ui/card";
 
 const SOURCE_META: Record<Observation["source"], { label: string; icon: ReactNode; tone: string }> = {
   image: { label: "Visible in photo", icon: <Camera className="size-3.5" />, tone: "border-l-cat-drain" },
-  description: { label: "Stated by resident", icon: <MessageSquareQuote className="size-3.5" />, tone: "border-l-cat-road" },
+  description: { label: "Stated by resident", icon: <QuoteUp className="size-3.5" />, tone: "border-l-cat-road" },
   image_and_description: { label: "Photo and resident agree", icon: <Camera className="size-3.5" />, tone: "border-l-accent" },
 };
 
@@ -40,7 +40,7 @@ export function AnalysisPanel({
     return (
       <div className="space-y-3" aria-busy>
         <p className="flex items-center gap-2 text-sm text-ink-2">
-          <Sparkles className="size-4 animate-pulse text-accent" />
+          <MagicStar className="size-4 animate-pulse text-accent" />
           Muse Spark is reading the photo and the description…
         </p>
         <Skeleton className="h-4 w-5/6" />
@@ -149,7 +149,7 @@ function InterpretationBlock({ label, children }: { label: string; children: Rea
   return (
     <div className="border-l-2 border-accent/50 pl-3">
       <p className="mb-1 flex items-center gap-1 text-[11.5px] font-medium text-accent-ink">
-        <Sparkles className="size-3" />
+        <MagicStar className="size-3" />
         {label}
       </p>
       {children}
@@ -162,7 +162,7 @@ function UnknownList({ title, items }: { title: string; items: string[] }) {
   return (
     <div>
       <p className="mb-1.5 flex items-center gap-1 text-[12px] font-medium text-ink-3">
-        <CircleHelp className="size-3.5" />
+        <MessageQuestion className="size-3.5" />
         {title}
       </p>
       <ul className="space-y-1 text-[13px] leading-relaxed text-ink-2">

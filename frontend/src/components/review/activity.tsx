@@ -1,6 +1,6 @@
 "use client";
 
-import { History, MessageSquare } from "lucide-react";
+import { Clock, MessageText } from "iconsax-reactjs";
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { formatDateTime } from "@/lib/format";
@@ -50,7 +50,7 @@ export function NotesPanel({ kind, id, onAdded }: { kind: Kind; id: string; onAd
         <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Add a note for other reviewers" className="min-h-20" aria-label="New note" maxLength={4000} />
         {error && <Callout tone="danger">{error}</Callout>}
         <div className="flex justify-end">
-          <Button variant="secondary" size="sm" onClick={() => void add()} disabled={!body.trim()} loading={busy} icon={<MessageSquare className="size-3.5" />}>
+          <Button variant="secondary" size="sm" onClick={() => void add()} disabled={!body.trim()} loading={busy} icon={<MessageText className="size-3.5" />}>
             Add note
           </Button>
         </div>
@@ -117,7 +117,7 @@ export function AuditTrail({ kind, id, refreshKey }: { kind: Kind; id: string; r
                 {detail && <p className="text-[12.5px] text-ink-2">{detail}</p>}
                 {e.note && <p className="mt-0.5 text-[12.5px] italic text-ink-2">“{e.note}”</p>}
                 <p className="mt-0.5 flex items-center gap-1 text-[12px] text-ink-3">
-                  <History className="size-3" />
+                  <Clock className="size-3" />
                   {e.actor_label} · {formatDateTime(e.created_at)}
                 </p>
               </li>

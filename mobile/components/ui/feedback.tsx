@@ -1,4 +1,4 @@
-import { CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react-native';
+import { CloseCircle, Danger, InfoCircle, TickCircle } from 'iconsax-react-nativejs';
 import type { ReactNode } from 'react';
 import { View } from 'react-native';
 
@@ -9,18 +9,18 @@ import { Text } from './Text';
 
 type Tone = 'neutral' | 'info' | 'warn' | 'danger' | 'success';
 
-const tones: Record<Tone, { box: string; icon: typeof Info; color: string }> = {
-  neutral: { box: 'border-line bg-sunken', icon: Info, color: colors.ink[2] },
-  info: { box: 'border-info-line bg-info-soft', icon: Info, color: colors.info.DEFAULT },
-  warn: { box: 'border-warn-line bg-warn-soft', icon: TriangleAlert, color: colors.warn.DEFAULT },
+const tones: Record<Tone, { box: string; icon: typeof InfoCircle; color: string }> = {
+  neutral: { box: 'border-line bg-sunken', icon: InfoCircle, color: colors.ink[2] },
+  info: { box: 'border-info-line bg-info-soft', icon: InfoCircle, color: colors.info.DEFAULT },
+  warn: { box: 'border-warn-line bg-warn-soft', icon: Danger, color: colors.warn.DEFAULT },
   danger: {
     box: 'border-danger-line bg-danger-soft',
-    icon: CircleAlert,
+    icon: CloseCircle,
     color: colors.danger.DEFAULT,
   },
   success: {
     box: 'border-success-line bg-success-soft',
-    icon: CircleCheck,
+    icon: TickCircle,
     color: colors.success.DEFAULT,
   },
 };

@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "iconsax-reactjs";
 import Link from "next/link";
 import type { ReactNode } from "react";
 

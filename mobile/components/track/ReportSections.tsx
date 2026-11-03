@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-react-native';
+import { MagicStar } from 'iconsax-react-nativejs';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -77,7 +77,7 @@ export function AnalysisCard({ report }: { report: ReportDetail }) {
             </Row>
           )}
           <View className="flex-row items-center gap-1.5 border-t border-line px-4 py-3">
-            <Sparkles size={12} color={colors.ink[3]} />
+            <MagicStar size={12} color={colors.ink[3]} />
             <Text className="text-[12px] text-ink-3">
               Muse Spark’s reading is a suggestion; a person reviews every report.
             </Text>

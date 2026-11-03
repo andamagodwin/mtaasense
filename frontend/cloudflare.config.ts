@@ -8,6 +8,9 @@ export default defineConfig({
     entrypoint: "vinext/server/fetch-handler",
     compatibilityDate: "2026-10-30",
     compatibilityFlags: ["nodejs_compat"],
+    // Registered with Cloudflare Registrar in the same account; attached on deploy. www redirects to the
+    // apex in next.config.ts. The workers.dev URL keeps working.
+    domains: ["mtaasense.com", "www.mtaasense.com"],
     assets: {
       htmlHandling: "none",
       notFoundHandling: "none",

@@ -16,6 +16,17 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async redirects() {
+    // One canonical address: www.mtaasense.com → mtaasense.com.
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.mtaasense.com" }],
+        destination: "https://mtaasense.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [{ source: "/api/v1/:path*", destination: `${apiBase}/api/v1/:path*` }];
   },

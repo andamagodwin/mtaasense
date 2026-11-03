@@ -24,7 +24,7 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 | Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build && pnpm build:vinext` |
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
 | Contabo VPS deployment | **Not deployed** | Artifacts in [`deploy/`](deploy/); the target VPS already hosts another app on ports 80/443 (see [Deploying](#deploying)) |
-| Frontend on Cloudflare Workers (vinext) | **Deployed** — <https://mtaasense.mtaasense.workers.dev> | Pages load; API calls fail until the backend is deployed and the frontend is rebuilt with its URL |
+| Frontend on Cloudflare Workers (vinext) | **Deployed** — <https://mtaasense.com> (also <https://mtaasense.mtaasense.workers.dev>) | Pages load; API calls fail until the backend is deployed and the frontend is rebuilt with its URL |
 
 ---
 
@@ -382,8 +382,12 @@ npx cf auth login                                      # once, opens a device-co
 NEXT_PUBLIC_API_BASE_URL=https://<API_DOMAIN> pnpm deploy:vinext
 ```
 
+The Worker serves `mtaasense.com` and `www.mtaasense.com`, both registered with Cloudflare Registrar in the same
+account. The `domains` list in `cloudflare.config.ts` attaches them on each deploy, `next.config.ts` permanently
+redirects `www` to the apex, and the `workers.dev` URL keeps working.
+
 The API base URL is baked into the `/api/v1/*` rewrite at build time, so redeploy whenever it changes. Then add the
-frontend origin (e.g. `https://mtaasense.mtaasense.workers.dev`) to `CORS_ORIGINS` on the server and restart the API
+frontend origin (`https://mtaasense.com`) to `CORS_ORIGINS` on the server and restart the API
 — cookie-authenticated writes from any other origin are refused. `pnpm dev:vinext` runs the Workers build locally
 on port 3001 (inside `workerd`); `pnpm dev` is still the plain Next.js dev server.
 

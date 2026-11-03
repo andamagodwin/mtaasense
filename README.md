@@ -25,6 +25,7 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
 | Backend on the Contabo VPS | **Deployed** — <https://api.mtaasense.com> | Docker Compose behind a Cloudflare Tunnel (the VPS's ports 80/443 belong to another app); `/ready` reports database, migrations, media and model API OK |
 | Frontend on Cloudflare Workers (vinext) | **Deployed** — <https://mtaasense.com> (also <https://mtaasense.mtaasense.workers.dev>) | Calls the API through same-origin `/api/v1/*` |
+| Mobile app (`mobile/`, Expo SDK 58, iOS and Android) | **Runs in an iOS development build** | Report, My reports and Map screens render on the iPhone 17 simulator against the live API; the submit-to-tracking flow still needs a tap-through on a device |
 
 ---
 
@@ -133,6 +134,29 @@ pnpm dev                       # → http://localhost:3000
 ```
 
 `docker compose --profile app up` runs DB + API + worker in containers instead.
+
+### Mobile app
+
+`mobile/` is an Expo SDK 58 app (Expo Router, NativeWind 4, MapLibre React Native) with the same three
+resident flows as the web: **Report** (photo, category or "let AI suggest", description, voice note, GPS or
+map pin), **My reports** (receipts kept on the phone, with live status) and **Map** (public hazards on the
+same OpenFreeMap style). Residents don't sign in: the receipt token from each submission is stored in the
+iOS Keychain or Android Keystore and sent back as `X-Report-Token`.
+
+MapLibre needs native code, so the app runs in a development build rather than Expo Go:
+
+```bash
+cd mobile
+pnpm install
+pnpm ios          # prebuilds, compiles and opens the iOS simulator (Xcode 26); `pnpm android` for Android
+```
+
+It talks to `https://api.mtaasense.com` by default. To use a local backend, start the API and set
+`EXPO_PUBLIC_API_ORIGIN=http://<your-lan-ip>:8000` before `pnpm start`.
+
+`patches/expo-modules-jsi@58.0.21.patch` works around a compile error in Expo's JSI module under Xcode 26.3
+(Swift 6.2.4 rejects one `nonisolated(unsafe)` capture). pnpm applies it on install; drop it once Expo ships a
+fixed release.
 
 ### Configuring the Meta API key
 

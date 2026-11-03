@@ -1,0 +1,79 @@
+import { CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react-native';
+import type { ReactNode } from 'react';
+import { View } from 'react-native';
+
+import { cn } from '@/lib/cn';
+import { colors } from '@/theme/tokens';
+
+import { Text } from './Text';
+
+type Tone = 'neutral' | 'info' | 'warn' | 'danger' | 'success';
+
+const tones: Record<Tone, { box: string; icon: typeof Info; color: string }> = {
+  neutral: { box: 'border-line bg-sunken', icon: Info, color: colors.ink[2] },
+  info: { box: 'border-[#cfdcec] bg-info-soft', icon: Info, color: colors.info.DEFAULT },
+  warn: { box: 'border-[#efdcb6] bg-warn-soft', icon: TriangleAlert, color: colors.warn.DEFAULT },
+  danger: {
+    box: 'border-[#ebc9c0] bg-danger-soft',
+    icon: CircleAlert,
+    color: colors.danger.DEFAULT,
+  },
+  success: {
+    box: 'border-[#c9dccf] bg-accent-soft',
+    icon: CircleCheck,
+    color: colors.accent.DEFAULT,
+  },
+};
+
+export function Callout({
+  tone = 'neutral',
+  title,
+  children,
+  className,
+}: {
+  tone?: Tone;
+  title?: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  const t = tones[tone];
+  const Icon = t.icon;
+  return (
+    <View className={cn('flex-row gap-2.5 rounded-xl border px-3.5 py-3', t.box, className)}>
+      <View className="pt-0.5">
+        <Icon size={16} color={t.color} />
+      </View>
+      <View className="flex-1 gap-0.5">
+        {title && <Text className="font-semibold text-[14px]">{title}</Text>}
+        <Text className="text-[13.5px] leading-5 text-ink-2">{children}</Text>
+      </View>
+    </View>
+  );
+}
+
+export function ProgressBar({ value }: { value: number }) {
+  return (
+    <View className="h-1.5 overflow-hidden rounded-full bg-line">
+      <View
+        className="h-full rounded-full bg-accent"
+        style={{ width: `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%` }}
+      />
+    </View>
+  );
+}
+
+export function Card({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <View className={cn('overflow-hidden rounded-[14px] border border-line bg-surface', className)}>
+      {children}
+    </View>
+  );
+}
+
+export function SectionLabel({ children }: { children: ReactNode }) {
+  return (
+    <Text className="font-semibold text-[12px] uppercase tracking-wider text-ink-3">
+      {children}
+    </Text>
+  );
+}

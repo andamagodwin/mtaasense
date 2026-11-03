@@ -1,0 +1,2 @@
+patchedDependencies:
+  expo-modules-jsi@58.0.21: patches/expo-modules-jsi@58.0.21.patch

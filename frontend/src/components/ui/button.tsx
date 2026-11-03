@@ -13,8 +13,8 @@ const variants: Record<Variant, string> = {
   primary: "bg-accent text-white shadow-[inset_0_-1px_0_rgb(0_0_0/0.12)] hover:bg-accent-hover",
   secondary: "border border-line-strong bg-surface text-ink hover:bg-sunken",
   ghost: "text-ink-2 hover:bg-sunken hover:text-ink",
-  subtle: "bg-accent-soft text-accent-ink hover:bg-[#d8e6dd]",
-  danger: "border border-[#e7c6bd] bg-surface text-danger hover:bg-danger-soft",
+  subtle: "bg-accent-soft text-accent-ink hover:bg-accent-line/50",
+  danger: "border border-danger-line bg-surface text-danger hover:bg-danger-soft",
   /** For use over imagery or video. */
   glass: "border border-white/25 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20",
 };

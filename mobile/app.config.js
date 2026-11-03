@@ -1,0 +1,78 @@
+// Expo app config. The splash and Android icon backgrounds come from the palette shared with the website.
+const { colors } = require('../theme/colors');
+
+module.exports = {
+  name: 'MtaaSense',
+  slug: 'mtaasense',
+  version: '1.0.0',
+  scheme: 'mtaasense',
+  platforms: ['ios', 'android'],
+  web: {
+    bundler: 'metro',
+    output: 'static',
+    favicon: './assets/favicon.png',
+  },
+  plugins: [
+    'expo-router',
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/splash.png',
+        imageWidth: 120,
+        backgroundColor: colors.paper,
+      },
+    ],
+    'expo-font',
+    'expo-status-bar',
+    'expo-web-browser',
+    'expo-dev-client',
+    [
+      'expo-image-picker',
+      {
+        cameraPermission:
+          'MtaaSense uses the camera so you can photograph a road or drainage hazard to report it.',
+        photosPermission:
+          'MtaaSense opens your photo library so you can attach an existing photo of a hazard.',
+        microphonePermission: false,
+      },
+    ],
+    [
+      'expo-location',
+      {
+        locationWhenInUsePermission:
+          'MtaaSense uses your location, only when you ask it to, to place a report at the hazard you are standing next to.',
+      },
+    ],
+    [
+      'expo-audio',
+      {
+        microphonePermission:
+          'MtaaSense records a voice note when you choose to describe a hazard by speaking.',
+      },
+    ],
+    'expo-secure-store',
+    'expo-image',
+    '@maplibre/maplibre-react-native',
+    'expo-asset',
+  ],
+  experiments: {
+    typedRoutes: true,
+    tsconfigPaths: true,
+  },
+  orientation: 'portrait',
+  icon: './assets/icon.png',
+  userInterfaceStyle: 'light',
+  backgroundColor: colors.paper,
+  assetBundlePatterns: ['**/*'],
+  ios: {
+    bundleIdentifier: 'com.mtaasense.app',
+    supportsTablet: true,
+  },
+  android: {
+    package: 'com.mtaasense.app',
+    adaptiveIcon: {
+      foregroundImage: './assets/adaptive-icon.png',
+      backgroundColor: colors.accent.DEFAULT,
+    },
+  },
+};

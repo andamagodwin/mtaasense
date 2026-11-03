@@ -2,6 +2,7 @@
 
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
+import { colors } from "@/lib/colors";
 import { CATEGORY_HEX } from "@/lib/format";
 import type { MapFeatures } from "@/lib/types";
 import { Callout } from "../ui/feedback";
@@ -9,7 +10,7 @@ import { createMap, loadMapLibre } from "./maplibre";
 
 export type Selection = { kind: "incident" | "report"; id: string } | null;
 
-const NEUTRAL = "#878174";
+const NEUTRAL = colors.ink[3];
 
 function toGeoJSON(features: MapFeatures, selection: Selection): {
   incidents: GeoJSON.FeatureCollection;
@@ -115,7 +116,7 @@ export function IncidentMap({
           source: "reports",
           paint: {
             "circle-radius": 6.5,
-            "circle-color": "#ffffff",
+            "circle-color": colors.surface,
             "circle-stroke-color": ["get", "color"],
             "circle-stroke-width": 2.5,
           },
@@ -128,7 +129,7 @@ export function IncidentMap({
             "circle-radius": ["+", 7, ["*", 1.6, ["min", ["get", "count"], 6]]],
             "circle-color": ["get", "color"],
             "circle-opacity": ["case", ["get", "resolved"], 0.45, 0.95],
-            "circle-stroke-color": "#ffffff",
+            "circle-stroke-color": colors.surface,
             "circle-stroke-width": 2,
           },
         });

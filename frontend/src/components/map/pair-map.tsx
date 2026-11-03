@@ -2,6 +2,7 @@
 
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useEffect, useRef } from "react";
+import { colors } from "@/lib/colors";
 import type { LatLon } from "@/lib/types";
 import { createMap, loadMapLibre } from "./maplibre";
 
@@ -29,9 +30,9 @@ export function PairMap({ a, b, className }: { a: LatLon; b: LatLon; className?:
           type: "geojson",
           data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [[a.lon, a.lat], [b.lon, b.lat]] } },
         });
-        map.addLayer({ id: "pair", type: "line", source: "pair", paint: { "line-color": "#1d1b17", "line-width": 1.5, "line-dasharray": [2, 2] } });
-        new maplibre.Marker({ element: pin("A", "#2f6b4f") }).setLngLat([a.lon, a.lat]).addTo(map);
-        new maplibre.Marker({ element: pin("B", "#555046") }).setLngLat([b.lon, b.lat]).addTo(map);
+        map.addLayer({ id: "pair", type: "line", source: "pair", paint: { "line-color": colors.ink.DEFAULT, "line-width": 1.5, "line-dasharray": [2, 2] } });
+        new maplibre.Marker({ element: pin("A", "var(--color-accent)") }).setLngLat([a.lon, a.lat]).addTo(map);
+        new maplibre.Marker({ element: pin("B", "var(--color-highlight)") }).setLngLat([b.lon, b.lat]).addTo(map);
         const bounds = new maplibre.LngLatBounds([a.lon, a.lat], [a.lon, a.lat]).extend([b.lon, b.lat]);
         map.fitBounds(bounds, { padding: 70, maxZoom: 18, duration: 0 });
       });

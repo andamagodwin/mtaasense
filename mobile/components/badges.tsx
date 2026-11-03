@@ -9,22 +9,22 @@ import { Text } from './ui/Text';
 
 const statusTone: Record<ReportStatus, { box: string; text: string; dot: string }> = {
   submitted: { box: 'border-line bg-sunken', text: 'text-ink-2', dot: 'bg-ink-2' },
-  processing: { box: 'border-[#cfdcec] bg-info-soft', text: 'text-info', dot: 'bg-info' },
-  under_review: { box: 'border-[#efdcb6] bg-warn-soft', text: 'text-warn-ink', dot: 'bg-warn-ink' },
+  processing: { box: 'border-info-line bg-info-soft', text: 'text-info-ink', dot: 'bg-info' },
+  under_review: { box: 'border-warn-line bg-warn-soft', text: 'text-warn-ink', dot: 'bg-warn-ink' },
   confirmed: {
-    box: 'border-[#c9dccf] bg-accent-soft',
-    text: 'text-accent-ink',
-    dot: 'bg-accent-ink',
+    box: 'border-success-line bg-success-soft',
+    text: 'text-success-ink',
+    dot: 'bg-success',
   },
   duplicate: {
-    box: 'border-[#c9dccf] bg-accent-soft',
-    text: 'text-accent-ink',
-    dot: 'bg-accent-ink',
+    box: 'border-success-line bg-success-soft',
+    text: 'text-success-ink',
+    dot: 'bg-success',
   },
   rejected: { box: 'border-line bg-sunken', text: 'text-ink-3', dot: 'bg-ink-3' },
   resolved: { box: 'border-line-strong bg-surface', text: 'text-ink-2', dot: 'bg-ink-2' },
   processing_failed: {
-    box: 'border-[#ebc9c0] bg-danger-soft',
+    box: 'border-danger-line bg-danger-soft',
     text: 'text-danger',
     dot: 'bg-danger',
   },

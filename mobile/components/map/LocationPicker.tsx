@@ -82,14 +82,19 @@ export function LocationPicker({
                 'circle-color': ['get', 'color'],
                 'circle-opacity': 0.4,
                 'circle-stroke-width': 1,
-                'circle-stroke-color': '#ffffff',
+                'circle-stroke-color': colors.surface,
               }}
             />
           </GeoJSONSource>
         )}
         {value && (
           <Marker lngLat={[value.lon, value.lat]} anchor="bottom">
-            <MapPin size={40} color="#ffffff" fill={colors.accent.DEFAULT} strokeWidth={1.5} />
+            <MapPin
+              size={40}
+              color={colors.surface}
+              fill={colors.highlight.DEFAULT}
+              strokeWidth={1.5}
+            />
           </Marker>
         )}
       </Map>

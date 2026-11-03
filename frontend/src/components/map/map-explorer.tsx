@@ -5,6 +5,7 @@ import { ArrowUpRight, Layers, MapPinOff, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { api } from "@/lib/api";
+import { colors } from "@/lib/colors";
 import { CATEGORY_HEX, CATEGORY_LABEL, formatDate, timeAgo } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
 import type { HazardCategory, IncidentStatus } from "@/lib/types";
@@ -163,7 +164,7 @@ export function MapExplorer() {
                   key={r.id}
                   active={selection?.kind === "report" && selection.id === r.id}
                   onClick={() => setSelection({ kind: "report", id: r.id })}
-                  color={r.hazard_category ? CATEGORY_HEX[r.hazard_category] : "#878174"}
+                  color={r.hazard_category ? CATEGORY_HEX[r.hazard_category] : colors.ink[3]}
                   title={r.hazard_category ? CATEGORY_LABEL[r.hazard_category] : "Uncategorised report"}
                   meta={`${r.reference} · unreviewed · ${timeAgo(r.created_at)}`}
                   sample={r.is_sample}
@@ -215,7 +216,7 @@ function ListRow({ active, onClick, color, filled, dim, title, meta, sample }: {
       >
         <span
           className={clsx("mt-1 size-3 shrink-0 rounded-full", dim && "opacity-50")}
-          style={filled ? { background: color, boxShadow: "0 0 0 2px #fff, 0 0 0 3px #d1c9ba" } : { border: `2.5px solid ${color}`, background: "#fff" }}
+          style={filled ? { background: color, boxShadow: "0 0 0 2px var(--color-surface), 0 0 0 3px var(--color-line-strong)" } : { border: `2.5px solid ${color}`, background: "var(--color-surface)" }}
         />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[14px] font-medium text-ink">{title}</span>

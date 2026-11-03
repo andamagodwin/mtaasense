@@ -2,41 +2,14 @@
 /* In the base layer so Tailwind utilities (e.g. `absolute inset-0`) can override MapLibre defaults. */
 @import "maplibre-gl/dist/maplibre-gl.css" layer(base);
 
-/* MtaaSense design tokens: warm neutral paper, dark ink, restrained forest green. */
+/* Colours and shadows live in theme.css, generated from theme/colors.js (shared with the mobile app). */
+@import "./theme.css";
+
 @theme {
   --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
 
-  --color-paper: #f7f5f0;
-  --color-surface: #ffffff;
-  --color-sunken: #f1eee7;
-  --color-line: #e4dfd4;
-  --color-line-strong: #d1c9ba;
-  --color-ink: #1d1b17;
-  --color-ink-2: #555046;
-  --color-ink-3: #878174;
-
-  --color-accent: #2f6b4f;
-  --color-accent-hover: #265a42;
-  --color-accent-soft: #e5eee8;
-  --color-accent-ink: #1e4a36;
-
-  --color-warn: #a86b12;
-  --color-warn-soft: #faf0dc;
-  --color-danger: #a8402e;
-  --color-danger-soft: #f7e5e0;
-  --color-info: #355f93;
-  --color-info-soft: #e5edf6;
-
-  /* Hazard categories, used consistently on badges, map markers and overlays. */
-  --color-cat-pothole: #b4562f;
-  --color-cat-road: #8a6a3c;
-  --color-cat-drain: #2b6f78;
-  --color-cat-flood: #3b5fa3;
-
   --radius-card: 14px;
-  --shadow-card: 0 1px 2px rgb(29 27 23 / 0.04), 0 1px 1px rgb(29 27 23 / 0.03);
-  --shadow-pop: 0 12px 32px -12px rgb(29 27 23 / 0.22), 0 2px 6px rgb(29 27 23 / 0.06);
 
   --animate-fade-in: fade-in 220ms ease-out both;
   --animate-rise: rise 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -86,6 +59,19 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Darkens the home-page reel toward the copy and the lower third so text stays legible over any frame. */
+.hero-scrim {
+  --scrim: var(--color-photo);
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--scrim) 85%, transparent) 0%, transparent 40%),
+    linear-gradient(90deg, color-mix(in srgb, var(--scrim) 88%, transparent) 0%, color-mix(in srgb, var(--scrim) 60%, transparent) 45%, color-mix(in srgb, var(--scrim) 20%, transparent) 100%);
+}
+@media (width < 40rem) {
+  .hero-scrim {
+    background: linear-gradient(0deg, color-mix(in srgb, var(--scrim) 90%, transparent) 0%, color-mix(in srgb, var(--scrim) 55%, transparent) 60%, color-mix(in srgb, var(--scrim) 40%, transparent) 100%);
+  }
 }
 
 :focus-visible {

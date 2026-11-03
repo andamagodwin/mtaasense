@@ -156,7 +156,7 @@ export function ReportForm() {
           <section className="space-y-4" aria-labelledby="photo-heading">
             <h2 id="photo-heading" className="text-[17px] font-semibold">Add a photo of the problem</h2>
             {photo ? (
-              <div className="overflow-hidden rounded-xl border border-line bg-[#16140f]">
+              <div className="overflow-hidden rounded-xl border border-line bg-photo">
                 {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
                 <img src={photo.url} alt="Selected photo preview" className="max-h-[52vh] w-full object-contain" />
                 <div className="flex items-center justify-between gap-2 bg-surface px-3 py-2 text-[13px]">
@@ -285,7 +285,7 @@ export function ReportForm() {
             <h2 id="review-heading" className="text-[17px] font-semibold">Check and submit</h2>
             <div className="overflow-hidden rounded-xl border border-line bg-surface">
               {/* eslint-disable-next-line @next/next/no-img-element -- local object URL preview */}
-              <img src={photo.url} alt="Photo to submit" className="max-h-64 w-full bg-[#16140f] object-contain" />
+              <img src={photo.url} alt="Photo to submit" className="max-h-64 w-full bg-photo object-contain" />
               <dl className="divide-y divide-line text-sm">
                 <ReviewRow label="Type" onEdit={() => go(1)}>
                   {category === "auto" ? "Not sure, AI will suggest" : CATEGORY_LABEL[category]}

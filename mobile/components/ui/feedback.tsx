@@ -11,17 +11,17 @@ type Tone = 'neutral' | 'info' | 'warn' | 'danger' | 'success';
 
 const tones: Record<Tone, { box: string; icon: typeof Info; color: string }> = {
   neutral: { box: 'border-line bg-sunken', icon: Info, color: colors.ink[2] },
-  info: { box: 'border-[#cfdcec] bg-info-soft', icon: Info, color: colors.info.DEFAULT },
-  warn: { box: 'border-[#efdcb6] bg-warn-soft', icon: TriangleAlert, color: colors.warn.DEFAULT },
+  info: { box: 'border-info-line bg-info-soft', icon: Info, color: colors.info.DEFAULT },
+  warn: { box: 'border-warn-line bg-warn-soft', icon: TriangleAlert, color: colors.warn.DEFAULT },
   danger: {
-    box: 'border-[#ebc9c0] bg-danger-soft',
+    box: 'border-danger-line bg-danger-soft',
     icon: CircleAlert,
     color: colors.danger.DEFAULT,
   },
   success: {
-    box: 'border-[#c9dccf] bg-accent-soft',
+    box: 'border-success-line bg-success-soft',
     icon: CircleCheck,
-    color: colors.accent.DEFAULT,
+    color: colors.success.DEFAULT,
   },
 };
 

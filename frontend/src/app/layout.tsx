@@ -4,6 +4,7 @@ import { IBM_Plex_Mono, Manrope } from "next/font/google";
 import { SessionProvider } from "@/components/session";
 import { SiteHeader, SiteHeaderFallback } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { colors } from "@/lib/colors";
 import "./globals.css";
 
 // Variable font: one file covers every weight the UI uses.
@@ -33,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f7f5f0",
+  themeColor: colors.paper,
   width: "device-width",
   initialScale: 1,
 };

@@ -18,10 +18,10 @@ export function Skeleton({ className }: { className?: string }) {
 type Tone = "info" | "warn" | "danger" | "success" | "neutral";
 
 const toneStyles: Record<Tone, string> = {
-  info: "border-[#cfdcec] bg-info-soft text-[#24456e]",
-  warn: "border-[#efdcb6] bg-warn-soft text-[#6f4708]",
-  danger: "border-[#ebc9c0] bg-danger-soft text-[#7a2b1d]",
-  success: "border-[#c9dccf] bg-accent-soft text-accent-ink",
+  info: "border-info-line bg-info-soft text-info-ink",
+  warn: "border-warn-line bg-warn-soft text-warn-ink",
+  danger: "border-danger-line bg-danger-soft text-danger-ink",
+  success: "border-success-line bg-success-soft text-success-ink",
   neutral: "border-line bg-sunken text-ink-2",
 };
 

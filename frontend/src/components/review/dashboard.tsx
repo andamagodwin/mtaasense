@@ -174,7 +174,7 @@ function ReportRow({ report: r }: { report: ReportSummary }) {
           {r.ai_severity && r.ai_severity !== "undetermined" && <SeverityBadge severity={r.ai_severity} />}
           {r.ai_priority && r.ai_priority !== "routine" && <PriorityBadge priority={r.ai_priority} />}
           {r.open_duplicate_suggestions > 0 && (
-            <span className="inline-flex h-[22px] items-center gap-1 rounded-md border border-[#efdcb6] bg-warn-soft px-1.5 text-[12px] font-medium text-[#7d520c]">
+            <span className="inline-flex h-[22px] items-center gap-1 rounded-md border border-warn-line bg-warn-soft px-1.5 text-[12px] font-medium text-warn-ink">
               <GitMerge className="size-3" /> {r.open_duplicate_suggestions} possible duplicate{r.open_duplicate_suggestions === 1 ? "" : "s"}
             </span>
           )}

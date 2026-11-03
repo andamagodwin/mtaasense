@@ -1,3 +1,4 @@
+import { colors } from "./colors";
 import type {
   AnalysisStatus,
   HazardCategory,
@@ -32,10 +33,10 @@ export const CATEGORY_COLOR: Record<HazardCategory, string> = {
 
 /** Hex values for contexts that can't read CSS variables (MapLibre paint). */
 export const CATEGORY_HEX: Record<HazardCategory, string> = {
-  pothole: "#b4562f",
-  road_surface_damage: "#8a6a3c",
-  blocked_drainage: "#2b6f78",
-  flooding: "#3b5fa3",
+  pothole: colors.cat.pothole,
+  road_surface_damage: colors.cat.road,
+  blocked_drainage: colors.cat.drain,
+  flooding: colors.cat.flood,
 };
 
 export const REPORT_STATUS_LABEL: Record<ReportStatus, string> = {

@@ -36,13 +36,13 @@ export function Badge({
 
 const statusTone: Record<ReportStatus, string> = {
   submitted: "border-line bg-sunken text-ink-2",
-  processing: "border-[#cfdcec] bg-info-soft text-info",
-  under_review: "border-[#efdcb6] bg-warn-soft text-[#7d520c]",
-  confirmed: "border-[#c9dccf] bg-accent-soft text-accent-ink",
-  duplicate: "border-[#c9dccf] bg-accent-soft text-accent-ink",
+  processing: "border-info-line bg-info-soft text-info-ink",
+  under_review: "border-warn-line bg-warn-soft text-warn-ink",
+  confirmed: "border-success-line bg-success-soft text-success-ink",
+  duplicate: "border-success-line bg-success-soft text-success-ink",
   rejected: "border-line bg-sunken text-ink-3",
   resolved: "border-line-strong bg-surface text-ink-2",
-  processing_failed: "border-[#ebc9c0] bg-danger-soft text-danger",
+  processing_failed: "border-danger-line bg-danger-soft text-danger",
 };
 
 export function StatusBadge({ status }: { status: ReportStatus }) {
@@ -58,7 +58,7 @@ export function IncidentStatusBadge({ status }: { status: IncidentStatus }) {
   return status === "resolved" ? (
     <Badge className="border-line-strong bg-surface text-ink-2">Resolved</Badge>
   ) : (
-    <Badge className="border-[#c9dccf] bg-accent-soft text-accent-ink">
+    <Badge className="border-success-line bg-success-soft text-success-ink">
       <span className="size-1.5 rounded-full bg-current" />
       Confirmed incident
     </Badge>
@@ -92,9 +92,9 @@ const provenanceIcon: Record<Provenance, ReactNode> = {
 };
 
 const provenanceTone: Record<Provenance, string> = {
-  live: "border-[#c9dccf] bg-accent-soft text-accent-ink",
-  cached: "border-[#cfdcec] bg-info-soft text-info",
-  fixture: "border-[#efdcb6] bg-warn-soft text-[#7d520c]",
+  live: "border-accent-line bg-accent-soft text-accent-ink",
+  cached: "border-line bg-sunken text-ink-2",
+  fixture: "border-warn-line bg-warn-soft text-warn-ink",
 };
 
 export function ProvenanceBadge({ provenance, model }: { provenance: Provenance | null; model?: string | null }) {
@@ -110,8 +110,8 @@ export function ProvenanceBadge({ provenance, model }: { provenance: Provenance 
 
 const severityTone: Record<Severity, string> = {
   low: "border-line bg-sunken text-ink-2",
-  moderate: "border-[#efdcb6] bg-warn-soft text-[#7d520c]",
-  high: "border-[#ebc9c0] bg-danger-soft text-danger",
+  moderate: "border-warn-line bg-warn-soft text-warn-ink",
+  high: "border-danger-line bg-danger-soft text-danger",
   critical: "border-danger bg-danger text-white",
   undetermined: "border-line bg-surface text-ink-3",
 };
@@ -127,8 +127,8 @@ export function SeverityBadge({ severity, prefix = true }: { severity: Severity;
 
 const priorityTone: Record<Priority, string> = {
   routine: "border-line bg-surface text-ink-2",
-  elevated: "border-[#efdcb6] bg-warn-soft text-[#7d520c]",
-  urgent: "border-[#ebc9c0] bg-danger-soft text-danger",
+  elevated: "border-warn-line bg-warn-soft text-warn-ink",
+  urgent: "border-danger-line bg-danger-soft text-danger",
 };
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
@@ -145,8 +145,8 @@ export function SampleBadge() {
 }
 
 const verdictTone: Record<ModelVerdict, string> = {
-  likely_same: "border-[#c9dccf] bg-accent-soft text-accent-ink",
-  possibly_same: "border-[#efdcb6] bg-warn-soft text-[#7d520c]",
+  likely_same: "border-accent-line bg-accent-soft text-accent-ink",
+  possibly_same: "border-warn-line bg-warn-soft text-warn-ink",
   likely_different: "border-line-strong bg-surface text-ink-2",
   insufficient_evidence: "border-line bg-sunken text-ink-3",
 };

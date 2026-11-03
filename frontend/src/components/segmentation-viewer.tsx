@@ -3,6 +3,7 @@
 import { clsx } from "clsx";
 import { Eye, EyeOff, ExternalLink, Layers, ScanSearch, SquareDashed } from "lucide-react";
 import { useMemo, useState } from "react";
+import { colors } from "@/lib/colors";
 import { errorLabel, formatDateTime, pct } from "@/lib/format";
 import type { MediaRef, SegmentationView } from "@/lib/types";
 import { ProvenanceBadge } from "./badges";
@@ -10,15 +11,15 @@ import { Button } from "./ui/button";
 import { Callout, Spinner } from "./ui/feedback";
 
 const CONCEPT_COLOR: Record<string, string> = {
-  pothole: "#d9622b",
-  "damaged road surface": "#c58a2a",
-  "drainage channel": "#1f9aa8",
-  "standing water": "#3d74e0",
-  puddle: "#5b8def",
+  pothole: colors.mask.pothole,
+  "damaged road surface": colors.mask.road,
+  "drainage channel": colors.mask.drain,
+  "standing water": colors.mask.water,
+  puddle: colors.mask.puddle,
 };
 
 export function conceptColor(prompt: string): string {
-  return CONCEPT_COLOR[prompt] ?? "#2f6b4f";
+  return CONCEPT_COLOR[prompt] ?? colors.highlight.DEFAULT;
 }
 
 interface Props {
@@ -59,7 +60,7 @@ export function SegmentationViewer({
   const active = (selectedPrompt ? byPrompt.get(selectedPrompt) : undefined) ?? fallback ?? null;
   const pending = active && (active.status === "queued" || active.status === "running");
   const regions = active?.status === "completed" ? (active.regions ?? []) : [];
-  const color = active ? conceptColor(active.prompt) : "#2f6b4f";
+  const color = active ? conceptColor(active.prompt) : colors.highlight.DEFAULT;
   const W = active?.image_width ?? image.width ?? 1;
   const H = active?.image_height ?? image.height ?? 1;
   const imageArea = W * H;
@@ -79,7 +80,7 @@ export function SegmentationViewer({
 
   return (
     <div className="space-y-3">
-      <div className="relative overflow-hidden rounded-xl border border-line bg-[#16140f]">
+      <div className="relative overflow-hidden rounded-xl border border-line bg-photo">
         {/* eslint-disable-next-line @next/next/no-img-element -- private, signed evidence URLs bypass the optimizer */}
         <img
           src={image.url}

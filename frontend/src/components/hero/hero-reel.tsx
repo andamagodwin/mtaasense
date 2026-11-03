@@ -83,7 +83,7 @@ export function HeroReel({ children }: { children: ReactNode }) {
   const shot = shots[index];
 
   return (
-    <section className="relative isolate overflow-hidden bg-[#0b0d0c] text-white">
+    <section className="relative isolate overflow-hidden bg-photo text-white">
       <video
         ref={videoRef}
         className="absolute inset-0 -z-20 size-full object-cover"
@@ -103,7 +103,7 @@ export function HeroReel({ children }: { children: ReactNode }) {
       {/* Darken toward the copy and the lower third so text stays legible over any frame. */}
       <div
         aria-hidden
-        className="absolute inset-0 -z-10 bg-[linear-gradient(0deg,rgb(8_10_9/0.85)_0%,transparent_40%),linear-gradient(90deg,rgb(8_10_9/0.88)_0%,rgb(8_10_9/0.6)_45%,rgb(8_10_9/0.2)_100%)] max-sm:bg-[linear-gradient(0deg,rgb(8_10_9/0.9)_0%,rgb(8_10_9/0.55)_60%,rgb(8_10_9/0.4)_100%)]"
+        className="hero-scrim absolute inset-0 -z-10"
       />
       <div
         aria-hidden

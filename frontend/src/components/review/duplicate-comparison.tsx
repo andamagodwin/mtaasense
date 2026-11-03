@@ -46,7 +46,7 @@ export function DuplicateComparison() {
           {s.model_verdict && <VerdictBadge verdict={s.model_verdict} />}
           {s.status !== "pending" && (
             <span className={clsx("rounded-md border px-2 py-0.5 text-[12.5px] font-medium capitalize",
-              s.status === "confirmed" ? "border-[#c9dccf] bg-accent-soft text-accent-ink" : "border-line bg-sunken text-ink-2")}>
+              s.status === "confirmed" ? "border-success-line bg-success-soft text-success-ink" : "border-line bg-sunken text-ink-2")}>
               {s.status === "deferred" ? "Left unresolved" : s.status}
             </span>
           )}

@@ -158,6 +158,20 @@ It talks to `https://api.mtaasense.com` by default. To use a local backend, star
 (Swift 6.2.4 rejects one `nonisolated(unsafe)` capture). pnpm applies it on install; drop it once Expo ships a
 fixed release.
 
+### Colours
+
+Every colour for the website and the app is set in [`theme/colors.js`](theme/colors.js). The three brand
+colours at the top (sky blue `#0593C6`, white `#FCFFFF`, hot pink `#D83995`) drive everything else: hover,
+soft-fill, border and text shades are mixed from them. After editing it:
+
+- **Website:** nothing to do. `pnpm dev`, `pnpm build` and `pnpm deploy:vinext` run `theme/sync.mjs`, which
+  regenerates `frontend/src/app/theme.css`, `frontend/src/lib/colors.ts` and the SVG favicon. Run
+  `pnpm theme` in `frontend/` to regenerate them by hand.
+- **App:** reads the file directly. Restart Metro with `pnpm start --clear`. The splash and Android icon
+  backgrounds come from `app.config.js`, so rebuild the dev client to see them.
+- **Bitmap icons** (app icon, splash, `favicon.ico`, `apple-icon.png`): run
+  `uv run --project backend python theme/icons.py` from the repo root.
+
 ### Configuring the Meta API key
 
 Set `MODEL_API_KEY` in `backend/.env` (local) or `deploy/.env.production` (server). It is read only by the

@@ -14,9 +14,9 @@ const SOURCE_META: Record<Observation["source"], { label: string; icon: ReactNod
 };
 
 const CONSISTENCY: Record<HazardAssessment["description_consistency"], { label: string; tone: string }> = {
-  consistent: { label: "Description matches photo", tone: "border-[#c9dccf] bg-accent-soft text-accent-ink" },
-  partially_consistent: { label: "Partly matches photo", tone: "border-[#efdcb6] bg-warn-soft text-[#7d520c]" },
-  inconsistent: { label: "Description conflicts with photo", tone: "border-[#ebc9c0] bg-danger-soft text-danger" },
+  consistent: { label: "Description matches photo", tone: "border-success-line bg-success-soft text-success-ink" },
+  partially_consistent: { label: "Partly matches photo", tone: "border-warn-line bg-warn-soft text-warn-ink" },
+  inconsistent: { label: "Description conflicts with photo", tone: "border-danger-line bg-danger-soft text-danger" },
   no_description: { label: "No description to compare", tone: "border-line bg-sunken text-ink-3" },
 };
 
@@ -69,7 +69,7 @@ export function AnalysisPanel({
       <div className="flex flex-wrap items-center gap-1.5">
         <ProvenanceBadge provenance={analysis.provenance} model={analysis.model} />
         {!r.is_infrastructure_hazard && (
-          <Badge className="border-[#ebc9c0] bg-danger-soft text-danger">Model: not an infrastructure hazard</Badge>
+          <Badge className="border-danger-line bg-danger-soft text-danger">Model: not an infrastructure hazard</Badge>
         )}
       </div>
 

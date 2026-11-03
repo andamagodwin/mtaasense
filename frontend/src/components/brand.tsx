@@ -9,7 +9,7 @@ const MONOGRAM =
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden>
-      <rect width="64" height="64" rx="14" fill="var(--color-ink)" />
+      <rect width="64" height="64" rx="14" fill="var(--color-accent)" />
       <path fill="var(--color-paper)" transform="translate(12.16 18.24) scale(0.039287) translate(-8 -136)" d={MONOGRAM} />
     </svg>
   );

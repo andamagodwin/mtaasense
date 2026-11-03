@@ -2,6 +2,7 @@
 
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
+import { colors } from "@/lib/colors";
 import { CATEGORY_HEX } from "@/lib/format";
 import type { LatLon, MapFeatures } from "@/lib/types";
 import { createMap, loadMapLibre } from "./maplibre";
@@ -80,7 +81,7 @@ export function LocationPicker({
       ...context.reports.map((r) => ({
         type: "Feature" as const,
         geometry: { type: "Point" as const, coordinates: [r.location.lon, r.location.lat] },
-        properties: { color: r.hazard_category ? CATEGORY_HEX[r.hazard_category] : "#878174", incident: false },
+        properties: { color: r.hazard_category ? CATEGORY_HEX[r.hazard_category] : colors.ink[3], incident: false },
       })),
     ];
     (map.getSource("context") as GeoJSONSource | undefined)?.setData({ type: "FeatureCollection", features: points });
@@ -96,7 +97,7 @@ export function LocationPicker({
     }
     void loadMapLibre().then((maplibre) => {
       if (!markerRef.current) {
-        const marker = new maplibre.Marker({ color: "#2f6b4f", draggable: true });
+        const marker = new maplibre.Marker({ color: colors.highlight.DEFAULT, draggable: true });
         marker.on("dragend", () => {
           const p = marker.getLngLat();
           onChangeRef.current({ lat: p.lat, lon: p.lng });

@@ -73,7 +73,7 @@ export default function MapScreen() {
                 'circle-color': ['get', 'color'],
                 'circle-opacity': ['case', ['==', ['get', 'kind'], 'incident'], 1, 0.7],
                 'circle-stroke-width': ['case', ['==', ['get', 'kind'], 'incident'], 2.5, 1.5],
-                'circle-stroke-color': '#ffffff',
+                'circle-stroke-color': colors.surface,
               }}
             />
           </GeoJSONSource>

@@ -52,7 +52,7 @@ export function EvidencePhoto({
                   key={r.object_id}
                   d={r.mask.svg_path}
                   transform={`translate(${r.box.left} ${r.box.top}) scale(${sx} ${sy}) translate(0.5 0.5)`}
-                  fill={colors.accent.DEFAULT}
+                  fill={colors.highlight.DEFAULT}
                   fillOpacity={0.32}
                   fillRule="evenodd"
                   stroke="#ffffff"

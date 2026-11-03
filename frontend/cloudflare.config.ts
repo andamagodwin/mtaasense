@@ -5,12 +5,16 @@ export default defineConfig({
   accountId: "d35ff67e20bfbffa7c5c8eb65e86e921",
   worker: defineWorker({
     name: "mtaasense",
-    entrypoint: "vinext/server/fetch-handler",
+    // Wraps vinext's handler: www → apex redirect and byte ranges for the hero reel.
+    entrypoint: "./worker.ts",
     compatibilityDate: "2026-10-30",
     compatibilityFlags: ["nodejs_compat"],
-    // Registered with Cloudflare Registrar in the same account; attached on deploy. www redirects to the
-    // apex in next.config.ts. The workers.dev URL keeps working.
+    // Registered with Cloudflare Registrar in the same account; attached on deploy. worker.ts redirects
+    // www to the apex.
     domains: ["mtaasense.com", "www.mtaasense.com"],
+    // Deploys turn workers.dev off once custom domains exist unless it is set explicitly; keep the old URL
+    // working for links already shared.
+    workersDev: true,
     assets: {
       htmlHandling: "none",
       notFoundHandling: "none",

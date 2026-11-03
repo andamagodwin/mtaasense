@@ -383,8 +383,10 @@ NEXT_PUBLIC_API_BASE_URL=https://<API_DOMAIN> pnpm deploy:vinext
 ```
 
 The Worker serves `mtaasense.com` and `www.mtaasense.com`, both registered with Cloudflare Registrar in the same
-account. The `domains` list in `cloudflare.config.ts` attaches them on each deploy, `next.config.ts` permanently
-redirects `www` to the apex, and the `workers.dev` URL keeps working.
+account. The `domains` list in `cloudflare.config.ts` attaches them on each deploy, and `workersDev: true` keeps the
+`workers.dev` URL working. [`frontend/worker.ts`](frontend/worker.ts) wraps vinext's handler: it permanently
+redirects `www` to the apex (keeping the query string) and answers byte-range requests for the hero reel, which
+Workers static assets otherwise ignore and Safari needs to play video.
 
 The API base URL is baked into the `/api/v1/*` rewrite at build time, so redeploy whenever it changes. Then add the
 frontend origin (`https://mtaasense.com`) to `CORS_ORIGINS` on the server and restart the API

@@ -4,7 +4,9 @@
 #   cp .env.production.example .env.production   # fill in secrets; chmod 600
 #   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 #
-# Only Caddy publishes ports (80/443). PostgreSQL is reachable only on the internal network.
+# Nothing publishes ports. cloudflared holds an outbound Cloudflare Tunnel: Cloudflare serves
+# https://api.mtaasense.com and forwards requests to Caddy on the internal network, so this stack shares no
+# ports with other apps on the VPS. PostgreSQL is reachable only on the internal network.
 name: mtaasense
 
 services:
@@ -81,13 +83,6 @@ services:
   caddy:
     image: caddy:2.10-alpine
     restart: unless-stopped
-    environment:
-      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN}
-      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL}
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -95,6 +90,17 @@ services:
     networks: [internal]
     depends_on:
       - api
+
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.1
+    restart: unless-stopped
+    # Remotely managed tunnel: its public hostname (api.mtaasense.com → http://caddy:80) lives in Cloudflare.
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?set TUNNEL_TOKEN}
+    networks: [internal]
+    depends_on:
+      - caddy
 
 networks:
   internal:

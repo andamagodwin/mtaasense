@@ -1,8 +1,9 @@
 {
-	email {$ACME_EMAIL}
+	# Cloudflare terminates TLS; the tunnel (cloudflared) delivers plain HTTP on the internal network.
+	auto_https off
 }
 
-{$API_DOMAIN} {
+:80 {
 	encode zstd gzip
 
 	# Photos are ≤15 MB and voice notes ≤12 MB; leave headroom for multipart overhead.
@@ -12,8 +13,9 @@
 
 	# The API docs and admin routes are protected by the app itself; only the API is exposed here.
 	reverse_proxy api:8000 {
-		# Pass the client chain through so the app can rate-limit per client (TRUSTED_PROXY_HOPS).
-		trusted_proxies static 0.0.0.0/0 ::/0
+		# Keep the forwarded client chain from cloudflared so the app can rate-limit per client
+		# (TRUSTED_PROXY_HOPS).
+		trusted_proxies private_ranges
 		transport http {
 			read_timeout 120s
 			write_timeout 120s

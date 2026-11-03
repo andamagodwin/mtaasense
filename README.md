@@ -23,8 +23,8 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 | Backend tests | **52 passing** | `uv run pytest` (real PostGIS, mocked Meta transport) |
 | Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build && pnpm build:vinext` |
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
-| Contabo VPS deployment | **Not deployed** | Artifacts in [`deploy/`](deploy/); the target VPS already hosts another app on ports 80/443 (see [Deploying](#deploying)) |
-| Frontend on Cloudflare Workers (vinext) | **Deployed** — <https://mtaasense.com> (also <https://mtaasense.mtaasense.workers.dev>) | Pages load; API calls fail until the backend is deployed and the frontend is rebuilt with its URL |
+| Backend on the Contabo VPS | **Deployed** — <https://api.mtaasense.com> | Docker Compose behind a Cloudflare Tunnel (the VPS's ports 80/443 belong to another app); `/ready` reports database, migrations, media and model API OK |
+| Frontend on Cloudflare Workers (vinext) | **Deployed** — <https://mtaasense.com> (also <https://mtaasense.mtaasense.workers.dev>) | Calls the API through same-origin `/api/v1/*` |
 
 ---
 
@@ -255,8 +255,9 @@ and any label not in the list sent is discarded. Reviewer decisions are never ov
   backstop). Request IDs on every response; JSON logs redact credential-like fields.
 - Prompt-injection hygiene: resident text is wrapped in tags and declared as data; segmentation prompts are restricted
   to a fixed list; model-returned IDs are validated against what we sent.
-- Production: Postgres is only on the internal Docker network; only Caddy publishes 80/443; `SECRET_KEY` and
-  `COOKIE_SECURE=true` are enforced at startup; API docs are disabled.
+- Production: the stack publishes no ports (the API is reached only through the Cloudflare Tunnel) and Postgres is
+  only on the internal Docker network; `SECRET_KEY` and `COOKIE_SECURE=true` are enforced at startup; API docs are
+  disabled.
 
 ---
 
@@ -339,29 +340,42 @@ IoU; severity calibration.
 
 ### Backend on the Contabo VPS
 
-Inspect the server first (`uname -a; free -h; df -h; docker ps; sudo ss -tlnp; sudo ufw status`) and do not reuse
-ports or directories that other services own.
+The API runs at **<https://api.mtaasense.com>** from `/opt/mtaasense` on the VPS. That server also hosts another
+app whose Caddy owns ports 80/443, so this stack publishes **no ports at all**. Instead, `cloudflared` holds an
+outbound [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
+(`mtaasense-api`). Cloudflare terminates HTTPS for `api.mtaasense.com` and forwards requests through the tunnel to
+Caddy on the stack's internal network. Caddy keeps the 20 MB body limit, the timeouts and the JSON access logs,
+then hands requests to the API. PostgreSQL is reachable only on the internal network.
+
+One-time Cloudflare setup, already done for this deployment (run from `frontend/`, where the `cf` CLI is
+installed, with `CLOUDFLARE_ACCOUNT_ID` set):
 
 ```bash
-# On the VPS (Ubuntu/Debian with Docker Engine + compose plugin)
-sudo mkdir -p /opt/mtaasense && sudo chown "$USER" /opt/mtaasense
-git clone <this repo> /opt/mtaasense && cd /opt/mtaasense/deploy
+cf tunnels create --name mtaasense-api --config-source cloudflare
+cf tunnels config update <tunnel-id> --body '{"config":{"ingress":[
+  {"hostname":"api.mtaasense.com","service":"http://caddy:80"},{"service":"http_status:404"}]}}'
+cf dns records create -z mtaasense.com --body \
+  '{"type":"CNAME","name":"api.mtaasense.com","content":"<tunnel-id>.cfargotunnel.com","proxied":true}'
+cf tunnels token get <tunnel-id>        # → TUNNEL_TOKEN in .env.production (never commit it)
+```
+
+On the VPS (Ubuntu with Docker Engine and the compose plugin):
+
+```bash
+# /opt/mtaasense holds backend/ and deploy/ from this repo (rsync from a checkout, or git clone)
+cd /opt/mtaasense/deploy
 cp .env.production.example .env.production && chmod 600 .env.production
-#   set API_DOMAIN (DNS A/AAAA record → VPS), ACME_EMAIL, POSTGRES_PASSWORD, SECRET_KEY, MODEL_API_KEY,
-#   CORS_ORIGINS=https://<your-frontend-domain>
+#   set TUNNEL_TOKEN, POSTGRES_PASSWORD, SECRET_KEY and MODEL_API_KEY; CORS_ORIGINS lists the frontend origins
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 docker compose -f docker-compose.prod.yml --env-file .env.production exec -e MTAA_NEW_USER_PASSWORD='…' api \
   python -m app.cli create-user --email you@example.org --name "Admin" --role admin
-curl -fsS https://$API_DOMAIN/ready
-
-# Firewall: only SSH + HTTP(S)
-sudo ufw allow OpenSSH && sudo ufw allow 80,443/tcp && sudo ufw allow 443/udp && sudo ufw enable
+curl -fsS https://api.mtaasense.com/ready
 ```
 
-Note: Docker publishes ports by editing iptables directly, bypassing ufw — that is why only Caddy publishes ports
-and Postgres has none. Logs: `docker compose -f docker-compose.prod.yml logs -f api worker caddy` (JSON, with
-request IDs). Updates: `git pull && docker compose … up -d --build` (migrations run in the one-shot `migrate`
-service before the API starts).
+Logs: `docker compose -f docker-compose.prod.yml logs -f api worker caddy cloudflared` (JSON, with request IDs).
+Updates: copy the new `backend/` and `deploy/`, then run `docker compose … up -d --build` again. Migrations run in
+the one-shot `migrate` service before the API starts. The firewall needs no changes, because nothing listens
+publicly.
 
 ### Backups
 
@@ -379,7 +393,7 @@ source for rewrites and headers; `vite.config.ts` and `cloudflare.config.ts` hol
 ```bash
 cd frontend
 npx cf auth login                                      # once, opens a device-code login
-NEXT_PUBLIC_API_BASE_URL=https://<API_DOMAIN> pnpm deploy:vinext
+NEXT_PUBLIC_API_BASE_URL=https://api.mtaasense.com pnpm deploy:vinext
 ```
 
 The Worker serves `mtaasense.com` and `www.mtaasense.com`, both registered with Cloudflare Registrar in the same
@@ -409,7 +423,7 @@ Repository settings it uses:
 | Name | Kind | Value |
 |---|---|---|
 | `CLOUDFLARE_API_TOKEN` | secret | Account API token with **Workers Scripts: Edit** (dashboard → Manage account → API tokens) |
-| `NEXT_PUBLIC_API_BASE_URL` | variable | `https://<API_DOMAIN>` once the backend is deployed |
+| `NEXT_PUBLIC_API_BASE_URL` | variable | `https://api.mtaasense.com` (set) |
 
 The account ID is set in `frontend/cloudflare.config.ts` (it identifies the account; it is not a credential).
 
@@ -439,8 +453,8 @@ Prep: seed samples, run the worker, `--confirm-incidents`, sign in as a reviewer
 
 ## Limitations and honest notes
 
-- The frontend is deployed on Cloudflare Workers; the backend is not deployed yet, so the live frontend cannot load
-  data. Backend deployment artifacts are tested only locally (image builds, compose config validates).
+- Backend deploys are manual (copy `backend/` and `deploy/` to the VPS, then `docker compose … up -d --build`);
+  CI deploys only the frontend.
 - vinext is not bug-for-bug Next.js; the app was verified on it (all routes, reviewer login, map, a full resident
   submission through the Worker's API proxy), and Next's partial prerendering (`cacheComponents`) is turned off
   because vinext does not support it.

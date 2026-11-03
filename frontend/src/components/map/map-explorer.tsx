@@ -7,30 +7,25 @@ import { useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { CATEGORY_HEX, CATEGORY_LABEL, formatDate, timeAgo } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
-import type { HazardCategory, IncidentStatus, MapFeatures } from "@/lib/types";
+import type { HazardCategory, IncidentStatus } from "@/lib/types";
 import { CategoryBadge, IncidentStatusBadge, PriorityBadge, SampleBadge, SeverityBadge } from "../badges";
 import { useSession } from "../session";
 import { Callout, EmptyState, Skeleton } from "../ui/feedback";
 import { IncidentMap, type Selection } from "./incident-map";
 
 const CATEGORIES: HazardCategory[] = ["pothole", "road_surface_damage", "blocked_drainage", "flooding"];
-const EMPTY: MapFeatures = { incidents: [], reports: [], unlocated_incidents: 0, unlocated_reports: 0 };
-const STATUSES: { value: IncidentStatus; label: string }[] = [
-  { value: "confirmed", label: "Open" },
-  { value: "resolved", label: "Resolved" },
-];
 
 export function MapExplorer() {
   const { user } = useSession();
-  const [categories, setCategories] = useState<HazardCategory[]>([]);
-  const [statuses, setStatuses] = useState<IncidentStatus[]>(["confirmed", "resolved"]);
-  const [showUnreviewed, setShowUnreviewed] = useState(true);
+  // Two decisions at most: one hazard type (or all), and whether resolved incidents stay on the map.
+  const [category, setCategory] = useState<HazardCategory | null>(null);
+  const [includeResolved, setIncludeResolved] = useState(true);
   const [selection, setSelection] = useState<Selection>(null);
 
-  const query = { category: categories, status: statuses.length === 2 ? [] : statuses, include_unreviewed: showUnreviewed };
-  const key = JSON.stringify(query);
-  const features = useApi(() => api.mapFeatures(query), statuses.length === 0 ? null : key);
-  const data = statuses.length === 0 ? EMPTY : features.data;
+  const statuses: IncidentStatus[] = includeResolved ? [] : ["confirmed"];
+  const query = { category: category ? [category] : [], status: statuses, include_unreviewed: true };
+  const features = useApi(() => api.mapFeatures(query), JSON.stringify(query));
+  const data = features.data;
 
   const selectedIncident = selection?.kind === "incident" ? data?.incidents.find((i) => i.id === selection.id) : undefined;
   const selectedReport = selection?.kind === "report" ? data?.reports.find((r) => r.id === selection.id) : undefined;
@@ -42,59 +37,49 @@ export function MapExplorer() {
     [data],
   );
 
-  const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
-
   return (
     <div className="flex flex-1 flex-col lg:h-[calc(100dvh-56px)] lg:flex-none lg:flex-row">
       <aside className="order-2 flex w-full flex-col border-line bg-paper lg:order-1 lg:min-h-0 lg:w-[400px] lg:overflow-hidden lg:border-r">
-        <div className="space-y-3 border-b border-line px-4 py-4">
+        <div className="space-y-3 border-b border-line p-5">
           <div className="flex items-baseline justify-between">
             <h1 className="text-lg font-semibold tracking-tight">Incident map</h1>
             <span className="text-[12.5px] text-ink-3">{features.loading ? "Loading…" : `${total} on map`}</span>
           </div>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by hazard type">
-            {CATEGORIES.map((c) => {
-              const on = categories.length === 0 || categories.includes(c);
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Hazard type">
+            {[null, ...CATEGORIES].map((c) => {
+              const on = category === c;
               return (
                 <button
-                  key={c}
+                  key={c ?? "all"}
                   type="button"
-                  aria-pressed={categories.includes(c)}
-                  onClick={() => setCategories((prev) => toggle(prev, c))}
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setCategory(c)}
                   className={clsx(
                     "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] transition-colors",
-                    categories.includes(c) ? "border-ink bg-surface text-ink" : "border-line bg-surface text-ink-2 hover:border-line-strong",
-                    !on && "opacity-50",
+                    on ? "border-ink bg-ink text-white" : "border-line bg-surface text-ink-2 hover:border-line-strong",
                   )}
                 >
-                  <span className="size-2 rounded-full" style={{ background: CATEGORY_HEX[c] }} />
-                  {CATEGORY_LABEL[c]}
+                  {c && <span className="size-2 rounded-full" style={{ background: CATEGORY_HEX[c] }} />}
+                  {c ? CATEGORY_LABEL[c] : "All"}
                 </button>
               );
             })}
           </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px]">
-            {STATUSES.map((s) => (
-              <label key={s.value} className="inline-flex items-center gap-1.5 text-ink-2">
-                <input
-                  type="checkbox"
-                  checked={statuses.includes(s.value)}
-                  onChange={() => setStatuses((prev) => toggle(prev, s.value))}
-                  className="size-4 accent-[var(--color-accent)]"
-                />
-                {s.label} incidents
-              </label>
-            ))}
-            <label className="inline-flex items-center gap-1.5 text-ink-2">
-              <input type="checkbox" checked={showUnreviewed} onChange={(e) => setShowUnreviewed(e.target.checked)} className="size-4 accent-[var(--color-accent)]" />
-              Unreviewed reports
-            </label>
-          </div>
+          <label className="inline-flex items-center gap-1.5 text-[13px] text-ink-2">
+            <input
+              type="checkbox"
+              checked={includeResolved}
+              onChange={(e) => setIncludeResolved(e.target.checked)}
+              className="size-4 accent-[var(--color-accent)]"
+            />
+            Include resolved incidents
+          </label>
           <Legend />
         </div>
 
         {selection && (selectedIncident || selectedReport) && (
-          <div className="border-b border-line bg-surface px-4 py-4 animate-fade-in">
+          <div className="border-b border-line bg-surface p-5 animate-fade-in">
             <div className="mb-2 flex items-start justify-between gap-2">
               <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">
                 {selectedIncident ? "Canonical incident" : "Individual report · not yet reviewed"}
@@ -147,15 +132,15 @@ export function MapExplorer() {
         )}
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {features.error && <Callout tone="danger" className="m-4">{features.error.message}</Callout>}
+          {features.error && <Callout tone="danger" className="m-5">{features.error.message}</Callout>}
           {!data && features.loading && (
-            <div className="space-y-2 p-4">
+            <div className="space-y-2 p-5">
               {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14" />)}
             </div>
           )}
           {data && total === 0 && (
             <EmptyState icon={<Layers className="size-5" />} title="Nothing to show yet">
-              {categories.length || statuses.length < 2 ? "No incidents match these filters." : "Once residents report hazards with a location, they appear here."}
+              {category || !includeResolved ? "No incidents match these filters." : "Once residents report hazards with a location, they appear here."}
             </EmptyState>
           )}
           {data && total > 0 && (
@@ -187,7 +172,7 @@ export function MapExplorer() {
             </ul>
           )}
           {data && (data.unlocated_incidents > 0 || data.unlocated_reports > 0) && (
-            <p className="flex items-start gap-2 border-t border-line px-4 py-3 text-[12.5px] leading-relaxed text-ink-3">
+            <p className="flex items-start gap-2 border-t border-line px-5 py-3 text-[12.5px] leading-relaxed text-ink-3">
               <MapPinOff className="mt-0.5 size-3.5 shrink-0" />
               {data.unlocated_incidents + data.unlocated_reports} record{data.unlocated_incidents + data.unlocated_reports === 1 ? " has" : "s have"} no location and {data.unlocated_incidents + data.unlocated_reports === 1 ? "isn’t" : "aren’t"} plotted. We never guess coordinates.
               {user && <Link href="/review?tab=unlocated" className="underline">See them</Link>}
@@ -226,7 +211,7 @@ function ListRow({ active, onClick, color, filled, dim, title, meta, sample }: {
         type="button"
         onClick={onClick}
         aria-current={active || undefined}
-        className={clsx("flex w-full items-start gap-3 px-4 py-3 text-left transition-colors", active ? "bg-accent-soft/50" : "hover:bg-sunken/60")}
+        className={clsx("flex w-full items-start gap-3 px-5 py-3 text-left transition-colors", active ? "bg-accent-soft/50" : "hover:bg-sunken/60")}
       >
         <span
           className={clsx("mt-1 size-3 shrink-0 rounded-full", dim && "opacity-50")}

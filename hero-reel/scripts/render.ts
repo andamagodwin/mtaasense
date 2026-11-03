@@ -5,7 +5,7 @@
  *
  * 1. Writes the caption timeline the site uses to label each shot as it plays.
  * 2. Renders a full-quality 1080p master with Remotion (out/master.mp4).
- * 3. Encodes the web versions — 720p VP9 WebM and H.264 MP4, silent, each about 1 Mbps — plus a JPEG
+ * 3. Encodes the web versions (720p VP9 WebM and H.264 MP4, silent, each about 1 Mbps) plus a JPEG
  *    poster into frontend/public/hero/, using Remotion's bundled ffmpeg.
  *
  * `pnpm encode` (--encode-only) skips step 2 and re-encodes the existing master, for tuning file sizes.

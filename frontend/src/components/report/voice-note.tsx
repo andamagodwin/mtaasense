@@ -156,7 +156,7 @@ export function VoiceNote({
         {notice && <Callout tone="warn">{notice}</Callout>}
         <div className="space-y-1.5">
           <label htmlFor="transcript" className="text-[13px] font-medium">
-            Transcript <span className="font-normal text-ink-3">— check and correct it before submitting</span>
+            Transcript <span className="font-normal text-ink-3">· check and correct it before submitting</span>
           </label>
           <Textarea
             id="transcript"

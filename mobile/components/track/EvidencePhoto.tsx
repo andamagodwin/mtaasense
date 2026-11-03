@@ -19,7 +19,6 @@ export function EvidencePhoto({
   const [width, setWidth] = useState(0);
   const active =
     segmentations.find((s) => s.status === 'completed' && (s.regions?.length ?? 0) > 0) ?? null;
-  const pending = segmentations.some((s) => s.status === 'queued' || s.status === 'running');
   const W = active?.image_width ?? image.width ?? 4;
   const H = active?.image_height ?? image.height ?? 3;
   const height = width ? Math.min(width * (H / W), 440) : 0;
@@ -66,11 +65,10 @@ export function EvidencePhoto({
           </Svg>
         )}
       </View>
-      {(active || pending) && (
-        <Text className="px-3.5 py-2 text-[12.5px] text-ink-3">
-          {active
-            ? `Outlined by SAM 3.1: “${active.prompt}”, ${active.regions!.length} region${active.regions!.length === 1 ? '' : 's'}`
-            : 'SAM 3.1 is outlining the hazard…'}
+      {/* Progress is on the timeline; the caption only names what was outlined. */}
+      {active && (
+        <Text className="px-4 py-3 text-[12.5px] text-ink-3">
+          {`Outlined by SAM 3.1: “${active.prompt}”, ${active.regions!.length} region${active.regions!.length === 1 ? '' : 's'}`}
         </Text>
       )}
     </View>

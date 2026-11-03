@@ -54,7 +54,7 @@ export function ResidentFacts({ report, showMachineTranscript = false }: { repor
               </span>
             </>
           ) : (
-            <span className="text-ink-3">Not provided — kept in the unlocated list</span>
+            <span className="text-ink-3">Not provided, so it is kept in the unlocated list</span>
           )}
           {report.location_note && <span className="mt-0.5 block text-ink-2">{report.location_note}</span>}
         </dd>

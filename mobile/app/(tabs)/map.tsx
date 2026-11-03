@@ -81,7 +81,7 @@ export default function MapScreen() {
       </Map>
 
       <SafeAreaView edges={['top']} pointerEvents="box-none" className="absolute inset-x-0 top-0">
-        <View className="mx-4 mt-2 flex-row items-center justify-between rounded-[14px] border border-line bg-surface/95 px-4 py-3">
+        <View className="mx-4 mt-4 flex-row items-center justify-between rounded-[14px] border border-line bg-surface/95 px-4 py-3">
           <View className="gap-0.5">
             <Text className="font-bold text-[17px]">Hazard map</Text>
             <Text className="text-[12.5px] text-ink-3">
@@ -97,7 +97,7 @@ export default function MapScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerClassName="gap-2 px-4 py-2.5">
+          contentContainerClassName="gap-2 px-4 py-3">
           <FilterChip label="All" selected={!filter} onPress={() => setFilter(null)} />
           {CATEGORIES.map((c) => (
             <FilterChip

@@ -1,4 +1,4 @@
-"""Evaluation harness — real Meta Model API calls on a small labelled set.
+"""Evaluation harness: real Meta Model API calls on a small labelled set.
 
     uv run python -m eval.run_eval              # analysis + segmentation + duplicate pairs (~$0.20)
     uv run python -m eval.run_eval --only analysis
@@ -200,7 +200,7 @@ CASES = [
     ),
 ]
 
-# (image A, image B, label) — label True = same incident, False = different, None = unknown.
+# (image A, image B, label): label True = same incident, False = different, None = unknown.
 PAIRS = [
     ("namanve-flood-a", "namanve-flood-b", True),
     ("r36-pothole-a", "r36-pothole-b", True),
@@ -364,7 +364,7 @@ def run_segmentation_cases(raw: dict[str, Any]) -> dict[str, Any]:
                 "latency_ms": ms,
                 "max_confidence": max((r["confidence"] or 0 for r in regions), default=None),
             }
-        except Exception as exc:  # noqa: BLE001 — record any failure as a data point
+        except Exception as exc:  # noqa: BLE001 - record any failure as a data point
             row = {
                 "id": case.id,
                 "concept": case.sam_concept,
@@ -396,10 +396,10 @@ def run_duplicate_pairs(raw: dict[str, Any]) -> dict[str, Any]:
         content = [
             {
                 "type": "input_text",
-                "text": "Source report S — category and description withheld for this evaluation. Photo of S:",
+                "text": "Source report S: category and description withheld for this evaluation. Photo of S:",
             },
             {"type": "input_image", "image_url": url_a},
-            {"type": "input_text", "text": "Candidate C1 — distance unknown. Photo of C1:"},
+            {"type": "input_text", "text": "Candidate C1: distance unknown. Photo of C1:"},
             {"type": "input_image", "image_url": url_b},
         ]
         payload = {
@@ -447,7 +447,7 @@ def main() -> None:
     parser.add_argument("--only", choices=["analysis", "segmentation", "duplicates"])
     args = parser.parse_args()
     if not get_meta_client().configured:
-        raise SystemExit("MODEL_API_KEY is not configured — evaluation needs live model access.")
+        raise SystemExit("MODEL_API_KEY is not configured; evaluation needs live model access.")
     started = datetime.now(UTC)
     raw: dict[str, Any] = {}
     summary: dict[str, Any] = {
@@ -467,7 +467,7 @@ def main() -> None:
     summary["not_evaluated"] = [
         "Transcription accuracy on real Ugandan speakers or Luganda (only one synthetic English clip tested)",
         "Deterministic duplicate retrieval at scale (covered by unit tests, not a labelled dataset)",
-        "Segmentation mask quality (IoU) — no ground-truth masks; only 'found a region' is measured",
+        "Segmentation mask quality (IoU): no ground-truth masks; only 'found a region' is measured",
     ]
     (ROOT / "results").mkdir(exist_ok=True)
     (ROOT / "runs").mkdir(exist_ok=True)

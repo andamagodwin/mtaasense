@@ -20,7 +20,7 @@ export function TextInput({ className, ...props }: TextInputProps) {
       selectionColor={colors.accent.DEFAULT}
       {...props}
       className={cn(
-        'rounded-xl border border-line-strong bg-surface px-3.5 py-3 font-sans text-[15px] text-ink',
+        'rounded-xl border border-line-strong bg-surface px-4 py-3 font-sans text-[15px] text-ink',
         className
       )}
     />

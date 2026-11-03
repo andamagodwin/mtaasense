@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { AlertTriangle, ArrowRight, GitMerge, Inbox, MapPinOff, Search } from "lucide-react";
+import { ArrowRight, GitMerge, Inbox, MapPinOff, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -14,11 +14,12 @@ import { useRequireReviewer } from "../session";
 import { Card } from "../ui/card";
 import { Callout, EmptyState, Skeleton } from "../ui/feedback";
 import { Input } from "../ui/field";
+import { Page, PageHeader } from "../ui/page";
 import { Thumb } from "./thumb";
 
 const TABS = [
   { id: "queue", label: "Review queue" },
-  { id: "duplicates", label: "Duplicate suggestions" },
+  { id: "duplicates", label: "Duplicates" },
   { id: "incidents", label: "Incidents" },
   { id: "unlocated", label: "Unlocated" },
   { id: "all", label: "All reports" },
@@ -35,62 +36,35 @@ export function ReviewDashboard() {
   usePolling(summary.reload, 10000, session.allowed);
 
   if (!session.allowed) {
-    return <div className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6"><Skeleton className="h-96" /></div>;
+    return <Page><Skeleton className="h-96" /></Page>;
   }
 
   const s = summary.data;
-  const tiles = [
-    { label: "Total reports", value: s?.reports_total, tab: "all" as Tab },
-    { label: "Awaiting review", value: s?.reports_awaiting_review, tab: "queue" as Tab, highlight: true },
-    { label: "Potential duplicates", value: s?.potential_duplicates, tab: "duplicates" as Tab },
-    { label: "Confirmed incidents", value: s?.incidents_confirmed, tab: "incidents" as Tab },
-    { label: "Resolved incidents", value: s?.incidents_resolved, tab: "incidents" as Tab },
-    { label: "Processing failures", value: s?.processing_failures, tab: "queue" as Tab, warn: (s?.processing_failures ?? 0) > 0 },
-  ];
-
+  // The counts live on the tabs themselves, so there is one place to look and one place to click.
+  const counts: Record<Tab, number | undefined> = {
+    queue: s?.reports_awaiting_review,
+    duplicates: s?.potential_duplicates,
+    incidents: s ? s.incidents_confirmed + s.incidents_resolved : undefined,
+    unlocated: s?.unlocated_reports,
+    all: s?.reports_total,
+  };
   const setTab = (t: Tab) => router.replace(`${pathname}?tab=${t}`, { scroll: false });
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px] font-semibold tracking-tight">Review workspace</h1>
-          <p className="mt-1 text-[14px] text-ink-3">
-            Check AI assessments against the original evidence, link duplicate reports and manage incidents.
-          </p>
-        </div>
-        {s && s.sample_records > 0 && (
-          <p className="text-[12.5px] text-ink-3">
-            {s.sample_records} sample record{s.sample_records === 1 ? "" : "s"} included · marked <SampleBadge />
-          </p>
-        )}
-      </header>
+    <Page>
+      <PageHeader
+        title="Review workspace"
+        description="Check AI assessments against the original evidence, link duplicate reports and manage incidents."
+      />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {tiles.map((t) => (
-          <button
-            key={t.label}
-            type="button"
-            onClick={() => setTab(t.tab)}
-            className={clsx(
-              "rounded-[var(--radius-card)] border bg-surface p-4 text-left shadow-[var(--shadow-card)] transition-colors hover:border-line-strong",
-              t.highlight ? "border-accent/35" : "border-line",
-            )}
-          >
-            <p className="flex items-center gap-1.5 text-[12.5px] text-ink-3">
-              {t.warn && <AlertTriangle className="size-3.5 text-warn" />}
-              {t.label}
-            </p>
-            {t.value === undefined ? <Skeleton className="mt-2 h-8 w-10" /> : <p className="mt-1 text-[28px] font-semibold tracking-tight tabular-nums">{t.value}</p>}
-          </button>
-        ))}
-      </div>
-
-      {s && s.reports_processing > 0 && (
-        <p className="mb-4 text-[13px] text-ink-3">{s.reports_processing} report{s.reports_processing === 1 ? " is" : "s are"} still being processed by the AI pipeline.</p>
+      {s && s.processing_failures > 0 && (
+        <Callout tone="warn" className="mb-6">
+          {s.processing_failures} report{s.processing_failures === 1 ? "" : "s"} failed AI processing and{" "}
+          {s.processing_failures === 1 ? "is" : "are"} waiting in the review queue.
+        </Callout>
       )}
 
-      <div className="mb-4 flex gap-1 overflow-x-auto border-b border-line" role="tablist">
+      <div className="mb-6 flex gap-1 overflow-x-auto border-b border-line" role="tablist">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -98,13 +72,20 @@ export function ReviewDashboard() {
             aria-selected={tab === t.id}
             onClick={() => setTab(t.id)}
             className={clsx(
-              "-mb-px whitespace-nowrap border-b-2 px-3 py-2.5 text-[14px] transition-colors",
+              "-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-[14px] transition-colors",
               tab === t.id ? "border-accent font-medium text-ink" : "border-transparent text-ink-3 hover:text-ink",
             )}
           >
             {t.label}
-            {t.id === "duplicates" && !!s?.potential_duplicates && (
-              <span className="ml-1.5 rounded-full bg-warn-soft px-1.5 py-0.5 font-mono text-[11px] text-[#7d520c]">{s.potential_duplicates}</span>
+            {counts[t.id] !== undefined && (
+              <span
+                className={clsx(
+                  "rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums",
+                  t.id === "queue" && counts.queue ? "bg-accent-soft text-accent-ink" : "bg-sunken text-ink-3",
+                )}
+              >
+                {counts[t.id]}
+              </span>
             )}
           </button>
         ))}
@@ -115,7 +96,13 @@ export function ReviewDashboard() {
       {tab === "unlocated" && <ReportTable hasLocation={false} empty="Every report has a location." />}
       {tab === "duplicates" && <DuplicateList />}
       {tab === "incidents" && <IncidentTable />}
-    </div>
+
+      {s && s.sample_records > 0 && (
+        <p className="mt-6 text-[12.5px] text-ink-3">
+          Includes {s.sample_records} sample record{s.sample_records === 1 ? "" : "s"}, marked <SampleBadge />
+        </p>
+      )}
+    </Page>
   );
 }
 
@@ -133,15 +120,15 @@ function ReportTable({ statuses, hasLocation, searchable, empty }: { statuses?: 
   return (
     <Card>
       {searchable && (
-        <div className="border-b border-line p-3">
+        <div className="border-b border-line px-5 py-3">
           <div className="relative max-w-sm">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
             <Input value={q} onChange={(e) => { setQ(e.target.value); setOffset(0); }} placeholder="Search reference or description" className="pl-9" aria-label="Search reports" />
           </div>
         </div>
       )}
-      {reports.error && <Callout tone="danger" className="m-4">{reports.error.message}</Callout>}
-      {!page && <div className="space-y-2 p-4">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16" />)}</div>}
+      {reports.error && <Callout tone="danger" className="m-5">{reports.error.message}</Callout>}
+      {!page && <div className="space-y-2 p-5">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-16" />)}</div>}
       {page && page.items.length === 0 && <EmptyState icon={<Inbox className="size-5" />} title={empty} />}
       {page && page.items.length > 0 && (
         <>
@@ -149,7 +136,7 @@ function ReportTable({ statuses, hasLocation, searchable, empty }: { statuses?: 
             {page.items.map((r) => <ReportRow key={r.id} report={r} />)}
           </ul>
           {page.total > limit && (
-            <div className="flex items-center justify-between border-t border-line px-4 py-2.5 text-[13px] text-ink-3">
+            <div className="flex items-center justify-between border-t border-line px-5 py-3 text-[13px] text-ink-3">
               <span>{offset + 1}–{Math.min(offset + limit, page.total)} of {page.total}</span>
               <div className="flex gap-2">
                 <button className="rounded px-2 py-1 hover:bg-sunken disabled:opacity-40" disabled={offset === 0} onClick={() => setOffset(offset - limit)}>Previous</button>
@@ -166,7 +153,7 @@ function ReportTable({ statuses, hasLocation, searchable, empty }: { statuses?: 
 function ReportRow({ report: r }: { report: ReportSummary }) {
   return (
     <li>
-      <Link href={`/review/reports/${r.id}`} className="flex items-center gap-4 px-4 py-3 transition-colors hover:bg-paper">
+      <Link href={`/review/reports/${r.id}`} className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-paper">
         <Thumb media={r.thumbnail} className="size-14" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -208,7 +195,7 @@ function DuplicateList() {
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {list.data.items.map((s) => (
-        <Link key={s.id} href={`/review/duplicates/${s.id}`} className="group rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-[var(--shadow-card)] transition-colors hover:border-line-strong">
+        <Link key={s.id} href={`/review/duplicates/${s.id}`} className="group rounded-[var(--radius-card)] border border-line bg-surface p-5 shadow-[var(--shadow-card)] transition-colors hover:border-line-strong">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="rounded-md bg-ink px-1.5 py-0.5 font-mono text-[12px] text-white">match {pct(s.score)}</span>
@@ -256,7 +243,7 @@ function IncidentTable() {
       <ul className="divide-y divide-line">
         {list.data.items.map((i) => (
           <li key={i.id}>
-            <Link href={`/review/incidents/${i.id}`} className="flex items-center gap-4 px-4 py-3 hover:bg-paper">
+            <Link href={`/review/incidents/${i.id}`} className="flex items-center gap-4 px-5 py-3 hover:bg-paper">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-[13px] text-ink-3">{i.reference}</span>

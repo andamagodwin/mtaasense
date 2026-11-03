@@ -1,11 +1,12 @@
 "use client";
 
-import { LockKeyhole } from "lucide-react";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { api, ApiError } from "@/lib/api";
 import { useSession } from "./session";
 import { Button } from "./ui/button";
+import { LogoMark } from "./brand";
 import { Card } from "./ui/card";
 import { Callout } from "./ui/feedback";
 import { Field, Input } from "./ui/field";
@@ -37,11 +38,9 @@ export function LoginForm() {
 
   return (
     <Card className="w-full max-w-sm animate-rise">
-      <form onSubmit={onSubmit} className="space-y-5 p-6">
+      <form onSubmit={onSubmit} className="space-y-5 p-5">
         <div>
-          <span className="mb-3 grid size-10 place-items-center rounded-xl bg-accent-soft text-accent-ink">
-            <LockKeyhole className="size-5" />
-          </span>
+          <LogoMark className="mb-3 size-10" />
           <h1 className="text-xl font-semibold tracking-tight">Reviewer sign in</h1>
           <p className="mt-1 text-[13.5px] leading-relaxed text-ink-3">
             Reviewers compare evidence, link duplicate reports and manage incidents. Residents don’t need an account.

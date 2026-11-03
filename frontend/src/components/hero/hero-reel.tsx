@@ -28,7 +28,7 @@ function shotAt(seconds: number) {
 /**
  * Full-bleed newsreel behind the home-page hero: a looping montage of openly licensed flood, storm, drought
  * and landslide footage (cut in /hero-reel with Remotion), with a lower third naming each shot's place, date
- * and source as it plays. The footage is decorative — the hero copy carries the meaning — so the video is
+ * and source as it plays. The footage is decorative (the hero copy carries the meaning), so the video is
  * hidden from assistive tech, stays paused for reduced-motion and data-saver users, and can always be paused.
  */
 export function HeroReel({ children }: { children: ReactNode }) {
@@ -140,8 +140,8 @@ export function HeroReel({ children }: { children: ReactNode }) {
                 <p className="mt-1 truncate text-[14px] font-medium">
                   {shot.place}
                   <span className="font-normal text-white/60">
-                    {" "}
-                    — {shot.event}, {shot.date}
+                    {" · "}
+                    {shot.event}, {shot.date}
                   </span>
                 </p>
                 <a

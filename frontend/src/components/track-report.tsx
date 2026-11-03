@@ -2,7 +2,6 @@
 
 import { clsx } from "clsx";
 import { Check, Copy, Link2 } from "lucide-react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { api, ApiError } from "@/lib/api";
@@ -16,6 +15,7 @@ import { SegmentationViewer } from "./segmentation-viewer";
 import { LinkButton } from "./ui/button";
 import { Card, CardBody, CardHeader } from "./ui/card";
 import { Callout, EmptyState, Skeleton } from "./ui/feedback";
+import { Page, PageHeader } from "./ui/page";
 
 const subscribeHash = (cb: () => void) => {
   window.addEventListener("hashchange", cb);
@@ -43,30 +43,30 @@ export function TrackReport() {
 
   if (!token) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-16">
+      <Page width="narrow">
         <EmptyState title="This tracking link is incomplete">
-          Open the full link you received after submitting — it includes a private code after the “#”.
+          Open the full link you received after submitting. It includes a private code after the “#”.
         </EmptyState>
-      </div>
+      </Page>
     );
   }
 
   if (state.error && !report) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-16">
+      <Page width="narrow">
         <Callout tone={state.error.status === 404 ? "warn" : "danger"} title={state.error.status === 404 ? "Report not found" : "Couldn't load the report"}>
           {state.error.status === 404 ? "Check that you opened the complete tracking link." : state.error.message}
         </Callout>
-      </div>
+      </Page>
     );
   }
 
   if (!report) {
     return (
-      <div className="mx-auto w-full max-w-[1180px] space-y-4 px-4 py-10 sm:px-6">
+      <Page className="space-y-4">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-[420px] w-full" />
-      </div>
+      </Page>
     );
   }
 
@@ -81,18 +81,18 @@ export function TrackReport() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1180px] px-4 py-8 sm:px-6 sm:py-10">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-[13px] text-ink-3">Report received {formatDateTime(report.created_at)}</p>
-          <h1 className="mt-1 flex flex-wrap items-center gap-2.5 text-[24px] font-semibold tracking-tight">
+    <Page>
+      <PageHeader
+        meta={`Report received ${formatDateTime(report.created_at)}`}
+        title={
+          <>
             <span className="font-mono">{report.reference}</span>
             <StatusBadge status={report.status} />
             {report.is_sample && <SampleBadge />}
-          </h1>
-        </div>
-        <CopyLink />
-      </header>
+          </>
+        }
+        actions={<CopyLink />}
+      />
 
       <Timeline report={report} />
 
@@ -138,14 +138,11 @@ export function TrackReport() {
         </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap gap-3">
+      <div className="mt-8 flex flex-wrap items-center gap-4">
         <LinkButton href="/report" variant="secondary">Report another hazard</LinkButton>
-        <LinkButton href="/map" variant="ghost">View the map</LinkButton>
+        <p className="text-[12.5px] text-ink-3">Only people with this link, and MtaaSense reviewers, can see your photo.</p>
       </div>
-      <p className="mt-6 text-[12.5px] text-ink-3">
-        Only people with this link (and MtaaSense reviewers) can see your photo. <Link href="/" className="underline">About MtaaSense</Link>
-      </p>
-    </div>
+    </Page>
   );
 }
 

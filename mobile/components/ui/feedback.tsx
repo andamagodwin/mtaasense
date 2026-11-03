@@ -39,7 +39,7 @@ export function Callout({
   const t = tones[tone];
   const Icon = t.icon;
   return (
-    <View className={cn('flex-row gap-2.5 rounded-xl border px-3.5 py-3', t.box, className)}>
+    <View className={cn('flex-row gap-2.5 rounded-xl border px-4 py-3', t.box, className)}>
       <View className="pt-0.5">
         <Icon size={16} color={t.color} />
       </View>

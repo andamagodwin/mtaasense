@@ -16,15 +16,15 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 
 | Area | State | Evidence |
 |---|---|---|
-| Muse Spark structured analysis (`muse-spark-1.3`, Responses API, strict JSON schema) | **Verified live** | 45+ real calls, all schema-valid — see [Evaluation](#evaluation) |
+| Muse Spark structured analysis (`muse-spark-1.3`, Responses API, strict JSON schema) | **Verified live** | 45+ real calls, all schema-valid; see [Evaluation](#evaluation) |
 | SAM 3.1 segmentation (`sam-3.1`, streamed, official `meta-sam-parser`) | **Verified live** | Real masks rendered over photos; alignment checked visually |
 | Muse Voice Transcribe (`muse-voice-transcribe-1.0`, `/v1/asr/transcribe`) | **Verified live (English, 1 synthetic clip)** | Not tested on real Ugandan speakers or Luganda |
 | Model-assisted duplicate comparison (Muse Spark, two+ images) | **Verified live** | Labels restricted to backend-supplied IDs |
 | Backend tests | **52 passing** | `uv run pytest` (real PostGIS, mocked Meta transport) |
 | Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build && pnpm build:vinext` |
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
-| Backend on the Contabo VPS | **Deployed** — <https://api.mtaasense.com> | Docker Compose behind a Cloudflare Tunnel (the VPS's ports 80/443 belong to another app); `/ready` reports database, migrations, media and model API OK |
-| Frontend on Cloudflare Workers (vinext) | **Deployed** — <https://mtaasense.com> (also <https://mtaasense.mtaasense.workers.dev>) | Calls the API through same-origin `/api/v1/*` |
+| Backend on the Contabo VPS | **Deployed** at <https://api.mtaasense.com> | Docker Compose behind a Cloudflare Tunnel (the VPS's ports 80/443 belong to another app); `/ready` reports database, migrations, media and model API OK |
+| Frontend on Cloudflare Workers (vinext) | **Deployed** at <https://mtaasense.com> (also <https://mtaasense.mtaasense.workers.dev>) | Calls the API through same-origin `/api/v1/*` |
 | Mobile app (`mobile/`, Expo SDK 58, iOS and Android) | **Runs in an iOS development build** | Report, My reports and Map screens render on the iPhone 17 simulator against the live API; the submit-to-tracking flow still needs a tap-through on a device |
 
 ---
@@ -34,7 +34,7 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 1. **Report** (`/report`, mobile-first): photo (camera or gallery), category or "let AI suggest",
    description, optional voice note with an editable transcript, optional location (map pin or device GPS
    after an explicit tap), review, submit. Large photos are downscaled in the browser; the uploaded file is kept
-   as the original evidence. No location? The report is kept and listed as *unlocated* — we never invent
+   as the original evidence. No location? The report is kept and listed as *unlocated*; we never invent
    coordinates.
 2. **Analyse**: a persistent job runs Muse Spark on the photo + resident text. The structured result tags every
    observation as *visible in photo*, *stated by resident*, or both; gives a preliminary severity with rationale,
@@ -43,7 +43,7 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
    standing water, puddle). Masks are rendered as SVG over the original photo; reviewers can toggle the
    overlay, show boxes, change opacity, and request other concepts. Results are cached per (image, concept).
 4. **Match**: PostGIS retrieves nearby reports of the same hazard family within a time window, scores them on
-   signals that actually exist (distance, category, trigram text similarity, time gap), and — when it helps —
+   signals that actually exist (distance, category, trigram text similarity, time gap), and, when it helps,
    Muse Spark compares the photos. Nothing is merged automatically.
 5. **Review** (`/review`): dashboard counts from the database, review queue, duplicate comparisons side by side
    (photos, overlays, mini-map, per-signal evidence, model verdict), confirm/reject/defer, category corrections,
@@ -207,7 +207,7 @@ Backend (`backend/.env`, see [`.env.example`](backend/.env.example)):
 | `REPORT_RATE_LIMIT_PER_HOUR`, `PUBLIC_GLOBAL_RATE_LIMIT_PER_HOUR` | abuse protection |
 
 Frontend (`frontend/.env.local`): `NEXT_PUBLIC_API_BASE_URL` (public API base URL; used for the rewrite),
-optional `NEXT_PUBLIC_MAP_STYLE_URL` (default OpenFreeMap Positron — free, keyless, OSM attribution shown on the map).
+optional `NEXT_PUBLIC_MAP_STYLE_URL` (default OpenFreeMap Positron: free, keyless, OSM attribution shown on the map).
 
 ---
 
@@ -236,9 +236,9 @@ Errors are always `{"error": {"code", "message", "request_id"}}`.
 | `GET /review/summary` | reviewer | Dashboard counts |
 | `GET /jobs/{id}` | reviewer or receipt | Job status |
 | `GET /media/{id}?exp&sig` | signed URL | Private media (URLs minted only for authorised viewers) |
-| `POST /auth/login` · `/logout`, `GET /auth/session` | — | Reviewer sessions |
+| `POST /auth/login` · `/logout`, `GET /auth/session` | None | Reviewer sessions |
 | `GET /admin/usage`, `GET /admin/evaluation` | admin | Model usage and evaluation |
-| `GET /health`, `GET /ready` | — | Liveness / readiness (DB, migrations, media, model config) |
+| `GET /health`, `GET /ready` | None | Liveness / readiness (DB, migrations, media, model config) |
 
 ### Status lifecycle (enforced in `services/lifecycle.py`)
 
@@ -254,7 +254,7 @@ incident: confirmed ⇄ resolved   (resolving requires a reviewer's written note
 
 Retrieval (SQL): other reports in a matchable state, same hazard *family* (road: pothole/road surface damage;
 drainage: blocked drainage/flooding), created within ±45 days, and either within 150 m (`ST_DWithin` on
-`geography(Point,4326)`, GiST-indexed) or — if a location is missing — with clearly similar wording
+`geography(Point,4326)`, GiST-indexed) or, if a location is missing, with clearly similar wording
 (`pg_trgm`). Up to 25 are retrieved.
 
 Score = weighted mean over the signals that exist: location 0.40 (1 − d/150 m), category 0.20 (same 1.0, same
@@ -274,8 +274,8 @@ and any label not in the list sent is discarded. Reviewer decisions are never ov
 - Media is private: stored outside the web root under server-generated keys, served only via HMAC-signed URLs
   (15 min) minted for authorised viewers. The display copy is EXIF-stripped; the original upload is preserved as
   evidence. File types are sniffed from bytes (Pillow / magic numbers + ffmpeg), sizes and pixel counts are capped.
-- Public map shows only category, status and location — never photos or resident text.
-- Rate limits are DB-backed (per client fingerprint — a keyed hash, raw IPs are never stored — plus a global
+- Public map shows only category, status and location, never photos or resident text.
+- Rate limits are DB-backed (per client fingerprint, a keyed hash so raw IPs are never stored, plus a global
   backstop). Request IDs on every response; JSON logs redact credential-like fields.
 - Prompt-injection hygiene: resident text is wrapped in tags and declared as data; segmentation prompts are restricted
   to a fixed list; model-returned IDs are validated against what we sent.
@@ -327,27 +327,27 @@ Run with `uv run python -m eval.run_eval` (live calls, ≈ $0.20). Results below
 summary to [`eval/results/summary.json`](backend/eval/results/summary.json), which the admin page also shows.
 **Sample sizes are small; treat these as indicative, not statistically robust.**
 
-**Structured analysis — 17 labelled cases** (13 clear/ambiguous hazards, 1 irrelevant photo, 2 conflicting
+**Structured analysis: 17 labelled cases** (13 clear/ambiguous hazards, 1 irrelevant photo, 2 conflicting
 descriptions, 1 synthetically blurred and darkened photo):
 
 | Metric | Result |
 |---|---|
 | Schema-valid structured output | 17/17 |
 | Category within the labelled acceptable set | 17/17 (ambiguous cases accept more than one label) |
-| Hazard recall (photo shows a hazard → `is_infrastructure_hazard`) | 14/15 — the miss is the blurred/dark photo, returned as `unclear`, image quality `poor`, confidence `low` |
+| Hazard recall (photo shows a hazard → `is_infrastructure_hazard`) | 14/15; the miss is the blurred/dark photo, returned as `unclear`, image quality `poor`, confidence `low` |
 | Non-hazard rejection (food photo, with and without a pothole description) | 2/2 |
 | Description/photo conflict flagged | 2/2 (`inconsistent`, `partially_consistent`) |
 | Latency | median 6.6 s, max 9.3 s |
 | Estimated cost | $0.112 for 17 calls |
 
-**SAM 3.1 — 12 hazard photos with a tested concept:** 12/12 requests succeeded and returned ≥1 region;
+**SAM 3.1, 12 hazard photos with a tested concept:** 12/12 requests succeeded and returned ≥1 region;
 the frame size SAM reported matched the input image on 12/12 (overlay alignment). Mask quality is not scored
 (no ground-truth masks). Concept phrasing matters: on the same three drainage photos "blocked drain" returned
 0 regions while "drainage channel" returned regions with confidence 0.60–0.94.
 
-**Duplicate visual comparison — 4 labelled pairs** (photos only; descriptions and distances withheld):
+**Duplicate visual comparison: 4 labelled pairs** (photos only; descriptions and distances withheld):
 precision for "same incident" 2/3, recall 2/2. The false positive is two different potholes on the same road
-photographed in similar conditions (`possibly_same`). In the full pipeline — with distance and wording — the same
+photographed in similar conditions (`possibly_same`). In the full pipeline, with distance and wording, the same
 comparison was judged `likely_different`, and the true pair `likely_same` (score 0.94, 18 m apart).
 
 Live pipeline observations (13 seeded samples + test submissions): every analysis call returned schema-valid
@@ -427,8 +427,8 @@ redirects `www` to the apex (keeping the query string) and answers byte-range re
 Workers static assets otherwise ignore and Safari needs to play video.
 
 The API base URL is baked into the `/api/v1/*` rewrite at build time, so redeploy whenever it changes. Then add the
-frontend origin (`https://mtaasense.com`) to `CORS_ORIGINS` on the server and restart the API
-— cookie-authenticated writes from any other origin are refused. `pnpm dev:vinext` runs the Workers build locally
+frontend origin (`https://mtaasense.com`) to `CORS_ORIGINS` on the server and restart the API;
+cookie-authenticated writes from any other origin are refused. `pnpm dev:vinext` runs the Workers build locally
 on port 3001 (inside `workerd`); `pnpm dev` is still the plain Next.js dev server.
 
 ### Continuous integration and deployment
@@ -466,7 +466,7 @@ Prep: seed samples, run the worker, `--confirm-incidents`, sign in as a reviewer
 2. **Tracking page:** watch Received → AI analysis (Muse Spark) → Segmentation (SAM 3.1) complete live; point out
    observations tagged *visible in photo* vs *stated by resident*, the uncertainties, and the mask.
 3. **Review workspace → the new report:** toggle *Show original* / overlay; try another concept.
-4. **Possible duplicates:** two candidates appear — the same pothole photographed from another angle and a
+4. **Possible duplicates:** two candidates appear: the same pothole photographed from another angle and a
    different pothole ~90 m away. Open the comparison: distance bar, wording/time signals, and Muse Spark's visual
    comparison for each. Confirm the true duplicate; mark the other as different.
 5. **Incident page:** both reports linked, each with its own evidence; audit trail shows every decision.
@@ -495,8 +495,8 @@ Prep: seed samples, run the worker, `--confirm-incidents`, sign in as a reviewer
 
 ## Credits
 
-Sample photos: Wikimedia Commons contributors under CC BY / CC BY-SA licences — see
+Sample photos: Wikimedia Commons contributors under CC BY / CC BY-SA licences; see
 [`ATTRIBUTION.md`](backend/seed/images/ATTRIBUTION.md). Home-page reel: public-domain Voice of America news
 footage and Wikimedia Commons contributors (CC0, CC BY-SA), cut with Remotion in [`hero-reel/`](hero-reel/);
-the reel is CC BY-SA 4.0 — see [`hero-reel/ATTRIBUTION.md`](hero-reel/ATTRIBUTION.md). Map tiles: OpenFreeMap;
+the reel is CC BY-SA 4.0; see [`hero-reel/ATTRIBUTION.md`](hero-reel/ATTRIBUTION.md). Map tiles: OpenFreeMap;
 map data © OpenStreetMap contributors. SAM output parsing: Meta's `meta-sam-parser` (SAM License).

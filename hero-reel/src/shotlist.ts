@@ -7,7 +7,7 @@
  *
  * Every clip is openly licensed footage on Wikimedia Commons. Voice of America material is a work of the
  * U.S. Government and in the public domain; the rest is CC0, CC BY or CC BY-SA. Because some sources are
- * CC BY-SA 4.0, the rendered reel is distributed under CC BY-SA 4.0 — see ../ATTRIBUTION.md.
+ * CC BY-SA 4.0, the rendered reel is distributed under CC BY-SA 4.0. See ../ATTRIBUTION.md.
  */
 
 export const fps = 30;
@@ -130,7 +130,7 @@ export type Shot = {
   at: number;
   /** On-screen length in seconds, including any transition overlap with the next shot. */
   seconds: number;
-  /** Scale at the start and end of the shot — a slow push. Values above ~1.1 also crop broadcaster logos. */
+  /** Scale at the start and end of the shot, for a slow push. Values above ~1.1 also crop broadcaster logos. */
   zoom?: [number, number];
   /** CSS transform-origin for the zoom; anchor away from a logo to crop it out. */
   origin?: string;
@@ -160,7 +160,7 @@ export const shots: Shot[] = [
   { clip: "mbale-floods", at: 46.3, seconds: 2.8, zoom: [1.02, 1.08], next: "cut" },
 ];
 
-/** The shot whose middle frame becomes the poster — shown while the video loads and to reduced-motion users. */
+/** The shot whose middle frame becomes the poster, shown while the video loads and to reduced-motion users. */
 export const posterShot = 3;
 
 /** Transition lengths in frames; a cut has none. */

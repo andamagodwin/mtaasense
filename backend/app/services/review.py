@@ -57,7 +57,7 @@ def _audit(
 def _default_title(report: Report) -> str:
     assert report.hazard_category is not None
     base = CATEGORY_TITLES[report.hazard_category]
-    return f"{base} — {report.location_note}"[:160] if report.location_note else base
+    return f"{base} at {report.location_note}"[:160] if report.location_note else base
 
 
 def create_incident_from(

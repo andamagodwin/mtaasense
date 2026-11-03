@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
+import { SCREEN_CONTENT, ScreenHeader } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { api, ApiError, appendFile } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -237,13 +238,12 @@ export function ReportFlow() {
           ref={scroll}
           scrollEnabled={!mapTouched}
           keyboardShouldPersistTaps="handled"
-          contentContainerClassName="gap-6 px-4 pb-8 pt-3">
-          <View className="gap-1">
-            <Text className="font-bold text-[28px] tracking-tight">Report a hazard</Text>
-            <Text className="text-[14.5px] leading-[21px] text-ink-2">
-              A photo and a few words are enough. Voice notes and location are optional.
-            </Text>
-          </View>
+          contentContainerClassName={SCREEN_CONTENT}>
+          <ScreenHeader
+            brand
+            title="Report a hazard"
+            description="A photo and a few words are enough. Voice notes and location are optional."
+          />
 
           <View
             className="flex-row gap-1.5"

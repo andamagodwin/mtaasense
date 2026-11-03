@@ -11,6 +11,7 @@ import { ProvenanceBadge } from "../badges";
 import { useRequireReviewer } from "../session";
 import { Card, CardBody, CardHeader } from "../ui/card";
 import { Callout, EmptyState, Skeleton } from "../ui/feedback";
+import { Page, PageHeader } from "../ui/page";
 
 const usd = (v: string | number, digits = 4) => `$${Number(v).toFixed(digits)}`;
 const compact = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 });
@@ -36,21 +37,23 @@ export function UsageDashboard() {
 
   return (
     <Page>
-      <header className="mb-6">
-        <h1 className="text-[26px] font-semibold tracking-tight">Model usage &amp; budget</h1>
-        <p className="mt-1 max-w-3xl text-[14px] leading-relaxed text-ink-3">
-          {u?.note ?? "Estimated from provider-reported usage."} Prices from{" "}
-          <a href={u?.pricing_source} className="underline" target="_blank" rel="noreferrer">the official price list</a>
-          {u && <> (retrieved {u.pricing_retrieved})</>}.
-        </p>
-      </header>
+      <PageHeader
+        title="Model usage & budget"
+        description={
+          <>
+            {u?.note ?? "Estimated from provider-reported usage."} Prices from{" "}
+            <a href={u?.pricing_source} className="underline" target="_blank" rel="noreferrer">the official price list</a>
+            {u && <> (retrieved {u.pricing_retrieved})</>}.
+          </>
+        }
+      />
 
       {!u ? (
         <Skeleton className="h-64" />
       ) : (
         <>
           {u.budget_exhausted && (
-            <Callout tone="danger" title="Budget limit reached" className="mb-5">
+            <Callout tone="danger" title="Budget limit reached" className="mb-6">
               New model calls are paused until the daily window resets or the limit is raised (MODEL_DAILY_BUDGET_USD / MODEL_TOTAL_BUDGET_USD).
             </Callout>
           )}
@@ -105,17 +108,13 @@ export function UsageDashboard() {
   );
 }
 
-function Page({ children }: { children: React.ReactNode }) {
-  return <div className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6">{children}</div>;
-}
-
 function sum(rows: UsageBucket[], key: "calls" | "failures" | "input_tokens" | "output_tokens" | "images" | "audio_seconds"): number {
   return rows.reduce((acc, r) => acc + Number(r[key]), 0);
 }
 
 function Tile({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
   return (
-    <Card className="p-4">
+    <Card className="p-5">
       <p className="flex items-center gap-1.5 text-[12.5px] text-ink-3">
         {warn && <AlertTriangle className="size-3.5 text-warn" aria-label="Warning" />}
         {label}
@@ -195,23 +194,23 @@ function BucketTable({ title, rows, label, mono }: { title: string; rows: UsageB
           <table className="w-full text-left text-[13px] tabular-nums">
             <thead className="bg-paper text-[12px] text-ink-3">
               <tr>
-                <th className="px-4 py-2 font-medium">Name</th>
-                <th className="px-3 py-2 text-right font-medium">Calls</th>
-                <th className="px-3 py-2 text-right font-medium">Failed</th>
-                <th className="px-3 py-2 text-right font-medium">Tokens in/out</th>
-                <th className="px-3 py-2 text-right font-medium">Avg latency</th>
-                <th className="px-4 py-2 text-right font-medium">Est. cost</th>
+                <th className="px-5 py-2.5 font-medium">Name</th>
+                <th className="px-3 py-2.5 text-right font-medium">Calls</th>
+                <th className="px-3 py-2.5 text-right font-medium">Failed</th>
+                <th className="px-3 py-2.5 text-right font-medium">Tokens in/out</th>
+                <th className="px-3 py-2.5 text-right font-medium">Avg latency</th>
+                <th className="px-5 py-2.5 text-right font-medium">Est. cost</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {rows.map((r) => (
                 <tr key={r.key}>
                   <td className={clsx("px-4 py-2", mono && "font-mono text-[12.5px]")}>{label(r.key)}</td>
-                  <td className="px-3 py-2 text-right">{r.calls}</td>
-                  <td className="px-3 py-2 text-right">{r.failures}</td>
-                  <td className="px-3 py-2 text-right">{compact.format(r.input_tokens)} / {compact.format(r.output_tokens)}</td>
-                  <td className="px-3 py-2 text-right">{r.avg_latency_ms !== null ? `${(r.avg_latency_ms / 1000).toFixed(1)} s` : "—"}</td>
-                  <td className="px-4 py-2 text-right font-medium">{usd(r.estimated_cost_usd)}</td>
+                  <td className="px-3 py-2.5 text-right">{r.calls}</td>
+                  <td className="px-3 py-2.5 text-right">{r.failures}</td>
+                  <td className="px-3 py-2.5 text-right">{compact.format(r.input_tokens)} / {compact.format(r.output_tokens)}</td>
+                  <td className="px-3 py-2.5 text-right">{r.avg_latency_ms !== null ? `${(r.avg_latency_ms / 1000).toFixed(1)} s` : "n/a"}</td>
+                  <td className="px-5 py-2.5 text-right font-medium">{usd(r.estimated_cost_usd)}</td>
                 </tr>
               ))}
             </tbody>
@@ -233,31 +232,31 @@ function RecentCalls({ report }: { report: UsageReport }) {
           <table className="w-full text-left text-[12.5px] tabular-nums">
             <thead className="bg-paper text-[12px] text-ink-3">
               <tr>
-                <th className="px-4 py-2 font-medium">Time</th>
-                <th className="px-3 py-2 font-medium">Operation</th>
-                <th className="px-3 py-2 font-medium">Model</th>
-                <th className="px-3 py-2 font-medium">Result</th>
-                <th className="px-3 py-2 text-right font-medium">Latency</th>
-                <th className="px-3 py-2 text-right font-medium">Tokens</th>
-                <th className="px-4 py-2 text-right font-medium">Est. cost</th>
+                <th className="px-5 py-2.5 font-medium">Time</th>
+                <th className="px-3 py-2.5 font-medium">Operation</th>
+                <th className="px-3 py-2.5 font-medium">Model</th>
+                <th className="px-3 py-2.5 font-medium">Result</th>
+                <th className="px-3 py-2.5 text-right font-medium">Latency</th>
+                <th className="px-3 py-2.5 text-right font-medium">Tokens</th>
+                <th className="px-5 py-2.5 text-right font-medium">Est. cost</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {report.recent.map((c) => (
                 <tr key={c.id}>
-                  <td className="whitespace-nowrap px-4 py-2 text-ink-2">{formatDateTime(c.created_at)}</td>
-                  <td className="px-3 py-2">{OPERATION_LABEL[c.operation]?.split(" (")[0] ?? c.operation}</td>
-                  <td className="px-3 py-2 font-mono">{c.model}</td>
-                  <td className="px-3 py-2">
+                  <td className="whitespace-nowrap px-5 py-2.5 text-ink-2">{formatDateTime(c.created_at)}</td>
+                  <td className="px-3 py-2.5">{OPERATION_LABEL[c.operation]?.split(" (")[0] ?? c.operation}</td>
+                  <td className="px-3 py-2.5 font-mono">{c.model}</td>
+                  <td className="px-3 py-2.5">
                     <span className="inline-flex items-center gap-1.5">
                       {c.success ? <CheckCircle2 className="size-3.5 text-accent" /> : <XCircle className="size-3.5 text-danger" />}
                       {c.success ? "OK" : c.error_code ?? `HTTP ${c.http_status}`}
                       {c.provenance !== "live" && <ProvenanceBadge provenance={c.provenance} />}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-right">{(c.latency_ms / 1000).toFixed(1)} s</td>
-                  <td className="px-3 py-2 text-right">{c.input_tokens !== null ? `${compact.format(c.input_tokens)}/${compact.format(c.output_tokens ?? 0)}` : c.image_count ? `${c.image_count} img` : "—"}</td>
-                  <td className="px-4 py-2 text-right">{usd(c.estimated_cost_usd)}</td>
+                  <td className="px-3 py-2.5 text-right">{(c.latency_ms / 1000).toFixed(1)} s</td>
+                  <td className="px-3 py-2.5 text-right">{c.input_tokens !== null ? `${compact.format(c.input_tokens)}/${compact.format(c.output_tokens ?? 0)}` : c.image_count ? `${c.image_count} img` : "n/a"}</td>
+                  <td className="px-5 py-2.5 text-right">{usd(c.estimated_cost_usd)}</td>
                 </tr>
               ))}
             </tbody>

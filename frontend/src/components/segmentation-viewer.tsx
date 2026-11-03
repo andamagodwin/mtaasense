@@ -260,7 +260,7 @@ export function SegmentationViewer({
             ))}
           </ul>
           <p className="border-t border-line px-3.5 py-2 text-[12px] leading-relaxed text-ink-3">
-            A segmentation marks a visual region only — it does not establish size, cause, severity or official status.
+            A segmentation marks a visual region only. It does not establish size, cause, severity or official status.
             {active.completed_at && <> Generated {formatDateTime(active.completed_at)}.</>}
           </p>
         </div>

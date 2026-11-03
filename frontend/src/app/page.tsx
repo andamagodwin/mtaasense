@@ -1,5 +1,4 @@
-import { ArrowRight, Camera, GitMerge, ScanSearch, ShieldCheck, Sparkles, UserCheck } from "lucide-react";
-import Link from "next/link";
+import { Camera, GitMerge, ScanSearch, ShieldCheck, Sparkles, UserCheck } from "lucide-react";
 import { HeroReel } from "@/components/hero/hero-reel";
 import { LiveStats } from "@/components/live-stats";
 import { LinkButton } from "@/components/ui/button";
@@ -8,26 +7,22 @@ const steps = [
   {
     icon: <Camera className="size-4" />,
     title: "A resident reports",
-    body: "Photo, a few words or a voice note, and an optional map pin. The original evidence is stored unchanged.",
-    tag: "Muse Voice Transcribe",
+    body: "A photo, a few words or a voice note, and an optional map pin. The original evidence is stored unchanged.",
   },
   {
     icon: <Sparkles className="size-4" />,
     title: "Muse Spark structures it",
-    body: "Category, visible conditions, a preliminary severity and what remains unknown — each observation tagged with its source.",
-    tag: "Muse Spark",
+    body: "Category, visible conditions, a preliminary severity and what remains unknown, with each observation tagged by its source.",
   },
   {
     icon: <ScanSearch className="size-4" />,
     title: "SAM 3.1 outlines the hazard",
-    body: "A pixel mask over the pothole, blocked drain or standing water, rendered on the original photo.",
-    tag: "SAM 3.1",
+    body: "A pixel mask over the pothole, blocked drain or standing water, drawn on the original photo.",
   },
   {
     icon: <GitMerge className="size-4" />,
     title: "Reports become one incident",
-    body: "PostGIS finds nearby reports of the same kind; a reviewer compares the evidence and decides whether to link them.",
-    tag: "Human review",
+    body: "Nearby reports of the same kind are matched, and a reviewer compares the evidence before linking them.",
   },
 ];
 
@@ -40,7 +35,7 @@ const principles = [
   {
     icon: <Sparkles className="size-4" />,
     title: "AI kept distinct",
-    body: "Model output is labelled as interpretation — with its provenance — and never presented as resident fact or official verification.",
+    body: "Model output is labelled as interpretation, with its provenance, and never presented as resident fact or official verification.",
   },
   {
     icon: <UserCheck className="size-4" />,
@@ -61,22 +56,18 @@ export default function HomePage() {
           <h1 className="max-w-[17ch] text-[34px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[52px]">
             From a photo on the street to an evidence‑backed incident.
           </h1>
-          <p className="mt-5 max-w-[56ch] text-[16.5px] leading-relaxed text-white/75">
-            Potholes, damaged roads, blocked drains and flooding get reported in fragments — a photo here, a message there.
-            MtaaSense uses Meta’s multimodal models to turn those fragments into structured, reviewable records, and helps
-            reviewers consolidate repeat reports into a single incident.
+          <p className="mt-5 max-w-[52ch] text-[16.5px] leading-relaxed text-white/75">
+            Potholes, broken roads, blocked drains and flooding get reported in fragments. MtaaSense turns them into
+            structured, reviewable records with Meta’s multimodal models.
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3">
             <LinkButton href="/report" size="lg" icon={<Camera className="size-4" />}>
               Report a hazard
             </LinkButton>
             <LinkButton href="/map" size="lg" variant="glass">
-              Open the incident map
+              View the map
             </LinkButton>
           </div>
-          <Link href="/review" className="mt-5 inline-flex items-center gap-1 text-sm text-white/60 hover:text-white">
-            Reviewer workspace <ArrowRight className="size-3.5" />
-          </Link>
         </div>
       </HeroReel>
 
@@ -85,29 +76,26 @@ export default function HomePage() {
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Disasters start as street‑level warning signs</h2>
             <p className="mt-3 max-w-[56ch] text-[15px] leading-relaxed text-ink-2">
-              The reel above is news and community footage of floods, washed‑out roads, drought and landslides — from
-              Mbale, Douala, Bangui, Zambia, Somalia and beyond, 2017–2024. Long before damage like that makes the news,
-              residents see the signs: a drain that never clears, a road that floods every time it rains. MtaaSense makes
-              those observations count as evidence.
+              The reel above is news and community footage of floods, washed-out roads, drought and landslides from
+              Mbale, Douala, Bangui, Zambia, Somalia and beyond, 2017 to 2024. Long before damage like that makes the
+              news, residents see the signs: a drain that never clears, a road that floods every time it rains.
+              MtaaSense makes those observations count as evidence.
             </p>
           </div>
           <LiveStats />
         </section>
 
         <section className="border-t border-line py-12">
-          <div className="mb-6 flex items-end justify-between gap-4">
-            <h2 className="text-xl font-semibold tracking-tight">How a report becomes an incident</h2>
-          </div>
+          <h2 className="mb-6 text-xl font-semibold tracking-tight">How a report becomes an incident</h2>
           <ol className="grid gap-3 md:grid-cols-4">
             {steps.map((step, i) => (
-              <li key={step.title} className="relative rounded-[var(--radius-card)] border border-line bg-surface p-4 shadow-[var(--shadow-card)]">
+              <li key={step.title} className="rounded-[var(--radius-card)] border border-line bg-surface p-5 shadow-[var(--shadow-card)]">
                 <div className="mb-3 flex items-center justify-between">
                   <span className="grid size-8 place-items-center rounded-lg bg-accent-soft text-accent-ink">{step.icon}</span>
                   <span className="font-mono text-[12px] text-ink-3">0{i + 1}</span>
                 </div>
                 <h3 className="text-[15px] font-semibold">{step.title}</h3>
                 <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-2">{step.body}</p>
-                <p className="mt-3 text-[12px] font-medium text-accent-ink">{step.tag}</p>
               </li>
             ))}
           </ol>

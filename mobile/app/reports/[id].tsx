@@ -9,6 +9,7 @@ import { AnalysisCard, ResidentFacts } from '@/components/track/ReportSections';
 import { isProcessing, Timeline } from '@/components/track/Timeline';
 import { Button } from '@/components/ui/Button';
 import { Callout, Card } from '@/components/ui/feedback';
+import { SCREEN_CONTENT } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { api } from '@/lib/api';
 import { WEB_ORIGIN } from '@/lib/config';
@@ -98,7 +99,7 @@ export default function TrackReportScreen() {
     <>
       <Stack.Screen options={{ title: report.reference }} />
       <ScrollView
-        contentContainerClassName="gap-5 px-4 pb-10 pt-2"
+        contentContainerClassName={SCREEN_CONTENT}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -113,10 +114,7 @@ export default function TrackReportScreen() {
           <Text className="text-[13px] text-ink-3">
             Received {formatDateTime(report.created_at)}
           </Text>
-          <View className="flex-row flex-wrap items-center gap-2.5">
-            <Text className="font-mono text-[22px] text-ink">{report.reference}</Text>
-            <StatusBadge status={report.status} />
-          </View>
+          <StatusBadge status={report.status} />
           {state.error && (
             <Text className="text-[12.5px] text-warn">
               Showing the last update; {state.error.message}
@@ -131,7 +129,7 @@ export default function TrackReportScreen() {
           </Callout>
         )}
 
-        <Card className="px-4 py-4">
+        <Card className="p-4">
           <Timeline report={report} />
         </Card>
 

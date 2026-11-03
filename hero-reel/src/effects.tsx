@@ -24,7 +24,7 @@ export function Toning() {
   );
 }
 
-/** A warm flare that sweeps across the frame — laid over soft transitions to sell the handover. */
+/** A warm flare that sweeps across the frame, laid over soft transitions to sell the handover. */
 export function LightLeak({ frames, flip = false }: { frames: number; flip?: boolean }) {
   const frame = useCurrentFrame();
   const p = frame / Math.max(1, frames - 1);

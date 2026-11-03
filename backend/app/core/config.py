@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://mtaasense:mtaasense_dev_only@localhost:5433/mtaasense"
 
-    # Meta Model API — server-side only.
+    # Meta Model API, server-side only.
     model_api_key: SecretStr | None = None
     model_api_base_url: str = "https://api.meta.ai/v1"
     model_timeout_seconds: float = 90.0

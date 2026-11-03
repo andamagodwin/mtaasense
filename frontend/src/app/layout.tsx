@@ -20,9 +20,16 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "MtaaSense — community infrastructure intelligence", template: "%s · MtaaSense" },
+  title: { default: "MtaaSense · Community infrastructure intelligence", template: "%s · MtaaSense" },
   description:
     "Turn resident observations of potholes, blocked drainage and flooding into structured, evidence-backed incident records.",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "48x48" },
+    ],
+    apple: "/apple-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

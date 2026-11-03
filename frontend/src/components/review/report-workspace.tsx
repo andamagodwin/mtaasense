@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Ban, CheckCircle2, GitMerge, RefreshCw, RotateCcw } from "lucide-react";
+import { ArrowRight, Ban, CheckCircle2, GitMerge, RefreshCw, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -19,6 +19,7 @@ import { Card, CardBody, CardHeader } from "../ui/card";
 import { Dialog } from "../ui/dialog";
 import { Callout, EmptyState, Skeleton } from "../ui/feedback";
 import { Field, Input, Select, Textarea } from "../ui/field";
+import { Page, PageHeader } from "../ui/page";
 import { AuditTrail, NotesPanel } from "./activity";
 import { Thumb } from "./thumb";
 
@@ -35,10 +36,10 @@ export function ReportWorkspace() {
   usePolling(() => { report.reload(); duplicates.reload(); }, 2500, processing);
 
   if (!session.allowed || (!report.data && !report.error)) {
-    return <div className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6"><Skeleton className="h-[600px]" /></div>;
+    return <Page><Skeleton className="h-[600px]" /></Page>;
   }
   if (report.error && !report.data) {
-    return <div className="mx-auto max-w-xl px-4 py-16"><Callout tone="danger" title="Couldn't load this report">{report.error.message}</Callout></div>;
+    return <Page width="narrow"><Callout tone="danger" title="Couldn't load this report">{report.error.message}</Callout></Page>;
   }
   const r = report.data!;
   const refresh = (next?: ReportDetail) => {
@@ -54,25 +55,23 @@ export function ReportWorkspace() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8">
-      <Link href="/review" className="mb-4 inline-flex items-center gap-1 text-[13px] text-ink-3 hover:text-ink">
-        <ArrowLeft className="size-3.5" /> Review workspace
-      </Link>
-      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="flex flex-wrap items-center gap-2.5 text-[24px] font-semibold tracking-tight">
+    <Page>
+      <PageHeader
+        back={{ href: "/review", label: "Review workspace" }}
+        meta={`Submitted ${formatDateTime(r.created_at)}`}
+        title={
+          <>
             <span className="font-mono">{r.reference}</span>
             <StatusBadge status={r.status} />
             <CategoryBadge category={r.hazard_category} suffix={r.reviewer_category ? <span className="text-ink-3">· corrected</span> : undefined} />
             {r.is_sample && <SampleBadge />}
-          </h1>
-          <p className="mt-1 text-[13px] text-ink-3">Submitted {formatDateTime(r.created_at)}</p>
-        </div>
-        <ReviewActions report={r} onDone={refresh} />
-      </header>
+          </>
+        }
+        actions={<ReviewActions report={r} onDone={refresh} />}
+      />
 
       {r.incident && (
-        <Callout tone="success" className="mb-5" title={<>Linked to <Link href={`/review/incidents/${r.incident.id}`} className="underline">{r.incident.reference} · {r.incident.title}</Link></>}
+        <Callout tone="success" className="mb-6" title={<>Linked to <Link href={`/review/incidents/${r.incident.id}`} className="underline">{r.incident.reference} · {r.incident.title}</Link></>}
           action={<IncidentStatusBadge status={r.incident.status} />}>
           This report’s evidence is preserved and listed on the incident.
         </Callout>
@@ -113,8 +112,8 @@ export function ReportWorkspace() {
                 </Button>
               }
             />
-            <CardBody className="p-0 sm:p-0">
-              {!duplicates.data && <div className="p-4"><Skeleton className="h-16" /></div>}
+            <div>
+              {!duplicates.data && <div className="p-5"><Skeleton className="h-16" /></div>}
               {duplicates.data?.length === 0 && (
                 <EmptyState icon={<GitMerge className="size-5" />} title="No likely duplicates" className="py-8">
                   {r.location ? "No similar reports nearby in the last 45 days." : "Without a location, only reports with very similar wording are compared."}
@@ -123,7 +122,7 @@ export function ReportWorkspace() {
               <ul className="divide-y divide-line">
                 {duplicates.data?.map((s) => (
                   <li key={s.id}>
-                    <Link href={`/review/duplicates/${s.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-paper sm:px-5">
+                    <Link href={`/review/duplicates/${s.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-paper">
                       <Thumb media={s.candidate.thumbnail} className="size-14" />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -142,7 +141,7 @@ export function ReportWorkspace() {
                   </li>
                 ))}
               </ul>
-            </CardBody>
+            </div>
           </Card>
 
           <Card>
@@ -166,7 +165,7 @@ export function ReportWorkspace() {
           <JobsCard report={r} />
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
 
@@ -179,7 +178,7 @@ function ReviewActions({ report, onDone }: { report: ReportDetail; onDone: (r?: 
   const [error, setError] = useState<string | null>(null);
   const can = (a: string) => report.allowed_actions.includes(a);
   const defaultTitle = report.hazard_category
-    ? `${CATEGORY_LABEL[report.hazard_category]}${report.location_note ? ` — ${report.location_note}` : ""}`
+    ? `${CATEGORY_LABEL[report.hazard_category]}${report.location_note ? ` at ${report.location_note}` : ""}`
     : "";
 
   async function run(action: "confirm_incident" | "reject" | "reopen") {
@@ -258,9 +257,9 @@ function CategoryCorrection({ report, onDone }: { report: ReportDetail; onDone: 
       <CardHeader title="Hazard category" description="Correct the category if the resident or the model got it wrong. The original values are kept." />
       <CardBody className="space-y-3">
         <dl className="grid grid-cols-3 gap-2 text-[13px]">
-          <div><dt className="text-ink-3">Resident</dt><dd>{report.reporter_category ? CATEGORY_LABEL[report.reporter_category] : "—"}</dd></div>
-          <div><dt className="text-ink-3">Model</dt><dd>{report.ai_category ? CATEGORY_LABEL[report.ai_category] : "—"}</dd></div>
-          <div><dt className="text-ink-3">Reviewer</dt><dd>{report.reviewer_category ? CATEGORY_LABEL[report.reviewer_category] : "—"}</dd></div>
+          <div><dt className="text-ink-3">Resident</dt><dd>{report.reporter_category ? CATEGORY_LABEL[report.reporter_category] : "Not set"}</dd></div>
+          <div><dt className="text-ink-3">Model</dt><dd>{report.ai_category ? CATEGORY_LABEL[report.ai_category] : "Not set"}</dd></div>
+          <div><dt className="text-ink-3">Reviewer</dt><dd>{report.reviewer_category ? CATEGORY_LABEL[report.reviewer_category] : "Not set"}</dd></div>
         </dl>
         <div className="flex gap-2">
           <Select value={value} onChange={(e) => setValue(e.target.value as HazardCategory)} aria-label="Corrected category">
@@ -294,14 +293,15 @@ function CategoryCorrection({ report, onDone }: { report: ReportDetail; onDone: 
 }
 
 function JobsCard({ report }: { report: ReportDetail }) {
-  if (report.jobs.length === 0) return null;
+  // Finished jobs are already in the audit trail; this card only appears when there is something to watch or fix.
+  if (report.jobs.every((j) => j.status === "succeeded")) return null;
   const label = { analyze_report: "Muse Spark analysis", segment_image: "SAM 3.1 segmentation", match_duplicates: "Duplicate matching" } as const;
   return (
     <Card>
       <CardHeader title="Processing jobs" description="Persistent queue; failed jobs retry with backoff." />
       <ul className="divide-y divide-line text-[13px]">
         {report.jobs.map((j) => (
-          <li key={j.id} className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5">
+          <li key={j.id} className="flex items-center justify-between gap-3 px-5 py-3">
             <span>{label[j.kind]}</span>
             <span className="text-right text-ink-3">
               <span className={j.status === "failed" ? "text-danger" : j.status === "succeeded" ? "text-accent-ink" : ""}>{j.status}</span>

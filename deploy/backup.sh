@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Nightly backup: PostgreSQL (custom-format dump) + uploaded media (tar.gz).
 #   crontab -e  →  15 2 * * * /opt/mtaasense/deploy/backup.sh >> /var/log/mtaasense-backup.log 2>&1
-# Copy BACKUP_DIR off the server (e.g. rclone to object storage) — a backup on the same disk is not a backup.
+# Copy BACKUP_DIR off the server (e.g. rclone to object storage). A backup on the same disk is not a backup.
 set -euo pipefail
 
 cd "$(dirname "$0")"

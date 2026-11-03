@@ -32,7 +32,7 @@ from app.services.review import create_incident_from
 
 IMAGES = Path(__file__).resolve().parent / "images"
 SEEDER_EMAIL = "sample-seeder@mtaasense.invalid"
-ILLUSTRATIVE = "Illustrative location — sample photo taken in {where}"
+ILLUSTRATIVE = "Illustrative location: sample photo taken in {where}"
 
 
 @dataclass(frozen=True)
@@ -220,7 +220,7 @@ def seed() -> list[uuid.UUID]:
             report.created_at = when
             job.run_after = datetime.now(UTC) + timedelta(seconds=len(created) * 2)  # gentle on rate limits
             created.append(report.id)
-            print(f"seeded {report.reference} {sample.slug} — {sources[sample.slug]['license']}")
+            print(f"seeded {report.reference} {sample.slug} ({sources[sample.slug]['license']})")
     return created
 
 

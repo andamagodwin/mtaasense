@@ -76,7 +76,7 @@ export function AnalysisCard({ report }: { report: ReportDetail }) {
               ))}
             </Row>
           )}
-          <View className="flex-row items-center gap-1.5 border-t border-line px-4 py-2.5">
+          <View className="flex-row items-center gap-1.5 border-t border-line px-4 py-3">
             <Sparkles size={12} color={colors.ink[3]} />
             <Text className="text-[12px] text-ink-3">
               Muse Spark’s reading is a suggestion; a person reviews every report.

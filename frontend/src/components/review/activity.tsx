@@ -85,7 +85,7 @@ const ACTION_LABEL: Record<string, string> = {
 
 function describe(e: AuditView): string | null {
   const d = e.data as Record<string, unknown>;
-  if (e.action === "category_corrected") return `${String(d.from ?? "—")} → ${String(d.to)}`;
+  if (e.action === "category_corrected") return `${String(d.from ?? "not set")} → ${String(d.to)}`;
   if (e.action === "duplicates_matched") return `${String(d.retrieved)} candidates retrieved, ${String(d.suggested)} suggested`;
   if (e.action === "analysis_completed") return `${String(d.provenance)} · ${String(d.model)}`;
   if (e.action === "segmentation_completed") return `“${String(d.prompt)}” · ${String(d.regions)} region(s) · ${String(d.provenance)}`;

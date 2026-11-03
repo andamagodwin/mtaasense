@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CategoryDot, StatusBadge } from '@/components/badges';
 import { Button } from '@/components/ui/Button';
+import { ScreenHeader } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
 import { api, mediaUrl } from '@/lib/api';
 import { CATEGORY_LABEL, timeAgo } from '@/lib/format';
@@ -52,7 +53,7 @@ export default function MyReportsScreen() {
       <FlatList
         data={receipts}
         keyExtractor={(r) => r.id}
-        contentContainerClassName="gap-2.5 px-4 pb-8 pt-3"
+        contentContainerClassName="gap-3 px-4 pb-8 pt-4"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -64,11 +65,11 @@ export default function MyReportsScreen() {
           />
         }
         ListHeaderComponent={
-          <View className="mb-2 gap-1">
-            <Text className="font-bold text-[28px] tracking-tight">My reports</Text>
-            <Text className="text-[14.5px] leading-[21px] text-ink-2">
-              Reports sent from this phone. Only you and MtaaSense reviewers can see your photos.
-            </Text>
+          <View className="mb-3">
+            <ScreenHeader
+              title="My reports"
+              description="Reports sent from this phone. Only you and MtaaSense reviewers can see your photos."
+            />
           </View>
         }
         ListEmptyComponent={loaded ? <Empty /> : undefined}
@@ -83,7 +84,7 @@ function ReceiptRow({ receipt, thumbnail }: { receipt: Receipt; thumbnail: Media
     <Pressable
       accessibilityRole="button"
       onPress={() => router.push({ pathname: '/reports/[id]', params: { id: receipt.id } })}
-      className="flex-row items-center gap-3 rounded-[14px] border border-line bg-surface p-3 active:bg-sunken">
+      className="flex-row items-center gap-3 rounded-[14px] border border-line bg-surface px-4 py-3 active:bg-sunken">
       <View className="size-16 items-center justify-center overflow-hidden rounded-[10px] bg-sunken">
         {thumbnail ? (
           <Image
@@ -114,7 +115,7 @@ function ReceiptRow({ receipt, thumbnail }: { receipt: Receipt; thumbnail: Media
 
 function Empty() {
   return (
-    <View className="items-center gap-3 rounded-[14px] border border-dashed border-line-strong px-6 py-10">
+    <View className="items-center gap-3 rounded-[14px] border border-dashed border-line-strong px-4 py-10">
       <View className="size-12 items-center justify-center rounded-full bg-sunken">
         <Inbox size={22} color={colors.ink[3]} />
       </View>

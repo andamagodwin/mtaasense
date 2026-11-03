@@ -22,7 +22,7 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 
-# Uploaded user media and local data — never commit
+# Uploaded user media and local data: never commit
 media/
 backend/media/
 backups/

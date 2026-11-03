@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, CheckCircle2, RotateCcw, Save } from "lucide-react";
+import { ArrowRight, CheckCircle2, RotateCcw, Save } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -15,6 +15,7 @@ import { Card, CardBody, CardHeader, KeyValue } from "../ui/card";
 import { Dialog } from "../ui/dialog";
 import { Callout, Skeleton } from "../ui/feedback";
 import { Field, Input, Select, Textarea } from "../ui/field";
+import { Page, PageHeader } from "../ui/page";
 import { AuditTrail, NotesPanel } from "./activity";
 import { Thumb } from "./thumb";
 
@@ -24,8 +25,8 @@ export function IncidentWorkspace() {
   const incident = useApi(() => api.incident(id), session.allowed ? id : null);
   const [auditKey, setAuditKey] = useState(0);
 
-  if (incident.error) return <div className="mx-auto max-w-xl px-4 py-16"><Callout tone="danger">{incident.error.message}</Callout></div>;
-  if (!incident.data) return <div className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6"><Skeleton className="h-[600px]" /></div>;
+  if (incident.error) return <Page width="narrow"><Callout tone="danger">{incident.error.message}</Callout></Page>;
+  if (!incident.data) return <Page><Skeleton className="h-[600px]" /></Page>;
   const inc = incident.data;
   const done = (next: IncidentDetail) => {
     incident.setData(next);
@@ -33,24 +34,22 @@ export function IncidentWorkspace() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 sm:py-8">
-      <Link href="/review?tab=incidents" className="mb-4 inline-flex items-center gap-1 text-[13px] text-ink-3 hover:text-ink">
-        <ArrowLeft className="size-3.5" /> Incidents
-      </Link>
-      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="font-mono text-[13px] text-ink-3">{inc.reference}</p>
-          <h1 className="mt-0.5 text-[24px] font-semibold tracking-tight">{inc.title}</h1>
-          <div className="mt-2 flex flex-wrap gap-1.5">
+    <Page>
+      <PageHeader
+        back={{ href: "/review?tab=incidents", label: "Incidents" }}
+        meta={<span className="font-mono">{inc.reference}</span>}
+        title={inc.title}
+        description={
+          <span className="mt-1 flex flex-wrap gap-1.5">
             <IncidentStatusBadge status={inc.status} />
             <CategoryBadge category={inc.hazard_category} />
             <PriorityBadge priority={inc.priority} />
             <SeverityBadge severity={inc.severity} />
             {inc.is_sample && <SampleBadge />}
-          </div>
-        </div>
-        <StatusAction incident={inc} onDone={done} />
-      </header>
+          </span>
+        }
+        actions={<StatusAction incident={inc} onDone={done} />}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="space-y-6">
@@ -59,7 +58,7 @@ export function IncidentWorkspace() {
             <ul className="divide-y divide-line">
               {inc.reports?.map((r) => (
                 <li key={r.id}>
-                  <Link href={`/review/reports/${r.id}`} className="flex items-center gap-4 px-4 py-3 hover:bg-paper sm:px-5">
+                  <Link href={`/review/reports/${r.id}`} className="flex items-center gap-4 px-5 py-3 hover:bg-paper">
                     <Thumb media={r.thumbnail} className="size-20" />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -96,8 +95,8 @@ export function IncidentWorkspace() {
             <CardBody className="space-y-4">
               {inc.summary && <p className="text-[14px] leading-relaxed text-ink-2">{inc.summary}</p>}
               <dl className="grid grid-cols-2 gap-3">
-                <KeyValue label="First reported">{inc.first_reported_at ? formatDateTime(inc.first_reported_at) : "—"}</KeyValue>
-                <KeyValue label="Latest report">{inc.last_reported_at ? formatDateTime(inc.last_reported_at) : "—"}</KeyValue>
+                <KeyValue label="First reported">{inc.first_reported_at ? formatDateTime(inc.first_reported_at) : "None"}</KeyValue>
+                <KeyValue label="Latest report">{inc.last_reported_at ? formatDateTime(inc.last_reported_at) : "None"}</KeyValue>
                 <KeyValue label="Location">{inc.location ? <span className="font-mono text-[12.5px]">{formatCoords(inc.location.lat, inc.location.lon)}</span> : "Unknown"}</KeyValue>
                 <KeyValue label="Created">{formatDateTime(inc.created_at)}</KeyValue>
               </dl>
@@ -111,7 +110,7 @@ export function IncidentWorkspace() {
           <AuditTrail kind="incident" id={inc.id} refreshKey={auditKey} />
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
 
@@ -145,7 +144,7 @@ function StatusAction({ incident, onDone }: { incident: IncidentDetail; onDone: 
         open={open}
         onClose={() => setOpen(false)}
         title="Mark this incident resolved"
-        description="Only mark it resolved when you have evidence that the hazard was fixed — never on the basis of an AI assessment."
+        description="Only mark it resolved when you have evidence that the hazard was fixed, never on the basis of an AI assessment."
         footer={<><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => void change("resolved")} loading={busy} disabled={!note.trim()}>Mark resolved</Button></>}
       >
         <Field label="How was the resolution confirmed?" htmlFor="res-note">

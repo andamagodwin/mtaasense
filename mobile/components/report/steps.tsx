@@ -64,7 +64,7 @@ export function PhotoStep({
       ) : photo ? (
         <View className="overflow-hidden rounded-xl border border-line">
           <PhotoPreview photo={photo} maxHeight={420} />
-          <View className="flex-row items-center justify-between bg-surface px-3 py-2">
+          <View className="flex-row items-center justify-between bg-surface px-4 py-2">
             <Text className="text-[13px] text-ink-2">
               {photo.width} × {photo.height}
             </Text>
@@ -168,6 +168,14 @@ export function DescribeStep({
       <StepTitle>What did you see?</StepTitle>
       <View className="gap-2">
         <Text className="font-semibold text-[14px]">Type of problem</Text>
+        {/* The default comes first, so most people can skip this choice entirely. */}
+        <CategoryTile
+          selected={category === 'auto'}
+          onPress={() => onCategory('auto')}
+          title="Not sure"
+          hint="Let Muse Spark suggest a category"
+          mark={<Sparkles size={14} color={colors.accent.DEFAULT} />}
+        />
         {CATEGORIES.map((c) => (
           <CategoryTile
             key={c}
@@ -178,13 +186,6 @@ export function DescribeStep({
             mark={<CategoryDot category={c} size={10} />}
           />
         ))}
-        <CategoryTile
-          selected={category === 'auto'}
-          onPress={() => onCategory('auto')}
-          title="Not sure"
-          hint="Let Muse Spark suggest a category"
-          mark={<Sparkles size={14} color={colors.accent.DEFAULT} />}
-        />
       </View>
       <Field
         label="Description"
@@ -230,7 +231,7 @@ function CategoryTile({
       accessibilityState={{ selected }}
       onPress={onPress}
       className={cn(
-        'flex-row items-center gap-3 rounded-xl border px-3.5 py-3',
+        'flex-row items-center gap-3 rounded-xl border px-4 py-3',
         selected ? 'border-accent bg-accent-soft' : 'border-line-strong bg-surface active:bg-sunken'
       )}>
       <View className="size-4 items-center justify-center">{mark}</View>
@@ -419,7 +420,7 @@ function ReviewRow({
   onEdit: () => void;
 }) {
   return (
-    <View className="flex-row items-start gap-3 border-t border-line px-3.5 py-3">
+    <View className="flex-row items-start gap-3 border-t border-line px-4 py-3">
       <Text className="w-24 text-[14px] text-ink-3">{label}</Text>
       <View className="flex-1 gap-0.5">{children}</View>
       <Pressable

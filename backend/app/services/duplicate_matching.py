@@ -7,7 +7,7 @@ computed from only the signals that actually exist.
 Stage 2 (optional, model-assisted): Muse Spark looks at the source photo next to the top
 candidates' photos and returns a verdict per candidate. Candidates are given opaque labels
 (C1, C2, ...) constrained by a JSON-schema enum; every label returned is checked against
-the list we sent. Nothing is merged automatically — a reviewer decides.
+the list we sent. Nothing is merged automatically; a reviewer decides.
 """
 
 import logging
@@ -261,7 +261,8 @@ For each candidate, compare visible features: the shape and extent of the damage
 edges and markings, kerbs, drains, walls, buildings, vegetation, poles and other landmarks, and \
 viewing angle. Being the same category or nearby is not enough to call two reports the same. Use \
 "insufficient_evidence" when the photos do not show enough to judge. Return exactly one comparison \
-per candidate label you were given, and only those labels."""
+per candidate label you were given, and only those labels. Write plain sentences without em dashes; \
+use commas, colons or full stops instead."""
 
 
 def _assessment_schema(labels: list[str]) -> dict[str, Any]:
@@ -314,7 +315,7 @@ def _assess_with_model(source_id: uuid.UUID, candidate_ids: list[uuid.UUID], job
             )
         }
         content: list[dict[str, Any]] = [
-            {"type": "input_text", "text": f"Source report S — {_describe(source)}. Photo of S:"},
+            {"type": "input_text", "text": f"Source report S: {_describe(source)}. Photo of S:"},
             {"type": "input_image", "image_url": image_data_url(source.display_image, 1024)[0]},
         ]
         for label, cid in label_to_id.items():
@@ -326,7 +327,7 @@ def _assess_with_model(source_id: uuid.UUID, candidate_ids: list[uuid.UUID], job
                 {
                     "type": "input_text",
                     "text": (
-                        f"Candidate {label} — {dist}; submitted {sig['hours_apart']:.0f} h apart; {_describe(cand)}. "
+                        f"Candidate {label}: {dist}; submitted {sig['hours_apart']:.0f} h apart; {_describe(cand)}. "
                         f"Photo of {label}:"
                     ),
                 }

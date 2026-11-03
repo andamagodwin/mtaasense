@@ -17,4 +17,4 @@ read -r -p "This replaces the live database and media with $DB_DUMP. Type 'resto
 "${COMPOSE[@]}" exec -T db pg_restore -U mtaasense -d mtaasense --no-owner < "$DB_DUMP"
 "${COMPOSE[@]}" run --rm --no-deps -T --entrypoint sh api -c 'rm -rf /data/media/* && tar -C /data -xzf -' < "$MEDIA_TAR"
 "${COMPOSE[@]}" up -d api worker
-echo "restore complete — check: curl -fsS https://\$API_DOMAIN/ready"
+echo "restore complete; check: curl -fsS https://\$API_DOMAIN/ready"

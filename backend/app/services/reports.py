@@ -1,4 +1,4 @@
-"""Report intake: validate, store evidence, persist, queue processing — in one short transaction."""
+"""Report intake: validate, store evidence, persist and queue processing in one short transaction."""
 
 import uuid
 from dataclasses import dataclass

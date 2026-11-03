@@ -28,7 +28,7 @@
   --color-info: #355f93;
   --color-info-soft: #e5edf6;
 
-  /* Hazard categories — used consistently on badges, map markers and overlays. */
+  /* Hazard categories, used consistently on badges, map markers and overlays. */
   --color-cat-pothole: #b4562f;
   --color-cat-road: #8a6a3c;
   --color-cat-drain: #2b6f78;

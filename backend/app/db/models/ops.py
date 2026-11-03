@@ -25,7 +25,7 @@ class ProcessingJob(UUIDPk, Timestamps, Base):
     run_after: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, server_default=func.now())
     locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     locked_by: Mapped[str | None] = mapped_column(String(64))
-    # Safe, user-presentable classification only — never raw provider messages.
+    # Safe, user-presentable classification only, never raw provider messages.
     error_code: Mapped[str | None] = mapped_column(String(64))
     error_detail: Mapped[str | None] = mapped_column(Text)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

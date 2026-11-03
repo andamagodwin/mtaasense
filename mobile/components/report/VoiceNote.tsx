@@ -133,7 +133,7 @@ export function VoiceNote({
 
   if (value) {
     return (
-      <View className="gap-3 rounded-xl border border-line bg-surface p-3">
+      <View className="gap-3 rounded-xl border border-line bg-surface p-4">
         <View className="flex-row items-center gap-3">
           <Playback uri={value.uri} durationMs={value.durationMs} />
           <Button

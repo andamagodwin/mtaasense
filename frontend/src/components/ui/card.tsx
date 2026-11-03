@@ -24,7 +24,7 @@ export function CardHeader({
   className?: string;
 }) {
   return (
-    <header className={clsx("flex items-start justify-between gap-3 border-b border-line px-4 py-3.5 sm:px-5", className)}>
+    <header className={clsx("flex items-start justify-between gap-3 border-b border-line px-5 py-4", className)}>
       <div className="min-w-0">
         {eyebrow && <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">{eyebrow}</p>}
         <h2 className="text-[15px] font-semibold leading-snug text-ink">{title}</h2>
@@ -36,7 +36,7 @@ export function CardHeader({
 }
 
 export function CardBody({ className, ...rest }: ComponentProps<"div">) {
-  return <div className={clsx("px-4 py-4 sm:px-5", className)} {...rest} />;
+  return <div className={clsx("p-5", className)} {...rest} />;
 }
 
 export function KeyValue({ label, children, className }: { label: string; children: ReactNode; className?: string }) {

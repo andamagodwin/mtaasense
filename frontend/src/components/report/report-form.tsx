@@ -14,6 +14,7 @@ import { LocationPicker } from "../map/location-picker";
 import { Button } from "../ui/button";
 import { Callout, ProgressBar } from "../ui/feedback";
 import { Field, Input, Textarea } from "../ui/field";
+import { Page, PageHeader } from "../ui/page";
 import { VoiceNote, type VoiceNoteValue } from "./voice-note";
 
 const STEPS = ["Photo", "Describe", "Location", "Review"] as const;
@@ -49,7 +50,6 @@ export function ReportForm() {
   const idempotencyKey = useRef<string | null>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
   const galleryInput = useRef<HTMLInputElement>(null);
-  const top = useRef<HTMLDivElement>(null);
 
   useEffect(() => () => void (photo && URL.revokeObjectURL(photo.url)), [photo]);
 
@@ -101,7 +101,7 @@ export function ReportForm() {
 
   function go(next: number) {
     setStep(next);
-    top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function submit() {
@@ -131,19 +131,14 @@ export function ReportForm() {
       const created = await api.submitReport(form, idempotencyKey.current, setProgress);
       router.push(`/track/${created.id}#${created.receipt_token}`);
     } catch (err) {
-      setSubmitError(err instanceof ApiError ? err.message : "Submitting failed. Your report is still here — try again.");
+      setSubmitError(err instanceof ApiError ? err.message : "Submitting failed. Your report is still here, so try again.");
       setSubmitting(false);
     }
   }
 
   return (
-    <div ref={top} className="mx-auto w-full max-w-xl scroll-mt-20 px-4 pb-28 pt-6 sm:pt-10">
-      <div className="mb-6">
-        <h1 className="text-[26px] font-semibold tracking-tight">Report a hazard</h1>
-        <p className="mt-1 text-[14.5px] leading-relaxed text-ink-2">
-          A photo and a few words are enough. Voice notes and location are optional.
-        </p>
-      </div>
+    <Page width="narrow" className="pb-28 sm:pb-10">
+      <PageHeader title="Report a hazard" description="A photo and a few words are enough. Voice notes and location are optional." />
 
       <ol className="mb-6 grid grid-cols-4 gap-1.5" aria-label="Progress">
         {STEPS.map((label, i) => (
@@ -213,10 +208,8 @@ export function ReportForm() {
             <h2 id="describe-heading" className="text-[17px] font-semibold">What did you see?</h2>
             <fieldset>
               <legend className="mb-2 text-sm font-medium">Type of problem</legend>
+              {/* The default comes first, so most people can skip this choice entirely. */}
               <div className="grid gap-2 sm:grid-cols-2">
-                {CATEGORIES.map((c) => (
-                  <CategoryTile key={c} selected={category === c} onClick={() => setCategory(c)} title={CATEGORY_LABEL[c]} hint={CATEGORY_HINT[c]} dot={<CategoryDot category={c} className="size-2.5" />} />
-                ))}
                 <CategoryTile
                   selected={category === "auto"}
                   onClick={() => setCategory("auto")}
@@ -225,6 +218,9 @@ export function ReportForm() {
                   dot={<Sparkles className="size-3.5 text-accent" />}
                   className="sm:col-span-2"
                 />
+                {CATEGORIES.map((c) => (
+                  <CategoryTile key={c} selected={category === c} onClick={() => setCategory(c)} title={CATEGORY_LABEL[c]} hint={CATEGORY_HINT[c]} dot={<CategoryDot category={c} className="size-2.5" />} />
+                ))}
               </div>
             </fieldset>
             <Field label="Description" htmlFor="description" hint={`${textLength}/2000 · e.g. how big it is, how long it has been there, who it affects.`}>
@@ -250,7 +246,7 @@ export function ReportForm() {
             <div>
               <h2 id="location-heading" className="text-[17px] font-semibold">Where is it?</h2>
               <p className="mt-1 text-[13.5px] leading-relaxed text-ink-3">
-                Tap the map at the hazard, or use your device location if you’re standing at it. You can skip this — the
+                Tap the map at the hazard, or use your device location if you’re standing at it. You can skip this; the
                 report will be kept in the unlocated list.
               </p>
             </div>
@@ -271,7 +267,7 @@ export function ReportForm() {
               context={known.data}
               className="h-[320px] overflow-hidden rounded-xl border border-line"
             />
-            <p className="text-[12px] text-ink-3">Faint dots are hazards others have already reported — reporting the same one again still helps.</p>
+            <p className="text-[12px] text-ink-3">Faint dots are hazards others have already reported. Reporting the same one again still helps.</p>
             <p className="flex items-center gap-1.5 text-[13px] text-ink-2">
               <MapPin className="size-4 text-ink-3" />
               {location
@@ -292,7 +288,7 @@ export function ReportForm() {
               <img src={photo.url} alt="Photo to submit" className="max-h-64 w-full bg-[#16140f] object-contain" />
               <dl className="divide-y divide-line text-sm">
                 <ReviewRow label="Type" onEdit={() => go(1)}>
-                  {category === "auto" ? "Not sure — AI will suggest" : CATEGORY_LABEL[category]}
+                  {category === "auto" ? "Not sure, AI will suggest" : CATEGORY_LABEL[category]}
                 </ReviewRow>
                 <ReviewRow label="Description" onEdit={() => go(1)}>
                   {description.trim() || <span className="text-ink-3">None</span>}
@@ -343,7 +339,7 @@ export function ReportForm() {
           )}
         </div>
       </div>
-    </div>
+    </Page>
   );
 }
 
@@ -372,7 +368,7 @@ function CategoryTile({ selected, onClick, title, hint, dot, className }: {
 
 function ReviewRow({ label, children, onEdit }: { label: string; children: React.ReactNode; onEdit: () => void }) {
   return (
-    <div className="flex items-start gap-3 px-3.5 py-2.5">
+    <div className="flex items-start gap-3 px-5 py-3">
       <dt className="w-24 shrink-0 text-ink-3">{label}</dt>
       <dd className="min-w-0 flex-1 break-words text-ink">{children}</dd>
       <button type="button" onClick={onEdit} className="text-ink-3 hover:text-ink" aria-label={`Edit ${label.toLowerCase()}`}>

@@ -39,7 +39,7 @@ def _key(purpose: str) -> bytes:
 
 
 def fingerprint(value: str) -> str:
-    """Keyed hash of a client identifier (IP) — lets us rate-limit without storing IPs."""
+    """Keyed hash of a client identifier (IP), so we can rate-limit without storing IPs."""
     return hmac.new(_key("fingerprint"), value.encode(), hashlib.sha256).hexdigest()
 
 

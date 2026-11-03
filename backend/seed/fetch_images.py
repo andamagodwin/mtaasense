@@ -77,7 +77,7 @@ def main() -> None:
                 "original_size": [ii["width"], ii["height"]],
                 "rendition": "1600px-wide rendition served by Wikimedia Commons",
             }
-            print(f"{slug}: {sources[slug]['license']} — {sources[slug]['author']}")
+            print(f"{slug}: {sources[slug]['license']}, {sources[slug]['author']}")
     (OUT / "sources.json").write_text(json.dumps(sources, indent=2, ensure_ascii=False) + "\n")
 
 

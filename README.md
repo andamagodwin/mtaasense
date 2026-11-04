@@ -418,7 +418,7 @@ The API runs at **<https://api.mtaasense.com>** from `/opt/mtaasense` on the VPS
 app whose Caddy owns ports 80/443, so this stack publishes **no ports at all**. Instead, `cloudflared` holds an
 outbound [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/)
 (`mtaasense-api`). Cloudflare terminates HTTPS for `api.mtaasense.com` and forwards requests through the tunnel to
-Caddy on the stack's internal network. Caddy keeps the 20 MB body limit, the timeouts and the JSON access logs,
+Caddy on the stack's internal network. Caddy keeps the 55 MB body limit, the timeouts and the JSON access logs,
 then hands requests to the API. PostgreSQL is reachable only on the internal network.
 
 One-time Cloudflare setup, already done for this deployment (run from `frontend/`, where the `cf` CLI is

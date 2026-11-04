@@ -6,9 +6,9 @@
 :80 {
 	encode zstd gzip
 
-	# Photos are ≤15 MB and voice notes ≤12 MB; leave headroom for multipart overhead.
+	# Photos are ≤15 MB, voice notes ≤12 MB and clips ≤50 MB; leave headroom for multipart overhead.
 	request_body {
-		max_size 20MB
+		max_size 55MB
 	}
 
 	# The API docs and admin routes are protected by the app itself; only the API is exposed here.

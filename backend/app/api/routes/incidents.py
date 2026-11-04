@@ -98,7 +98,7 @@ async def check_incident_fix(
     check, _ = create_fix_check(db, incident, data, before=before, fingerprint=fp, user=user, note=note)
     db.commit()
     db.refresh(check)
-    return fix_check_view(check)
+    return fix_check_view(db, check, reviewer=True)
 
 
 @router.get("/incidents/{incident_id}/notes", response_model=list[NoteView])

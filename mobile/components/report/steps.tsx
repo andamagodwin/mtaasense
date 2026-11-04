@@ -112,7 +112,8 @@ export function PhotoStep({
       )}
       {error && <Callout tone="danger">{error}</Callout>}
       <Text className="text-[12.5px] leading-[18px] text-ink-3">
-        Tip: step back so the surroundings are visible, and avoid capturing faces or number plates.
+        Tip: step back so the surroundings are visible. Faces and number plates are blurred
+        automatically before anyone else sees your photo.
       </Text>
     </View>
   );

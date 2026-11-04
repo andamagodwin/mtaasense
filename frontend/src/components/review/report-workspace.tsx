@@ -82,15 +82,19 @@ export function ReportWorkspace() {
           <Card>
             <CardHeader title="Photo evidence" description="Original submission with SAM 3.1 segmentation. Toggle the overlay to inspect the untouched photo." />
             <CardBody>
-              <SegmentationViewer
-                image={r.image}
-                original={r.original_image}
-                segmentations={r.segmentations}
-                concepts={config.data?.segmentation_concepts ?? []}
-                suggestedConcept={r.analysis.result?.segmentation_concept}
-                canRequest
-                onRequest={requestSegment}
-              />
+              {r.image ? (
+                <SegmentationViewer
+                  image={r.image}
+                  original={r.original_image ?? undefined}
+                  segmentations={r.segmentations}
+                  concepts={config.data?.segmentation_concepts ?? []}
+                  suggestedConcept={r.analysis.result?.segmentation_concept}
+                  canRequest
+                  onRequest={requestSegment}
+                />
+              ) : (
+                <Callout tone="warn" title="Photo unavailable">The evidence photo couldn’t be loaded.</Callout>
+              )}
             </CardBody>
           </Card>
           <Card>

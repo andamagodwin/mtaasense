@@ -17,6 +17,7 @@ from app.db.models.enums import (
     ModelVerdict,
     Priority,
     Provenance,
+    RedactionStatus,
     ReportStatus,
     SegmentationStatus,
     Severity,
@@ -77,7 +78,10 @@ class SegmentationView(Out):
 
 
 class FixImageView(BaseModel):
-    image: MediaRef
+    # None while the privacy blur is still running; clients show a placeholder and poll.
+    image: MediaRef | None
+    # True when the URL serves the face/plate-blurred copy rather than the display image.
+    redacted: bool = False
     # SAM outline of the check's concept on this photo, in the photo's pixel frame.
     regions: list[SegmentationRegion] | None = None
     width: int | None = None
@@ -160,8 +164,13 @@ class ReportDetail(ReportSummary):
     voice_transcript: str | None
     voice_transcript_machine: str | None
     location_accuracy_m: float | None
-    image: MediaRef
-    original_image: MediaRef
+    # What this viewer may see: reviewers get the display image; residents get the blurred copy
+    # once ready, the display image when AI is unavailable, or nothing while the blur runs.
+    image: MediaRef | None
+    # Reviewers only; the original stays private.
+    original_image: MediaRef | None
+    redacted: bool = False
+    redaction_status: RedactionStatus | None = None
     audio: MediaRef | None
     analysis: AnalysisView
     segmentations: list[SegmentationView]

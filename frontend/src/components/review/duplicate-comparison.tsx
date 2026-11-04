@@ -90,7 +90,7 @@ function Side({ label, tone, report, summary }: { label: string; tone: "accent" 
         action={<CategoryBadge category={summary.hazard_category} />}
       />
       <CardBody>
-        {report ? (
+        {report?.image ? (
           <SegmentationViewer image={report.image} segmentations={report.segmentations} concepts={[]} canRequest={false} imageClassName="max-h-[480px]" />
         ) : (
           <Skeleton className="aspect-[4/3] w-full" />

@@ -21,7 +21,8 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 | Muse Voice Transcribe (`muse-voice-transcribe-1.0`, `/v1/asr/transcribe`) | **Verified live (English, 1 synthetic clip)** | Not tested on real Ugandan speakers or Luganda |
 | Model-assisted duplicate comparison (Muse Spark, two+ images) | **Verified live** | Labels restricted to backend-supplied IDs |
 | Repair checks (Muse Spark before/after + SAM 3.1 on both photos) | **Verified live (2 pairs)** | Same photo resent: *same spot, not repaired*; another street: *different spot*. No real repaired pair tested yet |
-| Backend tests | **52 passing** | `uv run pytest` (real PostGIS, mocked Meta transport) |
+| Privacy blur (SAM 3.1 faces/plates + local Gaussian blur) | **Verified live** | 4/4 faces and 1/1 plate blurred on seed photos; alignment checked visually |
+| Backend tests | **66 passing** | `uv run pytest` (real PostGIS, mocked Meta transport) |
 | Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build && pnpm build:vinext` |
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
 | Backend on the Contabo VPS | **Deployed** at <https://api.mtaasense.com> | Docker Compose behind a Cloudflare Tunnel (the VPS's ports 80/443 belong to another app); `/ready` reports database, migrations, media and model API OK |
@@ -37,29 +38,32 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
    after an explicit tap), review, submit. Large photos are downscaled in the browser; the uploaded file is kept
    as the original evidence. No location? The report is kept and listed as *unlocated*; we never invent
    coordinates.
-2. **Analyse**: a persistent job runs Muse Spark on the photo + resident text. The structured result tags every
+2. **Blur**: alongside analysis, SAM 3.1 finds faces and number plates and a local Gaussian blur is
+   composited over them into a stored copy. Non-reviewers only ever see the blurred copy; the original stays
+   private for reviewers. The blur is plain pixel math, so it cannot invent content.
+3. **Analyse**: a persistent job runs Muse Spark on the photo + resident text. The structured result tags every
    observation as *visible in photo*, *stated by resident*, or both; gives a preliminary severity with rationale,
    uncertainties, missing information, a description/photo consistency check and a suggested SAM concept.
-3. **Segment**: SAM 3.1 outlines the suggested concept (pothole, damaged road surface, drainage channel,
+4. **Segment**: SAM 3.1 outlines the suggested concept (pothole, damaged road surface, drainage channel,
    standing water, puddle). Masks are rendered as SVG over the original photo; reviewers can toggle the
    overlay, show boxes, change opacity, and request other concepts. Results are cached per (image, concept).
-4. **Match**: PostGIS retrieves nearby reports of the same hazard family within a time window, scores them on
+5. **Match**: PostGIS retrieves nearby reports of the same hazard family within a time window, scores them on
    signals that actually exist (distance, category, trigram text similarity, time gap), and, when it helps,
    Muse Spark compares the photos. Nothing is merged automatically.
-5. **Review** (`/review`): dashboard counts from the database, review queue, duplicate comparisons side by side
+6. **Review** (`/review`): dashboard counts from the database, review queue, duplicate comparisons side by side
    (photos, overlays, mini-map, per-signal evidence, model verdict), confirm/reject/defer, category corrections,
    incident lifecycle (resolving requires a written note), reviewer notes and an append-only audit trail.
-6. **Map** (`/map`): canonical incidents (filled, sized by report count) and unreviewed reports (hollow) on an
+7. **Map** (`/map`): canonical incidents (filled, sized by report count) and unreviewed reports (hollow) on an
    OpenFreeMap/MapLibre map with category/status filters and an accessible list.
-7. **Track** (`/track/{id}#token`): the resident's receipt page with live processing status. The receipt token is
-   in the URL fragment, so it never appears in server logs.
-8. **Repair check**: once a report is part of a confirmed incident, the resident (from their tracking page or
+8. **Track** (`/track/{id}#token`): the resident's receipt page with live processing status and their photo,
+   faces and plates blurred. The receipt token is in the URL fragment, so it never appears in server logs.
+9. **Repair check**: once a report is part of a confirmed incident, the resident (from their tracking page or
    the app) or a reviewer sends a new photo of the spot. Muse Spark compares it with the original (same spot?
    repaired, partly repaired, not repaired?), and SAM 3.1 outlines the same concept on both photos so the change
    is visible and measured as a share of the photo. It is advice: a reviewer resolves the incident and can cite
    the check as the evidence, which the public incident record then shows.
-9. **Usage** (`/admin`, admin only): estimated spend vs. budget, per-day spend, per-operation and per-model
-   tables, every model call, and the latest evaluation results.
+10. **Usage** (`/admin`, admin only): estimated spend vs. budget, per-day spend, per-operation and per-model
+    tables, every model call, and the latest evaluation results.
 
 Every AI result carries its **provenance**: *Live model call*, *Cached result*, or *Demo fixture*.
 
@@ -96,6 +100,10 @@ Key decisions:
 - **One model client** (`services/meta_client.py`) owns auth, timeouts, retries (429/500/503 honour
   `Retry-After`; read timeouts are never auto-retried because work may be billed), a per-process concurrency
   cap, the budget guard, usage capture and safe error codes.
+- **Privacy blur by default.** SAM 3.1 finds faces and number plates (two calls, ~$0.005 per photo) and the
+  blurred copy is stored as a `redacted` media variant. Non-reviewer views only ever receive that copy; the
+  original is only minted for reviewers. Until the blur finishes, residents see a placeholder; when AI is
+  unavailable the unblurred photo is served so the app keeps working.
 
 ```
 backend/app
@@ -104,7 +112,8 @@ backend/app
   db/             SQLAlchemy 2 models, session
   schemas/        API + structured-output schemas
   services/       meta_client, analysis, segmentation, transcription, duplicate_matching, review, reports,
-                  media (+storage abstraction), jobs, lifecycle, pricing, usage_tracking, rate_limit, fixtures
+                  media (+storage abstraction), jobs, lifecycle, pricing, usage_tracking, rate_limit, fixtures,
+                  fix_verification, redaction
   workers/        runner
 backend/alembic   migrations        backend/tests   pytest suite        backend/eval   evaluation harness
 backend/seed      sample images, attribution, seed + fixture scripts
@@ -190,7 +199,7 @@ backend and never sent to the browser. Without it, reports are still accepted an
 ```bash
 cd backend
 uv run python seed/fetch_images.py                 # only if seed/images is missing (Wikimedia Commons)
-uv run python -m seed.seed_demo                    # 13 sample reports; the worker analyses them live (~$0.15)
+uv run python -m seed.seed_demo                    # 13 sample reports; the worker analyses them live (~$0.22)
 uv run python -m seed.seed_demo --confirm-incidents  # optional: confirm 4 samples as incidents
 uv run python -m seed.export_fixtures              # optional: record results for fallback mode
 uv run python -m seed.seed_demo --reset            # remove all sample data
@@ -327,7 +336,7 @@ and any label not in the list sent is discarded. Reviewer decisions are never ov
 ```bash
 cd backend
 docker compose -f ../docker-compose.yml exec db psql -U mtaasense -c "CREATE DATABASE mtaasense_test"   # once
-uv run pytest            # 52 tests
+uv run pytest            # 66 tests
 uv run ruff check . && uv run mypy app      # lint + strict typing
 cd ../frontend && pnpm typecheck && pnpm lint && pnpm build
 ```

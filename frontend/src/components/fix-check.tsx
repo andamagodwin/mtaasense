@@ -7,7 +7,7 @@ import { ApiError } from "@/lib/api";
 import { colors } from "@/lib/colors";
 import { errorLabel, FIX_VERDICT_LABEL, formatDateTime, pct, SAME_PLACE_LABEL } from "@/lib/format";
 import type { FixCheck, FixImage, FixVerdict } from "@/lib/types";
-import { Badge, ProvenanceBadge } from "./badges";
+import { Badge, PrivacyBlurredBadge, ProvenanceBadge } from "./badges";
 import { Button } from "./ui/button";
 import { Callout, Spinner } from "./ui/feedback";
 import { Input } from "./ui/field";
@@ -26,14 +26,21 @@ export function FixVerdictBadge({ verdict }: { verdict: FixVerdict }) {
 
 /** A photo with SAM's outline of the hazard concept drawn over it. */
 function OutlinedPhoto({ label, photo }: { label: string; photo: FixImage }) {
-  const W = photo.width ?? photo.image.width ?? 1;
-  const H = photo.height ?? photo.image.height ?? 1;
+  const W = photo.width ?? photo.image?.width ?? 1;
+  const H = photo.height ?? photo.image?.height ?? 1;
   const regions = photo.regions ?? [];
   return (
     <figure className="min-w-0 space-y-1.5">
       <div className="relative overflow-hidden rounded-xl border border-line bg-photo">
-        {/* eslint-disable-next-line @next/next/no-img-element -- private, signed evidence URLs bypass the optimizer */}
-        <img src={photo.image.url} alt={label} className="block aspect-[4/3] w-full object-contain" />
+        {photo.image ? (
+          // eslint-disable-next-line @next/next/no-img-element -- private, signed evidence URLs bypass the optimizer
+          <img src={photo.image.url} alt={label} className="block aspect-[4/3] w-full object-contain" />
+        ) : (
+          <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 bg-sunken text-center">
+            <Spinner className="size-5 text-accent" />
+            <p className="px-4 text-[12px] text-ink-3">Blurring faces and number plates…</p>
+          </div>
+        )}
         {regions.length > 0 && (
           <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" className="pointer-events-none absolute inset-0 size-full animate-mask-in" aria-hidden>
             {regions.map((r) => (
@@ -52,8 +59,11 @@ function OutlinedPhoto({ label, photo }: { label: string; photo: FixImage }) {
           </svg>
         )}
       </div>
-      <figcaption className="flex items-center justify-between gap-2 text-[12px] text-ink-3">
-        <span className="font-medium text-ink-2">{label}</span>
+      <figcaption className="flex flex-wrap items-center justify-between gap-2 text-[12px] text-ink-3">
+        <span className="flex items-center gap-2 font-medium text-ink-2">
+          {label}
+          {photo.redacted && <PrivacyBlurredBadge />}
+        </span>
         {photo.coverage !== null && <span>{photo.coverage > 0 && photo.coverage < 0.01 ? "under 1%" : pct(photo.coverage)} of the photo outlined</span>}
       </figcaption>
     </figure>

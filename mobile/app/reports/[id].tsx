@@ -137,7 +137,11 @@ export default function TrackReportScreen() {
         </Card>
 
         <Card>
-          <EvidencePhoto image={report.image} segmentations={report.segmentations} />
+          <EvidencePhoto
+            image={report.image}
+            redacted={report.redacted}
+            segmentations={report.segmentations}
+          />
         </Card>
 
         <AnalysisCard report={report} />

@@ -1,6 +1,7 @@
 """Background worker: `python -m app.workers.runner`.
 
-Pipeline per report: analyze_report -> (segment_image for the suggested concept) + match_duplicates.
+Pipeline per report: analyze_report -> (segment_image for the suggested concept) + match_duplicates,
+with redact_image running alongside so the blurred photo is ready for non-reviewers.
 Matching always runs, even when AI analysis is unavailable, using resident-provided data. verify_fix jobs
 compare an incident's "after" photo with the original.
 """
@@ -22,6 +23,7 @@ from app.services import jobs
 from app.services.analysis import AnalysisFailed, mark_analysis_unavailable, run_analysis
 from app.services.duplicate_matching import run_matching
 from app.services.fix_verification import FixCheckFailed, mark_fix_check_failed, run_fix_check
+from app.services.redaction import RedactionFailed, mark_redaction_failed, run_redaction
 from app.services.segmentation import (
     SegmentationFailed,
     mark_segmentation_failed,
@@ -71,9 +73,11 @@ def process(
             run_matching(report_id, job_id)
         elif kind == JobKind.verify_fix:
             run_fix_check(uuid.UUID(str(options["fix_check_id"])), job_id)
+        elif kind == JobKind.redact_image:
+            run_redaction(uuid.UUID(str(options["redaction_id"])), job_id)
         with session_scope() as db:
             jobs.mark_succeeded(db, job_id)
-    except (AnalysisFailed, SegmentationFailed, FixCheckFailed) as exc:
+    except (AnalysisFailed, SegmentationFailed, FixCheckFailed, RedactionFailed) as exc:
         _fail(
             job_id, kind, report_id, segmentation_id, exc.code, exc.retryable, attempts, max_attempts, options=options
         )
@@ -130,6 +134,8 @@ def _fail(
         mark_segmentation_failed(segmentation_id, code)
     elif kind == JobKind.verify_fix and not will_retry and options:
         mark_fix_check_failed(uuid.UUID(str(options["fix_check_id"])), code)
+    elif kind == JobKind.redact_image and not will_retry and options:
+        mark_redaction_failed(uuid.UUID(str(options["redaction_id"])), code)
 
 
 def main() -> None:

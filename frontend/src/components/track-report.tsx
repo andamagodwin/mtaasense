@@ -9,13 +9,13 @@ import { formatDateTime } from "@/lib/format";
 import { usePolling, useApi } from "@/lib/hooks";
 import type { ReportDetail } from "@/lib/types";
 import { AnalysisPanel } from "./analysis-panel";
-import { CategoryBadge, SampleBadge, StatusBadge } from "./badges";
+import { CategoryBadge, PrivacyBlurredBadge, SampleBadge, StatusBadge } from "./badges";
 import { FixCheckForm, FixCheckResult } from "./fix-check";
 import { ResidentFacts } from "./resident-facts";
 import { SegmentationViewer } from "./segmentation-viewer";
 import { LinkButton } from "./ui/button";
 import { Card, CardBody, CardHeader } from "./ui/card";
-import { Callout, EmptyState, Skeleton } from "./ui/feedback";
+import { Callout, EmptyState, Skeleton, Spinner } from "./ui/feedback";
 import { Page, PageHeader } from "./ui/page";
 
 const subscribeHash = (cb: () => void) => {
@@ -28,6 +28,8 @@ export function isProcessing(report: ReportDetail): boolean {
     report.status === "submitted" ||
     report.status === "processing" ||
     report.analysis.status === "running" ||
+    report.redaction_status === "queued" ||
+    report.redaction_status === "running" ||
     report.segmentations.some((s) => s.status === "queued" || s.status === "running") ||
     report.fix_checks.some((c) => c.status === "queued" || c.status === "running")
   );
@@ -132,17 +134,30 @@ export function TrackReport() {
 
       <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
         <Card>
-          <CardHeader title="Your photo" description="With the hazard region outlined by SAM 3.1 when available." />
+          <CardHeader
+            title="Your photo"
+            description="With the hazard region outlined by SAM 3.1 when available."
+            action={report.redacted ? <PrivacyBlurredBadge /> : undefined}
+          />
           <CardBody>
-            <SegmentationViewer
-              image={report.image}
-              segmentations={report.segmentations}
-              concepts={config.data?.segmentation_concepts ?? []}
-              suggestedConcept={report.analysis.result?.segmentation_concept}
-              canRequest
-              onRequest={requestSegment}
-              requestError={segError}
-            />
+            {report.image ? (
+              <SegmentationViewer
+                image={report.image}
+                segmentations={report.segmentations}
+                concepts={config.data?.segmentation_concepts ?? []}
+                suggestedConcept={report.analysis.result?.segmentation_concept}
+                canRequest
+                onRequest={requestSegment}
+                requestError={segError}
+              />
+            ) : (
+              <div className="flex aspect-[4/3] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-line-strong bg-sunken text-center">
+                <Spinner className="size-6 text-accent" />
+                <p className="max-w-60 text-[13.5px] text-ink-2">
+                  Preparing your photo… faces and number plates are blurred before anyone else sees it.
+                </p>
+              </div>
+            )}
           </CardBody>
         </Card>
         <div className="space-y-6">

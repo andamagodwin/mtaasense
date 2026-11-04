@@ -34,8 +34,10 @@ def test_submit_report_persists_evidence_and_queues_job(client: TestClient, imag
         assert report.hazard_category is not None and report.hazard_category.value == "pothole"
         assert report.image.sha256 and report.display_image.width == 640
         assert report.receipt_token_hash != body["receipt_token"]  # only the hash is stored
-        job = db.scalar(select(ProcessingJob).where(ProcessingJob.report_id == report.id))
-        assert job is not None and job.kind.value == "analyze_report"
+        kinds = sorted(
+            j.kind.value for j in db.scalars(select(ProcessingJob).where(ProcessingJob.report_id == report.id))
+        )
+        assert kinds == ["analyze_report", "redact_image"]
 
 
 def test_photo_and_text_without_location_is_accepted(client: TestClient, image_bytes: bytes) -> None:
@@ -107,9 +109,12 @@ def test_media_requires_valid_signature(client: TestClient, image_bytes: bytes) 
     assert client.get(expired).status_code == 404
 
 
-def test_display_variant_strips_exif(client: TestClient) -> None:
+def test_display_variant_strips_exif(reviewer: TestClient) -> None:
     from PIL import Image
 
+    from app.main import app
+
+    resident = TestClient(app)  # separate client: no reviewer session cookie
     img = Image.new("RGB", (400, 300), (10, 120, 30))
     exif = Image.Exif()
     exif[0x010F] = "PhoneMaker"  # Make
@@ -117,8 +122,10 @@ def test_display_variant_strips_exif(client: TestClient) -> None:
 
     buf = io.BytesIO()
     img.save(buf, format="JPEG", exif=exif.tobytes())
-    body = submit(client, buf.getvalue()).json()
-    detail = client.get(f"/api/v1/reports/{body['id']}", headers={"X-Report-Token": body["receipt_token"]}).json()
-    shown = client.get(detail["image"]["url"]).content
+    body = submit(resident, buf.getvalue()).json()
+    detail = resident.get(f"/api/v1/reports/{body['id']}", headers={"X-Report-Token": body["receipt_token"]}).json()
+    shown = resident.get(detail["image"]["url"]).content
     assert b"PhoneMaker" not in shown
-    assert b"PhoneMaker" in client.get(detail["original_image"]["url"]).content  # original preserved
+    assert detail["original_image"] is None  # the original stays private for reviewers
+    original = reviewer.get(f"/api/v1/reports/{body['id']}").json()["original_image"]["url"]
+    assert b"PhoneMaker" in reviewer.get(original).content  # original preserved

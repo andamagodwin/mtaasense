@@ -113,10 +113,16 @@ export interface ReportSummary {
   thumbnail: MediaRef | null;
 }
 
+export type RedactionStatus = 'queued' | 'running' | 'completed' | 'failed';
+
 export interface ReportDetail extends ReportSummary {
   voice_transcript: string | null;
   location_accuracy_m: number | null;
-  image: MediaRef;
+  /** Null while the privacy blur runs. */
+  image: MediaRef | null;
+  /** True when `image` serves the face/plate-blurred copy. */
+  redacted: boolean;
+  redaction_status: RedactionStatus | null;
   audio: MediaRef | null;
   analysis: AnalysisView;
   segmentations: SegmentationView[];
@@ -127,7 +133,10 @@ export type FixVerdict =
   'repaired' | 'partially_repaired' | 'not_repaired' | 'different_place' | 'insufficient_evidence';
 
 export interface FixImage {
-  image: MediaRef;
+  /** Null while the privacy blur runs. */
+  image: MediaRef | null;
+  /** True when `image` serves the face/plate-blurred copy. */
+  redacted: boolean;
   regions: SegmentationRegion[] | null;
   width: number | null;
   height: number | null;

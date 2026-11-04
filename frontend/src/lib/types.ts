@@ -134,12 +134,19 @@ export interface ReportSummary {
   open_duplicate_suggestions: number;
 }
 
+export type RedactionStatus = "queued" | "running" | "completed" | "failed";
+
 export interface ReportDetail extends ReportSummary {
   voice_transcript: string | null;
   voice_transcript_machine: string | null;
   location_accuracy_m: number | null;
-  image: MediaRef;
-  original_image: MediaRef;
+  /** What this viewer may see; null while the privacy blur runs. Reviewers always get the display image. */
+  image: MediaRef | null;
+  /** Reviewers only. */
+  original_image: MediaRef | null;
+  /** True when `image` serves the face/plate-blurred copy. */
+  redacted: boolean;
+  redaction_status: RedactionStatus | null;
   audio: MediaRef | null;
   analysis: AnalysisView;
   segmentations: SegmentationView[];
@@ -162,7 +169,10 @@ export interface FixAssessment {
 }
 
 export interface FixImage {
-  image: MediaRef;
+  /** Null while the privacy blur runs. Reviewers always get the display image. */
+  image: MediaRef | null;
+  /** True when `image` serves the face/plate-blurred copy. */
+  redacted: boolean;
   regions: SegmentationRegion[] | null;
   width: number | null;
   height: number | null;

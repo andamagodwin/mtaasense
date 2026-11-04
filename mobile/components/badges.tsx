@@ -75,3 +75,11 @@ export function CategoryBadge({ category }: { category: HazardCategory | null })
     </View>
   );
 }
+
+export function PrivacyBlurredBadge() {
+  return (
+    <View className="h-[24px] flex-row items-center gap-1.5 self-start rounded-md border border-line bg-sunken px-2">
+      <Text className="font-semibold text-[12px] text-ink-2">Faces and plates blurred</Text>
+    </View>
+  );
+}

@@ -25,17 +25,21 @@ const VERDICT_TONE: Record<FixVerdict, { box: string; text: string }> = {
 };
 
 function Photo({ label, photo }: { label: string; photo: FixImage }) {
-  const W = photo.width ?? photo.image.width ?? 4;
-  const H = photo.height ?? photo.image.height ?? 3;
+  const W = photo.width ?? photo.image?.width ?? 4;
+  const H = photo.height ?? photo.image?.height ?? 3;
   return (
     <View className="flex-1 gap-1.5">
-      <View className="aspect-[4/3] overflow-hidden rounded-xl bg-photo">
-        <Image
-          source={{ uri: mediaUrl(photo.image), cacheKey: photo.image.id }}
-          contentFit="contain"
-          accessibilityLabel={`${label} photo`}
-          style={StyleSheet.absoluteFill}
-        />
+      <View className="aspect-[4/3] items-center justify-center overflow-hidden rounded-xl bg-photo">
+        {photo.image ? (
+          <Image
+            source={{ uri: mediaUrl(photo.image), cacheKey: photo.image.id }}
+            contentFit="contain"
+            accessibilityLabel={`${label} photo`}
+            style={StyleSheet.absoluteFill}
+          />
+        ) : (
+          <ActivityIndicator size="small" color={colors.accent.DEFAULT} />
+        )}
         {photo.regions && photo.regions.length > 0 && (
           <MaskOverlay regions={photo.regions} width={W} height={H} />
         )}

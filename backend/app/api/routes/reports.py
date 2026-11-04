@@ -17,7 +17,7 @@ from app.api.serializers import (
 from app.core.config import get_settings
 from app.core.errors import Forbidden, InvalidTransition, NotFound, PayloadTooLarge, ValidationFailed
 from app.core.security import derive_token, hash_token
-from app.db.models import AuditEvent, DuplicateSuggestion, Incident, ProcessingJob, Report, ReviewNote, User
+from app.db.models import AuditEvent, DuplicateSuggestion, FixCheck, Incident, ProcessingJob, Report, ReviewNote, User
 from app.db.models.enums import HazardCategory, JobKind, LocationSource, ReportStatus
 from app.schemas.api import (
     AuditView,
@@ -39,6 +39,7 @@ from app.schemas.api import (
 from app.services import rate_limit, review
 from app.services.fix_verification import create_fix_check
 from app.services.jobs import enqueue
+from app.services.redaction import ensure_redactions
 from app.services.reports import NewReport, create_report, existing_for_key
 from app.services.segmentation import request_segmentation
 from app.services.transcription import retranscribe, transcribe_draft
@@ -170,7 +171,7 @@ async def check_report_fix(
     )
     db.commit()
     db.refresh(check)
-    return fix_check_view(check)
+    return fix_check_view(db, check, reviewer=user is not None)
 
 
 @router.post("/transcriptions", response_model=TranscriptionResult)
@@ -238,6 +239,12 @@ def get_report(
     x_report_token: Annotated[str | None, Header(max_length=128)] = None,
 ) -> ReportDetail:
     report = load_report(db, report_id, user, x_report_token)
+    if user is None:
+        # Photos that predate the privacy blur get one on first resident view. New uploads
+        # queue at creation, so this is a no-op for them.
+        checks = db.scalars(select(FixCheck).where(FixCheck.before_report_id == report.id)).all()
+        ensure_redactions(db, [report.display_media_id, *[c.display_media_id for c in checks]], report.id)
+        db.commit()
     return report_detail(db, report, reviewer=user is not None)
 
 

@@ -33,6 +33,7 @@ from app.schemas.analysis import FixAssessment
 from app.services.jobs import enqueue
 from app.services.media import image_data_url, store_image
 from app.services.meta_client import CallContext, ModelAPIError, get_meta_client, response_output_text
+from app.services.redaction import request_redaction
 from app.services.segmentation import CONCEPTS, SegmentationFailed, coverage, segment_media
 
 logger = logging.getLogger(__name__)
@@ -120,6 +121,7 @@ def create_fix_check(
     db.add(check)
     db.flush()
     job = enqueue(db, JobKind.verify_fix, before.id, dedupe=f"fix:{check.id}", options={"fix_check_id": str(check.id)})
+    request_redaction(db, stored.display, before.id)
     db.add(
         AuditEvent(
             actor_user_id=user.id if user else None,

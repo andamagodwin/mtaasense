@@ -27,6 +27,7 @@ def test_claim_retry_backoff_and_final_failure(client: TestClient, image_bytes: 
     with session_scope() as db:
         job = jobs.claim_next(db, "test-worker")
         assert job is not None and job.status == JobStatus.running and job.attempts == 1
+        assert jobs.claim_next(db, "other-worker") is not None  # submit queues analyze + redact
         assert jobs.claim_next(db, "other-worker") is None  # nothing else queued
         assert jobs.mark_failed(db, job, "rate_limited", retryable=True) is True
     with session_scope() as db:

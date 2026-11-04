@@ -12,6 +12,7 @@ from app.db.models.enums import (
     FixVerdict,
     ModelVerdict,
     Provenance,
+    RedactionStatus,
     SegmentationStatus,
     SuggestionStatus,
 )
@@ -77,6 +78,28 @@ class Segmentation(UUIDPk, Timestamps, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (UniqueConstraint("media_id", "prompt", name="uq_segmentation_media_prompt"),)
+
+
+class Redaction(UUIDPk, Timestamps, Base):
+    """Privacy blur for one display image. SAM 3.1 finds faces and number plates; the blurred
+    copy is what non-reviewers see. Completed rows always have a redacted image, even when
+    nothing was found (then it is an unmodified copy)."""
+
+    __tablename__ = "redactions"
+
+    media_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("media.id", ondelete="CASCADE"), unique=True)
+    status: Mapped[RedactionStatus] = mapped_column(
+        str_enum(RedactionStatus, "redaction_status"), default=RedactionStatus.queued
+    )
+    # [{concept, box: {left, top, right, bottom}, confidence}] in the redacted image's pixels.
+    regions: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
+    redacted_media_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media.id", ondelete="RESTRICT"))
+    model: Mapped[str | None] = mapped_column(String(64))
+    provenance: Mapped[Provenance | None] = mapped_column(str_enum(Provenance, "provenance"))
+    error_code: Mapped[str | None] = mapped_column(String(64))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    redacted_image: Mapped[Media | None] = relationship(foreign_keys=[redacted_media_id], lazy="joined")
 
 
 class FixCheck(UUIDPk, Timestamps, Base):

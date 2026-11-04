@@ -6,9 +6,19 @@ from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.core.security import sign_media
-from app.db.models import DuplicateSuggestion, FixCheck, Incident, Media, ProcessingJob, Report, Segmentation
-from app.db.models.enums import SuggestionStatus
+from app.db.models import (
+    DuplicateSuggestion,
+    FixCheck,
+    Incident,
+    Media,
+    ProcessingJob,
+    Redaction,
+    Report,
+    Segmentation,
+)
+from app.db.models.enums import RedactionStatus, SuggestionStatus
 from app.schemas.analysis import FixAssessment, HazardAssessment
 from app.schemas.api import (
     AnalysisView,
@@ -74,13 +84,43 @@ def media_ref(media: Media | None) -> MediaRef | None:
     )
 
 
-def _fix_image(media: Media, outline: dict[str, Any] | None) -> FixImageView:
-    image = media_ref(media)
-    assert image is not None
+def redactions_for(db: Session, media_ids: list[Any]) -> dict[Any, Redaction]:
+    if not media_ids:
+        return {}
+    rows = db.scalars(select(Redaction).where(Redaction.media_id.in_(media_ids))).all()
+    return {r.media_id: r for r in rows}
+
+
+def public_image(display: Media, red: Redaction | None) -> tuple[MediaRef | None, bool, RedactionStatus | None]:
+    """What a non-reviewer may see: the blurred copy once ready, nothing while the blur runs,
+    and the display image when blurring is impossible (AI unavailable or the blur failed)."""
+    if red is not None and red.status == RedactionStatus.completed and red.redacted_image is not None:
+        ref = media_ref(red.redacted_image)
+        assert ref is not None
+        return ref, True, red.status
+    if red is None or red.status == RedactionStatus.failed or not get_settings().model_api_configured:
+        ref = media_ref(display)
+        assert ref is not None
+        return ref, False, red.status if red else None
+    return None, False, red.status
+
+
+def viewer_image(
+    display: Media, *, reviewer: bool, redactions: dict[Any, Redaction]
+) -> tuple[MediaRef | None, bool, RedactionStatus | None]:
+    if reviewer:
+        ref = media_ref(display)
+        assert ref is not None
+        return ref, False, None
+    return public_image(display, redactions.get(display.id))
+
+
+def _fix_image(ref: MediaRef | None, redacted: bool, outline: dict[str, Any] | None) -> FixImageView:
     if not outline:
-        return FixImageView(image=image)
+        return FixImageView(image=ref, redacted=redacted)
     return FixImageView(
-        image=image,
+        image=ref,
+        redacted=redacted,
         regions=outline.get("regions"),
         width=outline.get("width"),
         height=outline.get("height"),
@@ -88,7 +128,7 @@ def _fix_image(media: Media, outline: dict[str, Any] | None) -> FixImageView:
     )
 
 
-def fix_check_view(check: FixCheck) -> FixCheckView:
+def fix_check_view(db: Session, check: FixCheck, *, reviewer: bool) -> FixCheckView:
     masks = check.masks or {}
     assessment = None
     if check.assessment:
@@ -98,6 +138,13 @@ def fix_check_view(check: FixCheck) -> FixCheckView:
             )
         except ValidationError:
             assessment = None
+    redactions = (
+        redactions_for(db, [check.before_report.display_media_id, check.display_media_id]) if not reviewer else {}
+    )
+    before_ref, before_redacted, _ = viewer_image(
+        check.before_report.display_image, reviewer=reviewer, redactions=redactions
+    )
+    after_ref, after_redacted, _ = viewer_image(check.display_image, reviewer=reviewer, redactions=redactions)
     return FixCheckView(
         id=check.id,
         created_at=check.created_at,
@@ -108,8 +155,8 @@ def fix_check_view(check: FixCheck) -> FixCheckView:
         concept=masks.get("concept"),
         outline_error=masks.get("error"),
         before_report_id=check.before_report_id,
-        before=_fix_image(check.before_report.display_image, masks.get("before")),
-        after=_fix_image(check.display_image, masks.get("after")),
+        before=_fix_image(before_ref, before_redacted, masks.get("before")),
+        after=_fix_image(after_ref, after_redacted, masks.get("after")),
         submitted_by=check.submitted_by.display_name if check.submitted_by else "Resident",
         note=check.note,
         model=check.model,
@@ -123,9 +170,22 @@ def latlon(value: Any) -> LatLon | None:
     return LatLon(lat=decoded[0], lon=decoded[1]) if decoded else None
 
 
-def report_summary(report: Report, *, open_suggestions: int = 0, with_media: bool = True) -> ReportSummary:
+def report_summary(
+    report: Report,
+    *,
+    open_suggestions: int = 0,
+    with_media: bool = True,
+    redactions: dict[Any, Redaction] | None = None,
+) -> ReportSummary:
+    """`redactions` selects the resident-visible thumbnail; reviewer lists leave it unset."""
     result = (report.analysis or {}).get("result") or {}
     incident = report.incident
+    if not with_media:
+        thumbnail = None
+    elif redactions is None:
+        thumbnail = media_ref(report.display_image)
+    else:
+        thumbnail, _, _ = public_image(report.display_image, redactions.get(report.display_media_id))
     return ReportSummary(
         id=report.id,
         reference=report.reference,
@@ -147,7 +207,7 @@ def report_summary(report: Report, *, open_suggestions: int = 0, with_media: boo
         incident=IncidentBrief.model_validate(incident) if incident else None,
         is_sample=report.is_sample,
         has_audio=report.audio_media_id is not None,
-        thumbnail=media_ref(report.display_image) if with_media else None,
+        thumbnail=thumbnail,
         open_duplicate_suggestions=open_suggestions,
     )
 
@@ -176,16 +236,23 @@ def allowed_actions(report: Report) -> list[str]:
 
 
 def report_detail(db: Session, report: Report, *, reviewer: bool) -> ReportDetail:
-    summary = report_summary(report, open_suggestions=open_suggestion_counts(db, [report.id]).get(report.id, 0))
+    # Residents and reviewers see the "after" photos compared against this report's own photo.
+    checks = db.scalars(
+        select(FixCheck).where(FixCheck.before_report_id == report.id).order_by(FixCheck.created_at.desc())
+    ).all()
+    redactions = (
+        redactions_for(db, [report.display_media_id, *[c.display_media_id for c in checks]]) if not reviewer else {}
+    )
+    summary = report_summary(
+        report,
+        open_suggestions=open_suggestion_counts(db, [report.id]).get(report.id, 0),
+        redactions=None if reviewer else redactions,
+    )
     analysis = report.analysis or {}
     result = analysis.get("result")
     meta = {k: v for k, v in (analysis.get("meta") or {}).items() if k in _META_KEYS} or None
     segs = db.scalars(
         select(Segmentation).where(Segmentation.report_id == report.id).order_by(Segmentation.created_at)
-    ).all()
-    # Residents and reviewers see the "after" photos compared against this report's own photo.
-    checks = db.scalars(
-        select(FixCheck).where(FixCheck.before_report_id == report.id).order_by(FixCheck.created_at.desc())
     ).all()
     jobs = (
         db.scalars(
@@ -197,8 +264,8 @@ def report_detail(db: Session, report: Report, *, reviewer: bool) -> ReportDetai
         if reviewer
         else []
     )
-    image, original = media_ref(report.display_image), media_ref(report.image)
-    assert image is not None and original is not None
+    image, redacted, redaction_status = viewer_image(report.display_image, reviewer=reviewer, redactions=redactions)
+    original = media_ref(report.image) if reviewer else None
     return ReportDetail(
         **summary.model_dump(),
         voice_transcript=report.voice_transcript,
@@ -206,6 +273,8 @@ def report_detail(db: Session, report: Report, *, reviewer: bool) -> ReportDetai
         location_accuracy_m=report.location_accuracy_m,
         image=image,
         original_image=original,
+        redacted=redacted,
+        redaction_status=redaction_status if not reviewer else None,
         audio=media_ref(report.audio),
         analysis=AnalysisView(
             status=report.analysis_status,
@@ -219,7 +288,7 @@ def report_detail(db: Session, report: Report, *, reviewer: bool) -> ReportDetai
         segmentations=[SegmentationView.model_validate(s) for s in segs],
         jobs=[JobView.model_validate(j) for j in jobs],
         allowed_actions=allowed_actions(report) if reviewer else [],
-        fix_checks=[fix_check_view(c) for c in checks],
+        fix_checks=[fix_check_view(db, c, reviewer=reviewer) for c in checks],
     )
 
 
@@ -265,7 +334,7 @@ def incident_detail(db: Session, incident: Incident, *, reviewer: bool) -> Incid
         )
         if resolution
         else None,
-        fix_checks=[fix_check_view(c) for c in checks] if reviewer else None,
+        fix_checks=[fix_check_view(db, c, reviewer=True) for c in checks] if reviewer else None,
     )
 
 

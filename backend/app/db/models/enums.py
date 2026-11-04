@@ -83,6 +83,7 @@ class MediaKind(StrEnum):
 class MediaVariant(StrEnum):
     original = "original"
     display = "display"
+    redacted = "redacted"
     wav = "wav"
 
 
@@ -105,6 +106,7 @@ class JobKind(StrEnum):
     segment_image = "segment_image"
     match_duplicates = "match_duplicates"
     verify_fix = "verify_fix"
+    redact_image = "redact_image"
 
 
 class JobStatus(StrEnum):
@@ -127,9 +129,17 @@ class ModelOperation(StrEnum):
     transcription = "transcription"
     duplicate_assessment = "duplicate_assessment"
     fix_verification = "fix_verification"
+    redaction = "redaction"
 
 
 class FixCheckStatus(StrEnum):
+    queued = "queued"
+    running = "running"
+    completed = "completed"
+    failed = "failed"
+
+
+class RedactionStatus(StrEnum):
     queued = "queued"
     running = "running"
     completed = "completed"

@@ -203,7 +203,7 @@ export function ReportForm() {
               onChange={(e) => { void choosePhoto(e.target.files?.[0]); e.target.value = ""; }} />
             {photoError && <Callout tone="danger">{photoError}</Callout>}
             <p className="text-[12.5px] leading-relaxed text-ink-3">
-              Tip: step back so the surroundings are visible, and avoid capturing faces or number plates.
+              Tip: step back so the surroundings are visible. Faces and number plates are blurred automatically before anyone else sees your photo.
             </p>
           </section>
         )}

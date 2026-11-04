@@ -1,8 +1,9 @@
 import { Image } from 'expo-image';
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { PrivacyBlurredBadge } from '@/components/badges';
 import { Text } from '@/components/ui/Text';
 import { mediaUrl } from '@/lib/api';
 import type { MediaRef, SegmentationRegion, SegmentationView } from '@/lib/types';
@@ -50,17 +51,30 @@ export function MaskOverlay({
 /** The submitted photo with SAM's hazard outline drawn over it once segmentation has finished. */
 export function EvidencePhoto({
   image,
+  redacted,
   segmentations,
 }: {
-  image: MediaRef;
+  image: MediaRef | null;
+  redacted: boolean;
   segmentations: SegmentationView[];
 }) {
   const [width, setWidth] = useState(0);
   const active =
     segmentations.find((s) => s.status === 'completed' && (s.regions?.length ?? 0) > 0) ?? null;
-  const W = active?.image_width ?? image.width ?? 4;
-  const H = active?.image_height ?? image.height ?? 3;
+  const W = active?.image_width ?? image?.width ?? 4;
+  const H = active?.image_height ?? image?.height ?? 3;
   const height = width ? Math.min(width * (H / W), 440) : 0;
+
+  if (!image) {
+    return (
+      <View className="items-center gap-2 px-4 py-10">
+        <ActivityIndicator color={colors.accent.DEFAULT} />
+        <Text className="text-center text-[13.5px] text-ink-2">
+          Preparing your photo… faces and number plates are blurred before anyone else sees it.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View>
@@ -78,6 +92,11 @@ export function EvidencePhoto({
         />
         {active?.regions && <MaskOverlay regions={active.regions} width={W} height={H} />}
       </View>
+      {redacted && (
+        <View className="px-4 pt-3">
+          <PrivacyBlurredBadge />
+        </View>
+      )}
       {/* Progress is on the timeline; the caption only names what was outlined. */}
       {active && (
         <Text className="px-4 py-3 text-[12.5px] text-ink-3">

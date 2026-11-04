@@ -15,6 +15,7 @@ from app.services.geo import point, within_uganda
 from app.services.jobs import enqueue
 from app.services.lifecycle import refresh_category
 from app.services.media import store_image
+from app.services.redaction import request_redaction
 
 
 @dataclass(frozen=True)
@@ -127,6 +128,7 @@ def create_report(db: Session, new: NewReport) -> tuple[Report, str, ProcessingJ
         )
     )
     job = enqueue(db, JobKind.analyze_report, report.id, dedupe=f"analyze:{report.id}")
+    request_redaction(db, stored.display, report.id)
     try:
         db.flush()
     except IntegrityError as exc:

@@ -1,5 +1,5 @@
 import { clsx } from "clsx";
-import { Box, Cpu, Driver, Repeat } from "iconsax-reactjs";
+import { Box, Cpu, Driver, EyeSlash, Repeat } from "iconsax-reactjs";
 import type { ReactNode } from "react";
 import {
   CATEGORY_COLOR,
@@ -133,6 +133,15 @@ const priorityTone: Record<Priority, string> = {
 
 export function PriorityBadge({ priority }: { priority: Priority }) {
   return <Badge className={priorityTone[priority]}>{PRIORITY_LABEL[priority]} priority</Badge>;
+}
+
+export function PrivacyBlurredBadge() {
+  return (
+    <Badge className="border-line bg-sunken text-ink-2" title="Faces and number plates are blurred in this copy. Reviewers see the original.">
+      <EyeSlash className="size-3" />
+      Faces and plates blurred
+    </Badge>
+  );
 }
 
 export function SampleBadge() {

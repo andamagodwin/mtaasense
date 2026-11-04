@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     display_image_max_edge: int = 2048
     max_audio_bytes: int = 12 * 1024 * 1024
     max_audio_seconds: int = 120
+    max_video_bytes: int = 50 * 1024 * 1024
+    max_video_seconds: int = 15
+    display_video_max_edge: int = 720
+    display_video_max_fps: int = 30
     ffmpeg_binary: str = "ffmpeg"
     media_url_ttl_seconds: int = 900
 

@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, RefreshControl, ScrollView, Share, View } fro
 
 import { StatusBadge } from '@/components/badges';
 import { EvidencePhoto } from '@/components/track/EvidencePhoto';
+import { TrackVideo } from '@/components/track/VideoSection';
 import { FixCheckCard } from '@/components/track/FixCheckCard';
 import { AnalysisCard, ResidentFacts } from '@/components/track/ReportSections';
 import { isProcessing, Timeline } from '@/components/track/Timeline';
@@ -144,6 +145,8 @@ export default function TrackReportScreen() {
           />
         </Card>
 
+        {report.video && <TrackVideo video={report.video} />}
+
         <AnalysisCard report={report} />
         <ResidentFacts report={report} />
 
@@ -155,7 +158,8 @@ export default function TrackReportScreen() {
             onPress={share}
           />
           <Text className="text-center text-[12px] text-ink-3">
-            Anyone with the link can see this report and its photo.
+            Anyone with the link can see this report
+            {report.video ? ', its photo and its clip' : ' and its photo'}.
           </Text>
         </View>
         <Button title="Remove from this phone" variant="ghost" icon={Trash} onPress={forget} />

@@ -14,7 +14,7 @@ from app.db.models.enums import HazardCategory, JobKind, LocationSource, MediaKi
 from app.services.geo import point, within_uganda
 from app.services.jobs import enqueue
 from app.services.lifecycle import refresh_category
-from app.services.media import store_image
+from app.services.media import store_image, store_video_upload
 from app.services.redaction import request_redaction
 
 
@@ -34,6 +34,7 @@ class NewReport:
     idempotency_key: str | None
     fingerprint: str | None
     is_sample: bool = False
+    video: bytes | None = None
 
 
 def validate(new: NewReport) -> None:
@@ -108,6 +109,10 @@ def create_report(db: Session, new: NewReport) -> tuple[Report, str, ProcessingJ
     db.flush()
     stored.original.report_id = report.id
     stored.display.report_id = report.id
+    if new.video is not None:
+        clip = store_video_upload(db, new.video, fingerprint=new.fingerprint, is_sample=new.is_sample)
+        clip.original.report_id = report.id
+        report.video_media_id = clip.original.id
     if new.audio_id is not None and new.audio_claim_token is not None:
         audio = _claim_audio(db, new.audio_id, new.audio_claim_token)
         audio.report_id = report.id
@@ -123,6 +128,7 @@ def create_report(db: Session, new: NewReport) -> tuple[Report, str, ProcessingJ
             data={
                 "has_location": report.location is not None,
                 "has_audio": report.audio_media_id is not None,
+                "has_video": report.video_media_id is not None,
                 "reporter_category": new.reporter_category.value if new.reporter_category else None,
             },
         )

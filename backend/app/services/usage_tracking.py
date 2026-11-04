@@ -33,6 +33,7 @@ class CallRecord:
     reasoning_tokens: int | None = None
     image_count: int = 0
     audio_ms: int | None = None
+    video_frames: int = 0
     estimated_cost_usd: Decimal = field(default_factory=lambda: Decimal("0"))
     provider_response_id: str | None = None
     report_id: uuid.UUID | None = None

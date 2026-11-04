@@ -23,7 +23,8 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 | Repair checks (Muse Spark before/after + SAM 3.1 on both photos) | **Verified live (2 pairs)** | Same photo resent: *same spot, not repaired*; another street: *different spot*. No real repaired pair tested yet |
 | Privacy blur (SAM 3.1 faces/plates + local Gaussian blur) | **Verified live** | 4/4 faces and 1/1 plate blurred on seed photos; alignment checked visually |
 | Rain warning (Open-Meteo Kampala forecast, free, no key) | **Verified live** | Real 48h fetch + 24h window checked; queue boost covered by tests |
-| Backend tests | **78 passing** | `uv run pytest` (real PostGIS, mocked Meta transport) |
+| Video reports (clip + SAM 3.1 tracking + Spark motion description) | **Verified live** | Water tracked across all 50 frames of a test clip; 3 outlined stills checked visually |
+| Backend tests | **90 passing** | `uv run pytest` (real PostGIS, mocked Meta transport; ffmpeg seams mocked) |
 | Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build && pnpm build:vinext` |
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
 | Backend on the Contabo VPS | **Deployed** at <https://api.mtaasense.com> | Docker Compose behind a Cloudflare Tunnel (the VPS's ports 80/443 belong to another app); `/ready` reports database, migrations, media and model API OK |
@@ -69,6 +70,11 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
     the map shows a warning with a count of open blocked drains, blocked drains jump to the top of the review
     queue, and the app's map tab lists open drain incidents longest-waiting first under "Clear before tonight's
     rain". When the forecast is unreachable there is simply no warning.
+12. **Video reports**: each photo report can carry one short clip (15s max). The worker normalises it, uploads
+    it to the Files API once, SAM 3.1 tracks the photo analysis' concept frame by frame, and Muse Spark
+    describes the motion, flow and spread. Three stills with the tracks drawn on, the playable clip and the
+    description appear on the tracking page and in review. The clip is shown to reviewers and the resident who
+    sent it; video is never blurred (a follow-up) and never appears on public surfaces.
 
 Every AI result carries its **provenance**: *Live model call*, *Cached result*, or *Demo fixture*.
 
@@ -112,6 +118,10 @@ Key decisions:
 - **Rain warning without new infrastructure.** One Kampala-wide Open-Meteo forecast, cached in-process for
   30 minutes (no migration, no key, no budget impact). Provider failures degrade to "no warning", and the
   review-queue boost is a sort flag (`rain_boosted`) on the existing reports endpoint.
+- **Video tracks are burned into stills.** The worker draws each sampled frame's tracks onto a JPEG, so web
+  and mobile need no frame-accurate sync. Tracking prompts mirror the still concepts except "standing water",
+  which finds nothing on video where "water" tracks the flood (measured live). SAM video bills $0.20 per
+  1,000 frames; a 10s 30fps clip costs about $0.06 and is usage-tracked per frame.
 
 ```
 backend/app
@@ -121,7 +131,7 @@ backend/app
   schemas/        API + structured-output schemas
   services/       meta_client, analysis, segmentation, transcription, duplicate_matching, review, reports,
                   media (+storage abstraction), jobs, lifecycle, pricing, usage_tracking, rate_limit, fixtures,
-                  fix_verification, redaction, rain
+                  fix_verification, redaction, rain, video_analysis
   workers/        runner
 backend/alembic   migrations        backend/tests   pytest suite        backend/eval   evaluation harness
 backend/seed      sample images, attribution, seed + fixture scripts
@@ -345,7 +355,7 @@ and any label not in the list sent is discarded. Reviewer decisions are never ov
 ```bash
 cd backend
 docker compose -f ../docker-compose.yml exec db psql -U mtaasense -c "CREATE DATABASE mtaasense_test"   # once
-uv run pytest            # 78 tests
+uv run pytest            # 90 tests
 uv run ruff check . && uv run mypy app      # lint + strict typing
 cd ../frontend && pnpm typecheck && pnpm lint && pnpm build
 ```

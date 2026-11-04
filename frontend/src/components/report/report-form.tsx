@@ -1,7 +1,7 @@
 "use client";
 
 import { clsx } from "clsx";
-import { ArrowLeft, ArrowRight, Camera, Edit2, GalleryAdd, Gps, Location as LocationIcon, MagicStar, TickCircle } from "iconsax-reactjs";
+import { ArrowLeft, ArrowRight, Camera, Edit2, GalleryAdd, Gps, Location as LocationIcon, MagicStar, TickCircle, Video as VideoIcon } from "iconsax-reactjs";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError } from "@/lib/api";
@@ -31,10 +31,14 @@ export function ReportForm() {
   const config = useApi(() => api.config(), "config");
   const known = useApi(() => api.mapFeatures({ include_unreviewed: true }), "known-hazards");
   const maxImageMb = config.data?.max_image_mb ?? 15;
+  const maxVideoMb = config.data?.max_video_mb ?? 50;
+  const maxVideoSeconds = config.data?.max_video_seconds ?? 15;
 
   const [step, setStep] = useState(0);
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [clip, setClip] = useState<Photo | null>(null);
+  const [clipError, setClipError] = useState<string | null>(null);
   const [category, setCategory] = useState<HazardCategory | "auto">("auto");
   const [description, setDescription] = useState("");
   const [voice, setVoice] = useState<VoiceNoteValue | null>(null);
@@ -50,8 +54,10 @@ export function ReportForm() {
   const idempotencyKey = useRef<string | null>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
   const galleryInput = useRef<HTMLInputElement>(null);
+  const clipInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => void (photo && URL.revokeObjectURL(photo.url)), [photo]);
+  useEffect(() => () => void (clip && URL.revokeObjectURL(clip.url)), [clip]);
 
   async function choosePhoto(file: File | undefined) {
     setPhotoError(null);
@@ -60,6 +66,29 @@ export function ReportForm() {
     const kind = await sniffImage(file);
     if (!kind) return setPhotoError("Please choose a JPEG, PNG or WebP photo. (HEIC photos: set your camera to “Most compatible”.)");
     setPhoto({ file, url: URL.createObjectURL(file) });
+  }
+
+  async function chooseClip(file: File | undefined) {
+    setClipError(null);
+    if (!file) return;
+    if (file.size > maxVideoMb * 1024 * 1024) {
+      return setClipError(`Clips must be under ${maxVideoMb} MB.`);
+    }
+    if (!/video\/(mp4|quicktime|webm)/.test(file.type) && !/\.(mp4|mov|webm)$/i.test(file.name)) {
+      return setClipError("Please choose an MP4, MOV or WebM clip.");
+    }
+    const duration = await new Promise<number | null>((resolve) => {
+      const el = document.createElement("video");
+      el.preload = "metadata";
+      el.onloadedmetadata = () => resolve(Number.isFinite(el.duration) ? el.duration : null);
+      el.onerror = () => resolve(null);
+      el.src = URL.createObjectURL(file);
+      window.setTimeout(() => resolve(null), 5000);
+    });
+    if (duration !== null && duration > maxVideoSeconds + 0.5) {
+      return setClipError(`Clips can be at most ${maxVideoSeconds} seconds. Trim it and try again.`);
+    }
+    setClip({ file, url: URL.createObjectURL(file) });
   }
 
   function useMyLocation() {
@@ -116,6 +145,7 @@ export function ReportForm() {
       const prepared = await prepareForUpload(photo.file);
       const form = new FormData();
       form.append("image", prepared.blob, prepared.resized ? "photo.jpg" : photo.file.name || "photo");
+      if (clip) form.append("video", clip.file, clip.file.name || "clip.mp4");
       form.append("description", description.trim());
       if (voice) {
         form.append("audio_id", voice.audioId);
@@ -202,6 +232,36 @@ export function ReportForm() {
             <input ref={galleryInput} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
               onChange={(e) => { void choosePhoto(e.target.files?.[0]); e.target.value = ""; }} />
             {photoError && <Callout tone="danger">{photoError}</Callout>}
+            {photo && (
+              <div className="space-y-2.5 rounded-xl border border-line bg-surface p-4">
+                <div className="flex items-center gap-2">
+                  <VideoIcon className="size-4 text-ink-2" />
+                  <h3 className="text-sm font-medium">Clip <span className="font-normal text-ink-3">(optional)</span></h3>
+                </div>
+                {clip ? (
+                  <div className="overflow-hidden rounded-lg border border-line bg-photo">
+                    <video src={clip.url} controls playsInline preload="metadata" className="max-h-56 w-full" />
+                    <div className="flex items-center justify-between gap-2 bg-surface px-3 py-2 text-[13px]">
+                      <span className="truncate text-ink-2">{clip.file.name || "Clip"} · {(clip.file.size / 1024 / 1024).toFixed(1)} MB</span>
+                      <Button variant="ghost" size="sm" onClick={() => setClip(null)}>
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button variant="secondary" size="sm" onClick={() => clipInput.current?.click()}>
+                    Add a short clip
+                  </Button>
+                )}
+                <input ref={clipInput} type="file" accept="video/mp4,video/quicktime,video/webm" className="hidden"
+                  onChange={(e) => { void chooseClip(e.target.files?.[0]); e.target.value = ""; }} />
+                {clipError && <Callout tone="danger">{clipError}</Callout>}
+                <p className="text-[12.5px] leading-relaxed text-ink-3">
+                  Up to {maxVideoSeconds} seconds showing movement, like flowing water. The hazard is tracked
+                  frame by frame and the motion described.
+                </p>
+              </div>
+            )}
             <p className="text-[12.5px] leading-relaxed text-ink-3">
               Tip: step back so the surroundings are visible. Faces and number plates are blurred automatically before anyone else sees your photo.
             </p>

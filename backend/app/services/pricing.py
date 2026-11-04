@@ -33,6 +33,7 @@ TOKEN_PRICES: dict[str, TokenPrice] = {
 }
 
 SAM_PRICE_PER_IMAGE = Decimal("2.50") / Decimal(1000)
+SAM_VIDEO_PRICE_PER_1K_FRAMES = Decimal("0.20")
 TRANSCRIBE_PRICE_PER_HOUR = Decimal("0.18")
 
 
@@ -48,6 +49,10 @@ def token_cost(model: str, input_tokens: int, output_tokens: int, cached_tokens:
 
 def sam_image_cost(images: int) -> Decimal:
     return (SAM_PRICE_PER_IMAGE * images).quantize(Decimal("0.000001"))
+
+
+def sam_video_cost(frames: int) -> Decimal:
+    return (SAM_VIDEO_PRICE_PER_1K_FRAMES * frames / Decimal(1000)).quantize(Decimal("0.000001"))
 
 
 def transcription_cost(audio_ms: int) -> Decimal:

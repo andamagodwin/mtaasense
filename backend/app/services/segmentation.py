@@ -25,6 +25,7 @@ from meta_sam_parser import (
     decode_mask_to_svg_path,
     image_segmentation_format,
     parse_responses_stream,
+    video_segmentation_format,
 )
 from sqlalchemy import select
 
@@ -65,21 +66,54 @@ async def _replay(events: list[dict[str, Any]]) -> AsyncIterator[dict[str, Any]]
         yield event
 
 
-def parse_sam_events(events: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], tuple[int, int] | None]:
-    """Parse collected SSE events into regions. Returns (regions, (frame_w, frame_h) if reported)."""
+def _frame_of(record: SegmentationBoxRecord | SegmentationMaskRecord) -> int | None:
+    return record.frame.frame_index if record.frame else None
 
-    text_events = ("response.output_text.delta", "response.output_text.done", "response.content_part.done")
-    if not any(e.get("type") in text_events for e in events) and any(
-        e.get("type") == "response.completed" for e in events
-    ):
-        # Zero matches: a completed response with no output text. Not an error.
-        return [], None
 
+def _decode_records(records: Any) -> list[tuple[int | None, dict[str, Any]]]:
+    """Box+mask records into (frame index, region) pairs. Stills carry frame None."""
+    boxes: dict[tuple[int | None, str], SegmentationBoxRecord] = {}
+    out: list[tuple[int | None, dict[str, Any]]] = []
+    for record in records:
+        if isinstance(record, SegmentationBoxRecord):
+            boxes[(_frame_of(record), record.object_id)] = record
+        elif isinstance(record, SegmentationMaskRecord):
+            try:
+                raster = decode_mask_to_raster(record.mask)
+                svg_path = decode_mask_to_svg_path(record.mask)
+            except InvalidSegmentationMaskError as exc:
+                raise SegmentationFailed("invalid_mask", retryable=False) from exc
+            box = boxes.get((_frame_of(record), record.object_id))
+            b = record.bounds
+            out.append(
+                (
+                    _frame_of(record),
+                    {
+                        "object_id": record.object_id,
+                        "box": {"left": b.left, "top": b.top, "right": b.right, "bottom": b.bottom},
+                        "confidence": record.confidence
+                        if record.confidence is not None
+                        else (box.confidence if box else None),
+                        "mask": {
+                            "width": record.mask.width,
+                            "height": record.mask.height,
+                            "svg_path": svg_path,
+                            "area_px": sum(raster),
+                            "raster": raster,
+                        },
+                    },
+                )
+            )
+    return out
+
+
+def _final_result(events: list[dict[str, Any]], video: bool) -> Any:
     async def _final() -> Any:
-        return await parse_responses_stream(_replay(events), image_segmentation_format()).final_result()
+        fmt = video_segmentation_format() if video else image_segmentation_format()
+        return await parse_responses_stream(_replay(events), fmt).final_result()
 
     try:
-        result = asyncio.run(_final())
+        return asyncio.run(_final())
     except ResponsesStreamRefusalError as exc:
         raise SegmentationFailed("model_refused", retryable=False) from exc
     except ResponsesStreamFailedError as exc:
@@ -87,40 +121,48 @@ def parse_sam_events(events: list[dict[str, Any]]) -> tuple[list[dict[str, Any]]
     except ResponsesStreamError as exc:
         raise SegmentationFailed("malformed_stream", retryable=False) from exc
 
-    boxes: dict[str, SegmentationBoxRecord] = {}
-    regions: list[dict[str, Any]] = []
-    for record in result.records:
-        if isinstance(record, SegmentationBoxRecord):
-            boxes[record.object_id] = record
-        elif isinstance(record, SegmentationMaskRecord):
-            try:
-                raster = decode_mask_to_raster(record.mask)
-                svg_path = decode_mask_to_svg_path(record.mask)
-            except InvalidSegmentationMaskError as exc:
-                raise SegmentationFailed("invalid_mask", retryable=False) from exc
-            box = boxes.get(record.object_id)
-            b = record.bounds
-            regions.append(
-                {
-                    "object_id": record.object_id,
-                    "box": {"left": b.left, "top": b.top, "right": b.right, "bottom": b.bottom},
-                    "confidence": record.confidence
-                    if record.confidence is not None
-                    else (box.confidence if box else None),
-                    "mask": {
-                        "width": record.mask.width,
-                        "height": record.mask.height,
-                        "svg_path": svg_path,
-                        "area_px": sum(raster),
-                    },
-                }
-            )
+
+def _is_zero_match(events: list[dict[str, Any]]) -> bool:
+    text_events = ("response.output_text.delta", "response.output_text.done", "response.content_part.done")
+    return not any(e.get("type") in text_events for e in events) and any(
+        e.get("type") == "response.completed" for e in events
+    )
+
+
+def _frame_size(raw_output: str) -> tuple[int, int] | None:
+    match = _FRAME_SIZE.search(raw_output)
+    return (int(match.group(1)), int(match.group(2))) if match else None
+
+
+def parse_sam_events(events: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], tuple[int, int] | None]:
+    """Parse collected SSE events into regions. Returns (regions, (frame_w, frame_h) if reported)."""
+    if _is_zero_match(events):
+        # Zero matches: a completed response with no output text. Not an error.
+        return [], None
+    result = _final_result(events, video=False)
+    regions = [region for _, region in _decode_records(result.records)]
+    for region in regions:
+        del region["mask"]["raster"]
     for diag in result.diagnostics:
         if diag.severity == "error":
             log_event(logger, "sam_diagnostic", logging.WARNING, code=diag.code)
-    match = _FRAME_SIZE.search(result.raw_output)
-    frame = (int(match.group(1)), int(match.group(2))) if match else None
-    return regions, frame
+    return regions, _frame_size(result.raw_output)
+
+
+def parse_sam_video_events(
+    events: list[dict[str, Any]],
+) -> tuple[dict[int, list[dict[str, Any]]], tuple[int, int] | None]:
+    """Parse a video tracking stream into {frame index: regions}. Object ids are stable across frames."""
+    if _is_zero_match(events):
+        return {}, None
+    result = _final_result(events, video=True)
+    frames: dict[int, list[dict[str, Any]]] = {}
+    for frame_index, region in _decode_records(result.records):
+        frames.setdefault(frame_index if frame_index is not None else 0, []).append(region)
+    for diag in result.diagnostics:
+        if diag.severity == "error":
+            log_event(logger, "sam_diagnostic", logging.WARNING, code=diag.code)
+    return frames, _frame_size(result.raw_output)
 
 
 def request_segmentation(db: Any, report: Report, prompt: str) -> tuple[Segmentation, ProcessingJob | None]:

@@ -27,6 +27,7 @@ def _buckets(db: DB, key: Any) -> list[UsageBucket]:
             func.coalesce(func.sum(ModelCall.output_tokens), 0),
             func.coalesce(func.sum(ModelCall.image_count), 0),
             func.coalesce(func.sum(ModelCall.audio_ms), 0),
+            func.coalesce(func.sum(ModelCall.video_frames), 0),
             func.coalesce(func.sum(ModelCall.estimated_cost_usd), 0),
             func.avg(cast(ModelCall.latency_ms, Integer)),
         )
@@ -42,8 +43,9 @@ def _buckets(db: DB, key: Any) -> list[UsageBucket]:
             output_tokens=r[4],
             images=r[5],
             audio_seconds=round((r[6] or 0) / 1000, 1),
-            estimated_cost_usd=Decimal(r[7]).quantize(Decimal("0.0001")),
-            avg_latency_ms=round(float(r[8]), 0) if r[8] is not None else None,
+            video_frames=r[7],
+            estimated_cost_usd=Decimal(r[8]).quantize(Decimal("0.0001")),
+            avg_latency_ms=round(float(r[9]), 0) if r[9] is not None else None,
         )
         for r in rows
     ]

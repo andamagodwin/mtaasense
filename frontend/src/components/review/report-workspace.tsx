@@ -13,6 +13,7 @@ import { CategoryBadge, IncidentStatusBadge, SampleBadge, StatusBadge, VerdictBa
 import { ResidentFacts } from "../resident-facts";
 import { SegmentationViewer } from "../segmentation-viewer";
 import { useRequireReviewer } from "../session";
+import { VideoSection } from "../video-section";
 import { isProcessing } from "../track-report";
 import { Button } from "../ui/button";
 import { Card, CardBody, CardHeader } from "../ui/card";
@@ -97,6 +98,7 @@ export function ReportWorkspace() {
               )}
             </CardBody>
           </Card>
+          {r.video && <VideoSection video={r.video} />}
           <Card>
             <CardHeader eyebrow="Provided by the resident" title="Resident’s report" />
             <CardBody>

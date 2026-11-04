@@ -64,6 +64,7 @@ class ModelCall(UUIDPk, Base):
     reasoning_tokens: Mapped[int | None]
     image_count: Mapped[int] = mapped_column(Integer, default=0)
     audio_ms: Mapped[int | None]
+    video_frames: Mapped[int] = mapped_column(Integer, default=0)
     estimated_cost_usd: Mapped[Decimal] = mapped_column(Numeric(12, 6), default=Decimal("0"))
     provider_response_id: Mapped[str | None] = mapped_column(String(128))
     report_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("reports.id", ondelete="SET NULL"), index=True)

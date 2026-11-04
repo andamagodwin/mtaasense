@@ -117,3 +117,17 @@ class FixAssessment(BaseModel):
     visible_changes: str = Field(max_length=600)
     reasoning: str = Field(max_length=800)
     remaining_concerns: list[str] = Field(max_length=4)
+
+
+class VideoAssessment(BaseModel):
+    """Muse Spark's description of a report's clip: what motion shows that the photo cannot."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    hazard_visible: bool
+    summary: str = Field(max_length=400)
+    motion: str = Field(max_length=600)
+    spread: str = Field(max_length=600)
+    changes_through_clip: str = Field(max_length=600)
+    confidence: Literal["low", "medium", "high"]
+    uncertainties: list[str] = Field(max_length=4)

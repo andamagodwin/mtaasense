@@ -23,6 +23,9 @@ const OPERATION_LABEL: Record<string, string> = {
   duplicate_assessment: "Duplicate comparison (Muse Spark)",
   fix_verification: "Repair check (Muse Spark)",
   redaction: "Privacy blur (SAM 3.1)",
+  file_upload: "Clip upload (Files API)",
+  video_tracking: "Clip tracking (SAM 3.1)",
+  video_description: "Clip description (Muse Spark)",
 };
 
 export function UsageDashboard() {
@@ -74,7 +77,7 @@ export function UsageDashboard() {
               <Tile label="Model calls" value={compact.format(sum(u.by_operation, "calls"))} />
               <Tile label="Failed calls" value={compact.format(sum(u.by_operation, "failures"))} warn={sum(u.by_operation, "failures") > 0} />
               <Tile label="Tokens in / out" value={`${compact.format(sum(u.by_model, "input_tokens"))} / ${compact.format(sum(u.by_model, "output_tokens"))}`} />
-              <Tile label="Images · audio" value={`${sum(u.by_model, "images")} · ${Math.round(sum(u.by_model, "audio_seconds"))} s`} />
+              <Tile label="Images · audio · video frames" value={`${sum(u.by_model, "images")} · ${Math.round(sum(u.by_model, "audio_seconds"))} s · ${compact.format(sum(u.by_model, "video_frames"))}`} />
             </div>
           </div>
 
@@ -110,7 +113,7 @@ export function UsageDashboard() {
   );
 }
 
-function sum(rows: UsageBucket[], key: "calls" | "failures" | "input_tokens" | "output_tokens" | "images" | "audio_seconds"): number {
+function sum(rows: UsageBucket[], key: "calls" | "failures" | "input_tokens" | "output_tokens" | "images" | "audio_seconds" | "video_frames"): number {
   return rows.reduce((acc, r) => acc + Number(r[key]), 0);
 }
 

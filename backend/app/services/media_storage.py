@@ -14,7 +14,7 @@ from typing import Protocol
 
 from app.core.config import get_settings
 
-_KEY_PATTERN = re.compile(r"^(image|audio)/\d{4}/\d{2}/[0-9a-f-]{36}\.(jpg|png|webp|wav|webm|ogg|m4a|mp3)$")
+_KEY_PATTERN = re.compile(r"^(image|audio|video)/\d{4}/\d{2}/[0-9a-f-]{36}\.(jpg|png|webp|wav|webm|ogg|m4a|mp3|mp4)$")
 
 
 class MediaStorage(Protocol):

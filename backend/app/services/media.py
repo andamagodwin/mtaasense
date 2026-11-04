@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy.orm import Session
@@ -238,3 +239,231 @@ def store_audio(db: Session, data: bytes, *, fingerprint: str | None) -> StoredA
 
 def wav_for(db: Session, audio: Media) -> Media | None:
     return db.query(Media).filter(Media.parent_id == audio.id, Media.variant == MediaVariant.wav).one_or_none()
+
+
+# ---------------------------------------------------------------- video
+
+
+@dataclass(frozen=True)
+class VideoInfo:
+    duration_s: float
+    width: int
+    height: int
+    fps: float
+    frames: int
+
+
+@dataclass(frozen=True)
+class StoredVideoUpload:
+    original: Media
+    info: VideoInfo
+
+
+def sniff_video(data: bytes) -> str | None:
+    """Container from magic bytes: MP4/MOV share the ISO BMFF `ftyp` box; WebM is EBML."""
+    if len(data) >= 8 and data[4:8] == b"ftyp":
+        return "mp4"
+    if data[:4] == b"\x1a\x45\xdf\xa3":
+        return "webm"
+    return None
+
+
+def _ffprobe(path: Path, timeout: int) -> dict[str, Any]:
+    settings = get_settings()
+    ffmpeg = settings.ffmpeg_binary
+    ffprobe = str(Path(ffmpeg).with_name("ffprobe")) if "/" in ffmpeg else "ffprobe"
+    try:
+        probe = _run(
+            [
+                ffprobe,
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration:stream=index,codec_type,width,height,avg_frame_rate,nb_frames",
+                "-of",
+                "json",
+                "-protocol_whitelist",
+                "file",
+                str(path),
+            ],
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise ValidationFailed("That clip took too long to inspect.", code="video_timeout") from exc
+    if probe.returncode != 0:
+        raise ValidationFailed("We couldn't read that file as a video.", code="invalid_video")
+    try:
+        parsed: dict[str, Any] = json.loads(probe.stdout)
+    except json.JSONDecodeError as exc:
+        raise ValidationFailed("We couldn't read that file as a video.", code="invalid_video") from exc
+    return parsed
+
+
+def probe_video_bytes(data: bytes) -> VideoInfo:
+    """Fast header inspection (no decode): duration, dimensions, frame rate and frame count."""
+    with tempfile.TemporaryDirectory(prefix="mtaa-probe-") as tmp:
+        src = Path(tmp) / "in.mp4"
+        src.write_bytes(data)
+        info = _ffprobe(src, timeout=30)
+    try:
+        duration_s = float(info["format"]["duration"])
+    except (KeyError, ValueError, TypeError) as exc:
+        raise ValidationFailed("We couldn't read that clip's length.", code="invalid_video") from exc
+    streams = [s for s in info.get("streams", []) if s.get("codec_type") == "video"]
+    if not streams:
+        raise ValidationFailed("That file has no video track.", code="invalid_video")
+    first = streams[0]
+    try:
+        width, height = int(first["width"]), int(first["height"])
+    except (KeyError, ValueError, TypeError) as exc:
+        raise ValidationFailed("We couldn't read that clip's dimensions.", code="invalid_video") from exc
+    fps = 0.0
+    try:
+        num, den = (float(p) for p in str(first.get("avg_frame_rate", "0/0")).split("/"))
+        if den:
+            fps = num / den
+    except (ValueError, TypeError):
+        fps = 0.0
+    if not fps or fps > 240:
+        fps = 30.0
+    try:
+        frames = int(first.get("nb_frames") or 0) or round(duration_s * fps)
+    except (ValueError, TypeError):
+        frames = round(duration_s * fps)
+    return VideoInfo(duration_s=duration_s, width=width, height=height, fps=fps, frames=frames)
+
+
+def store_video_upload(
+    db: Session, data: bytes, *, fingerprint: str | None, is_sample: bool = False
+) -> StoredVideoUpload:
+    """Validate a clip and store the original. Transcoding to the display variant happens in the worker."""
+    settings = get_settings()
+    if len(data) > settings.max_video_bytes:
+        raise PayloadTooLarge(f"Clips must be under {settings.max_video_bytes // (1024 * 1024)} MB.")
+    ext = sniff_video(data)
+    if ext is None:
+        raise ValidationFailed("Please upload an MP4, MOV or WebM clip.", code="unsupported_video_type")
+    info = probe_video_bytes(data)
+    if info.duration_s < 1.0:
+        raise ValidationFailed("The clip is too short to show anything.", code="video_too_short")
+    if info.duration_s > settings.max_video_seconds + 0.5:
+        raise ValidationFailed(f"Clips can be at most {settings.max_video_seconds} seconds.", code="video_too_long")
+    if min(info.width, info.height) < 64:
+        raise ValidationFailed("That clip's resolution is too low to be useful.", code="video_too_small")
+
+    storage = get_storage()
+    key = new_storage_key("video", ext)
+    storage.put(key, data)
+    original = Media(
+        kind=MediaKind.video,
+        variant=MediaVariant.original,
+        storage_key=key,
+        content_type="video/mp4" if ext == "mp4" else "video/webm",
+        size_bytes=len(data),
+        sha256=_sha256(data),
+        width=info.width,
+        height=info.height,
+        duration_ms=int(info.duration_s * 1000),
+        uploader_fingerprint=fingerprint,
+        is_sample=is_sample,
+    )
+    db.add(original)
+    db.flush()
+    return StoredVideoUpload(original=original, info=info)
+
+
+def transcode_display_video(data: bytes, info: VideoInfo) -> tuple[bytes, VideoInfo]:
+    """Normalize a clip for models and playback: 720p max edge, capped frame rate, H.264 + faststart.
+
+    Audio is kept: Muse Spark reads a clip's visuals and sound together. Returns (bytes, re-probed info).
+    """
+    settings = get_settings()
+    edge = settings.display_video_max_edge
+    target_fps = min(info.fps, float(settings.display_video_max_fps))
+    with tempfile.TemporaryDirectory(prefix="mtaa-video-") as tmp:
+        src = Path(tmp) / "in.mp4"
+        dst = Path(tmp) / "out.mp4"
+        src.write_bytes(data)
+        try:
+            conv = _run(
+                [
+                    settings.ffmpeg_binary,
+                    "-nostdin",
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-protocol_whitelist",
+                    "file",
+                    "-i",
+                    str(src),
+                    "-map",
+                    "0:v:0",
+                    "-map",
+                    "0:a?",
+                    "-vf",
+                    f"scale=w='if(gt(iw,ih),{edge},-2)':h='if(gt(iw,ih),-2,{edge})'",
+                    "-r",
+                    f"{target_fps:.3f}",
+                    "-c:v",
+                    "libx264",
+                    "-preset",
+                    "veryfast",
+                    "-crf",
+                    "23",
+                    "-maxrate",
+                    "3M",
+                    "-bufsize",
+                    "6M",
+                    "-pix_fmt",
+                    "yuv420p",
+                    "-c:a",
+                    "aac",
+                    "-b:a",
+                    "96k",
+                    "-movflags",
+                    "+faststart",
+                    str(dst),
+                ],
+                timeout=240,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ValidationFailed("That clip took too long to process.", code="video_timeout") from exc
+        if conv.returncode != 0 or not dst.exists():
+            raise ValidationFailed("We couldn't process that clip.", code="invalid_video")
+        out = dst.read_bytes()
+        return out, probe_video_bytes(out)
+
+
+def extract_frame(display_bytes: bytes, time_s: float) -> bytes:
+    """One JPEG still from the display clip. Used for tracked stills (outlines drawn on later)."""
+    with tempfile.TemporaryDirectory(prefix="mtaa-frame-") as tmp:
+        src = Path(tmp) / "in.mp4"
+        dst = Path(tmp) / "frame.jpg"
+        src.write_bytes(display_bytes)
+        try:
+            conv = _run(
+                [
+                    get_settings().ffmpeg_binary,
+                    "-nostdin",
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-protocol_whitelist",
+                    "file",
+                    "-i",
+                    str(src),
+                    "-ss",
+                    f"{max(time_s, 0):.2f}",
+                    "-frames:v",
+                    "1",
+                    "-q:v",
+                    "3",
+                    str(dst),
+                ],
+                timeout=60,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ValidationFailed("That clip took too long to process.", code="video_timeout") from exc
+        if conv.returncode != 0 or not dst.exists():
+            raise ValidationFailed("We couldn't read frames from that clip.", code="invalid_video")
+        return dst.read_bytes()

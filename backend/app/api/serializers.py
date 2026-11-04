@@ -1,5 +1,6 @@
 """ORM -> API views. Signed media URLs are only minted here, for callers already authorised."""
 
+import uuid
 from typing import Any
 
 from pydantic import ValidationError
@@ -17,8 +18,9 @@ from app.db.models import (
     Redaction,
     Report,
     Segmentation,
+    VideoTrack,
 )
-from app.db.models.enums import RedactionStatus, SuggestionStatus
+from app.db.models.enums import RedactionStatus, SuggestionStatus, VideoStatus
 from app.schemas.analysis import FixAssessment, HazardAssessment
 from app.schemas.api import (
     AnalysisView,
@@ -35,6 +37,10 @@ from app.schemas.api import (
     ReportDetail,
     ReportSummary,
     SegmentationView,
+    TrackedRegionView,
+    VideoAssessmentView,
+    VideoStillView,
+    VideoView,
 )
 from app.services.geo import to_latlon
 from app.services.lifecycle import REVIEWABLE
@@ -207,6 +213,7 @@ def report_summary(
         incident=IncidentBrief.model_validate(incident) if incident else None,
         is_sample=report.is_sample,
         has_audio=report.audio_media_id is not None,
+        has_video=report.video_media_id is not None,
         thumbnail=thumbnail,
         open_duplicate_suggestions=open_suggestions,
     )
@@ -289,6 +296,48 @@ def report_detail(db: Session, report: Report, *, reviewer: bool) -> ReportDetai
         jobs=[JobView.model_validate(j) for j in jobs],
         allowed_actions=allowed_actions(report) if reviewer else [],
         fix_checks=[fix_check_view(db, c, reviewer=reviewer) for c in checks],
+        video=video_view(db, report),
+    )
+
+
+def video_view(db: Session, report: Report) -> VideoView | None:
+    """The report's clip, tracked stills and motion description. Residents see their own clip;
+    video never appears on public surfaces."""
+    if report.video_media_id is None:
+        return None
+    track = db.scalar(select(VideoTrack).where(VideoTrack.report_id == report.id))
+    display = report.display_video
+    if track is None:
+        # Clip attached, analysis not requested yet (it chains off the photo analysis).
+        return VideoView(status=VideoStatus.queued, concept=None, clip=media_ref(display))
+    stills: list[VideoStillView] = []
+    for frame in track.frames or []:
+        still = db.get(Media, uuid.UUID(str(frame["still_media_id"]))) if frame.get("still_media_id") else None
+        ref = media_ref(still) if still else None
+        if ref is None:
+            continue
+        regions = [
+            TrackedRegionView(object_id=r["object_id"], box=r["box"], confidence=r.get("confidence"))
+            for r in frame.get("regions", [])
+        ]
+        stills.append(VideoStillView(image=ref, time_s=frame["time_s"], track_count=len(regions), regions=regions))
+    assessment = None
+    if track.assessment:
+        try:
+            assessment = VideoAssessmentView.model_validate(track.assessment)
+        except ValidationError:
+            assessment = None
+    return VideoView(
+        status=track.status,
+        concept=track.concept,
+        clip=media_ref(display),
+        stills=stills,
+        assessment=assessment,
+        tracked_objects=track.tracked_objects,
+        model=track.model,
+        provenance=track.provenance,
+        outline_error=track.error_code if track.status == VideoStatus.failed else None,
+        completed_at=track.completed_at,
     )
 
 

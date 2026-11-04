@@ -147,6 +147,7 @@ class MetaClient:
         *,
         image_count: int = 0,
         audio_ms: int | None = None,
+        video_frames: int = 0,
         stream: bool = False,
     ) -> tuple[httpx.Response, int, CallRecord]:
         """Send with bounded retries. `build` returns a fresh httpx.Request per attempt."""
@@ -160,6 +161,7 @@ class MetaClient:
                 endpoint=endpoint,
                 image_count=image_count,
                 audio_ms=audio_ms,
+                video_frames=video_frames,
                 report_id=ctx.report_id,
                 job_id=ctx.job_id,
             )
@@ -264,7 +266,13 @@ class MetaClient:
         return ModelResult(body=body, latency_ms=latency, response_id=body.get("id"))
 
     def stream_response(
-        self, ctx: CallContext, payload: dict[str, Any], *, image_count: int = 0, cost: Decimal = Decimal("0")
+        self,
+        ctx: CallContext,
+        payload: dict[str, Any],
+        *,
+        image_count: int = 0,
+        video_frames: int = 0,
+        cost: Decimal = Decimal("0"),
     ) -> tuple[list[dict[str, Any]], int]:
         """POST /v1/responses with stream=true; returns every SSE event as a dict."""
         model = str(payload["model"])
@@ -276,6 +284,7 @@ class MetaClient:
             "responses:stream",
             lambda: self._http.build_request("POST", "/responses", json=body, headers={"Accept": "text/event-stream"}),
             image_count=image_count,
+            video_frames=video_frames,
             stream=True,
         )
         events: list[dict[str, Any]] = []
@@ -320,6 +329,34 @@ class MetaClient:
             success=record.success,
         )
         return events, latency
+
+    def upload_file(self, ctx: CallContext, data: bytes, filename: str) -> str:
+        """POST /v1/files with purpose=user_data. Returns the file id for later requests."""
+        files: dict[str, tuple[str | None, bytes | str, str]] = {
+            "file": (filename, data, "video/mp4"),
+            "purpose": (None, "user_data", "text/plain"),
+        }
+        started = time.monotonic()
+        response, _, record = self._send(
+            ctx,
+            "files",
+            "files",
+            lambda: self._http.build_request("POST", "/files", files=files, headers={"Accept": "application/json"}),
+        )
+        record.latency_ms = int((time.monotonic() - started) * 1000)
+        try:
+            body = response.json()
+            file_id = body.get("id")
+            if not isinstance(file_id, str) or not file_id:
+                raise ValueError("missing file id")
+        except (json.JSONDecodeError, UnicodeDecodeError, ValueError, AttributeError) as exc:
+            record.error_code = "malformed_response"
+            record_call(record)
+            raise ModelAPIError("malformed_response", "The provider returned an unreadable upload.") from exc
+        record.provider_response_id = file_id[:128]
+        record.success = True
+        record_call(record)
+        return file_id
 
     def transcribe(
         self, ctx: CallContext, wav: bytes, *, model: str, audio_ms: int, language_bias: list[str] | None = None

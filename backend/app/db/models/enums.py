@@ -78,12 +78,14 @@ class LocationSource(StrEnum):
 class MediaKind(StrEnum):
     image = "image"
     audio = "audio"
+    video = "video"
 
 
 class MediaVariant(StrEnum):
     original = "original"
     display = "display"
     redacted = "redacted"
+    tracked_still = "tracked_still"
     wav = "wav"
 
 
@@ -107,6 +109,7 @@ class JobKind(StrEnum):
     match_duplicates = "match_duplicates"
     verify_fix = "verify_fix"
     redact_image = "redact_image"
+    analyze_video = "analyze_video"
 
 
 class JobStatus(StrEnum):
@@ -130,6 +133,9 @@ class ModelOperation(StrEnum):
     duplicate_assessment = "duplicate_assessment"
     fix_verification = "fix_verification"
     redaction = "redaction"
+    file_upload = "file_upload"
+    video_tracking = "video_tracking"
+    video_description = "video_description"
 
 
 class FixCheckStatus(StrEnum):
@@ -140,6 +146,13 @@ class FixCheckStatus(StrEnum):
 
 
 class RedactionStatus(StrEnum):
+    queued = "queued"
+    running = "running"
+    completed = "completed"
+    failed = "failed"
+
+
+class VideoStatus(StrEnum):
     queued = "queued"
     running = "running"
     completed = "completed"

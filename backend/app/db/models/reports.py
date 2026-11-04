@@ -45,6 +45,8 @@ class Report(UUIDPk, Timestamps, Base):
     image_media_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("media.id", ondelete="RESTRICT"))
     display_media_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("media.id", ondelete="RESTRICT"))
     audio_media_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media.id", ondelete="SET NULL"))
+    video_media_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media.id", ondelete="SET NULL"))
+    video_display_media_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media.id", ondelete="SET NULL"))
 
     # --- Model-generated interpretation ---
     ai_category: Mapped[HazardCategory | None] = mapped_column(str_enum(HazardCategory, "ai_category"))
@@ -77,6 +79,8 @@ class Report(UUIDPk, Timestamps, Base):
     image: Mapped[Media] = relationship(foreign_keys=[image_media_id], lazy="joined")
     display_image: Mapped[Media] = relationship(foreign_keys=[display_media_id], lazy="joined")
     audio: Mapped[Media | None] = relationship(foreign_keys=[audio_media_id], lazy="joined")
+    video: Mapped[Media | None] = relationship(foreign_keys=[video_media_id], lazy="joined")
+    display_video: Mapped[Media | None] = relationship(foreign_keys=[video_display_media_id], lazy="joined")
     incident: Mapped["Incident | None"] = relationship(
         back_populates="reports", foreign_keys=[incident_id], lazy="selectin"
     )

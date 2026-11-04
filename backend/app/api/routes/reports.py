@@ -93,6 +93,7 @@ async def submit_report(
     location_note: Annotated[str | None, Form(max_length=200)] = None,
     audio_id: Annotated[uuid.UUID | None, Form()] = None,
     audio_claim_token: Annotated[str | None, Form(max_length=128)] = None,
+    video: Annotated[UploadFile | None, File(description="Optional MP4, MOV or WebM clip (15s max)")] = None,
     idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key", max_length=64)] = None,
 ) -> ReportCreated:
     settings = get_settings()
@@ -115,6 +116,7 @@ async def submit_report(
     rate_limit.hit(db, f"report:{fp}", settings.report_rate_limit_per_hour, timedelta(hours=1))
     rate_limit.hit(db, "report:global", settings.public_global_rate_limit_per_hour, timedelta(hours=1))
     data = await read_limited(image, settings.max_image_bytes, "photo")
+    clip = await read_limited(video, settings.max_video_bytes, "clip") if video is not None else None
     new = NewReport(
         image=data,
         description=description,
@@ -127,6 +129,7 @@ async def submit_report(
         location_note=location_note,
         audio_id=audio_id,
         audio_claim_token=audio_claim_token,
+        video=clip,
         idempotency_key=idempotency_key,
         fingerprint=fp,
     )

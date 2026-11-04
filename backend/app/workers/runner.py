@@ -1,7 +1,8 @@
 """Background worker: `python -m app.workers.runner`.
 
 Pipeline per report: analyze_report -> (segment_image for the suggested concept) + match_duplicates,
-with redact_image running alongside so the blurred photo is ready for non-reviewers.
+with redact_image running alongside so the blurred photo is ready for non-reviewers. Reports with a
+clip also queue analyze_video, which chains off the photo analysis for its tracking concept.
 Matching always runs, even when AI analysis is unavailable, using resident-provided data. verify_fix jobs
 compare an incident's "after" photo with the original.
 """
@@ -14,9 +15,11 @@ import time
 import uuid
 from types import FrameType
 
+from sqlalchemy import select
+
 from app.core.config import get_settings
 from app.core.logging import configure_logging, log_event
-from app.db.models import ProcessingJob, Report
+from app.db.models import ProcessingJob, Report, VideoTrack
 from app.db.models.enums import JobKind
 from app.db.session import session_scope
 from app.services import jobs
@@ -29,6 +32,12 @@ from app.services.segmentation import (
     mark_segmentation_failed,
     request_segmentation,
     run_segmentation,
+)
+from app.services.video_analysis import (
+    VideoFailed,
+    mark_video_failed,
+    request_video_analysis,
+    run_video_analysis,
 )
 
 logger = logging.getLogger("app.worker")
@@ -43,9 +52,13 @@ def _handle_stop(signum: int, frame: FrameType | None) -> None:
 def _queue_follow_ups(report_id: uuid.UUID, *, segment: bool) -> None:
     with session_scope() as db:
         jobs.enqueue(db, JobKind.match_duplicates, report_id, dedupe=f"match:{report_id}")
+        report = db.get(Report, report_id)
+        if report is not None and report.video_media_id is not None:
+            # Clip analysis chains off the photo analysis for its tracking concept, and still runs
+            # when the photo analysis failed (the category default stands in).
+            request_video_analysis(db, report)
         if not segment:
             return
-        report = db.get(Report, report_id)
         result = ((report.analysis or {}).get("result") or {}) if report else {}
         concept = result.get("segmentation_concept")
         if report is not None and result.get("is_infrastructure_hazard") and concept and concept != "none":
@@ -75,9 +88,11 @@ def process(
             run_fix_check(uuid.UUID(str(options["fix_check_id"])), job_id)
         elif kind == JobKind.redact_image:
             run_redaction(uuid.UUID(str(options["redaction_id"])), job_id)
+        elif kind == JobKind.analyze_video:
+            run_video_analysis(report_id, job_id)
         with session_scope() as db:
             jobs.mark_succeeded(db, job_id)
-    except (AnalysisFailed, SegmentationFailed, FixCheckFailed, RedactionFailed) as exc:
+    except (AnalysisFailed, SegmentationFailed, FixCheckFailed, RedactionFailed, VideoFailed) as exc:
         _fail(
             job_id, kind, report_id, segmentation_id, exc.code, exc.retryable, attempts, max_attempts, options=options
         )
@@ -136,6 +151,12 @@ def _fail(
         mark_fix_check_failed(uuid.UUID(str(options["fix_check_id"])), code)
     elif kind == JobKind.redact_image and not will_retry and options:
         mark_redaction_failed(uuid.UUID(str(options["redaction_id"])), code)
+    elif kind == JobKind.analyze_video and not will_retry:
+        with session_scope() as db:
+            track = db.scalar(select(VideoTrack).where(VideoTrack.report_id == report_id))
+            track_id = track.id if track else None
+        if track_id is not None:
+            mark_video_failed(track_id, code)
 
 
 def main() -> None:

@@ -14,6 +14,8 @@ export function isProcessing(report: ReportDetail): boolean {
     report.status === 'processing' ||
     report.analysis.status === 'pending' ||
     report.analysis.status === 'running' ||
+    report.video?.status === 'queued' ||
+    report.video?.status === 'running' ||
     report.redaction_status === 'queued' ||
     report.redaction_status === 'running' ||
     report.segmentations.some((s) => s.status === 'queued' || s.status === 'running') ||

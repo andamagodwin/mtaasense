@@ -18,7 +18,7 @@ import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/Button';
 import { SCREEN_CONTENT } from '@/components/ui/Screen';
 import { Text } from '@/components/ui/Text';
-import { api, ApiError, appendFile } from '@/lib/api';
+import { api, ApiError, appendFile, type UploadFile } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import { UGANDA_BOUNDS } from '@/lib/config';
 import { useApi } from '@/lib/hooks';
@@ -48,6 +48,8 @@ export function ReportFlow() {
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const [clip, setClip] = useState<UploadFile | null>(null);
+  const [clipError, setClipError] = useState<string | null>(null);
   const [category, setCategory] = useState<HazardCategory | 'auto'>('auto');
   const [description, setDescription] = useState('');
   const [voice, setVoice] = useState<VoiceNoteValue | null>(null);
@@ -115,6 +117,41 @@ export function ReportFlow() {
     }
   }
 
+  async function pickClip(source: 'camera' | 'library') {
+    setClipError(null);
+    const maxSeconds = config.data?.max_video_seconds ?? 15;
+    try {
+      if (source === 'camera') {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          setClipError(
+            'Camera access was declined. You can choose a clip from your library instead.'
+          );
+          return;
+        }
+      }
+      const result =
+        source === 'camera'
+          ? await ImagePicker.launchCameraAsync({
+              mediaTypes: ['videos'],
+              videoMaxDuration: maxSeconds,
+            })
+          : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'] });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      const seconds = (asset.duration ?? 0) / 1000;
+      if (seconds > maxSeconds + 0.5) {
+        setClipError(`Clips can be at most ${maxSeconds} seconds. Trim it and try again.`);
+        return;
+      }
+      const name = asset.fileName ?? `clip.${asset.uri.split('.').pop() ?? 'mp4'}`;
+      const type = asset.mimeType ?? (name.endsWith('.mov') ? 'video/quicktime' : 'video/mp4');
+      setClip({ uri: asset.uri, name, type });
+    } catch {
+      setClipError('That clip could not be opened. Try another one.');
+    }
+  }
+
   async function locateMe() {
     setGeoState('locating');
     setGeoError(null);
@@ -158,6 +195,8 @@ export function ReportFlow() {
   function reset() {
     setStep(0);
     setPhoto(null);
+    setClip(null);
+    setClipError(null);
     setCategory('auto');
     setDescription('');
     setVoice(null);
@@ -182,6 +221,7 @@ export function ReportFlow() {
     try {
       const form = new FormData();
       appendFile(form, 'image', { uri: photo.uri, name: 'photo.jpg', type: 'image/jpeg' });
+      if (clip) appendFile(form, 'video', clip);
       form.append('description', description.trim());
       if (voice) {
         form.append('audio_id', voice.audioId);
@@ -271,6 +311,14 @@ export function ReportFlow() {
               error={photoError}
               maxImageMb={config.data?.max_image_mb ?? 15}
               onPick={(source) => void pickPhoto(source)}
+              clip={clip}
+              clipError={clipError}
+              maxVideoSeconds={config.data?.max_video_seconds ?? 15}
+              onPickClip={(source) => void pickClip(source)}
+              onRemoveClip={() => {
+                setClip(null);
+                setClipError(null);
+              }}
             />
           )}
           {step === 1 && (

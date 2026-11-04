@@ -53,12 +53,22 @@ export function PhotoStep({
   error,
   maxImageMb,
   onPick,
+  clip,
+  clipError,
+  maxVideoSeconds,
+  onPickClip,
+  onRemoveClip,
 }: {
   photo: Photo | null;
   preparing: boolean;
   error: string | null;
   maxImageMb: number;
   onPick: (source: 'camera' | 'library') => void;
+  clip: { uri: string; name: string } | null;
+  clipError: string | null;
+  maxVideoSeconds: number;
+  onPickClip: (source: 'camera' | 'library') => void;
+  onRemoveClip: () => void;
 }) {
   return (
     <View className="gap-4">
@@ -111,6 +121,43 @@ export function PhotoStep({
         </View>
       )}
       {error && <Callout tone="danger">{error}</Callout>}
+      {photo && !preparing && (
+        <View className="gap-2.5 rounded-xl border border-line bg-surface p-4">
+          <Text className="font-semibold text-[15px]">
+            Clip <Text className="font-normal text-ink-3">(optional)</Text>
+          </Text>
+          {clip ? (
+            <View className="flex-row items-center justify-between gap-2">
+              <Text className="flex-1 text-[14px]" numberOfLines={1}>
+                {clip.name}
+              </Text>
+              <Button title="Remove" variant="ghost" size="sm" onPress={onRemoveClip} />
+            </View>
+          ) : (
+            <View className="flex-row gap-2">
+              <Button
+                title="Record"
+                variant="secondary"
+                size="sm"
+                icon={Camera}
+                onPress={() => onPickClip('camera')}
+              />
+              <Button
+                title="Choose"
+                variant="secondary"
+                size="sm"
+                icon={GalleryAdd}
+                onPress={() => onPickClip('library')}
+              />
+            </View>
+          )}
+          {clipError && <Callout tone="danger">{clipError}</Callout>}
+          <Text className="text-[12.5px] leading-[18px] text-ink-3">
+            Up to {maxVideoSeconds} seconds showing movement, like flowing water. The hazard is
+            tracked frame by frame and the motion described.
+          </Text>
+        </View>
+      )}
       <Text className="text-[12.5px] leading-[18px] text-ink-3">
         Tip: step back so the surroundings are visible. Faces and number plates are blurred
         automatically before anyone else sees your photo.

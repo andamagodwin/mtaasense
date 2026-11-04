@@ -23,6 +23,7 @@ from app.db.models.enums import (
     Severity,
     SuggestionStatus,
     UserRole,
+    VideoStatus,
 )
 from app.schemas.analysis import FixAssessment, HazardAssessment
 
@@ -116,6 +117,42 @@ class FixCheckBrief(BaseModel):
     completed_at: datetime | None
 
 
+class VideoAssessmentView(BaseModel):
+    hazard_visible: bool
+    summary: str
+    motion: str
+    spread: str
+    changes_through_clip: str
+    confidence: str
+    uncertainties: list[str] = []
+
+
+class TrackedRegionView(BaseModel):
+    object_id: str
+    box: dict[str, float]
+    confidence: float | None = None
+
+
+class VideoStillView(BaseModel):
+    image: MediaRef
+    time_s: float
+    track_count: int
+    regions: list[TrackedRegionView] = []
+
+
+class VideoView(BaseModel):
+    status: VideoStatus
+    concept: str | None
+    clip: MediaRef | None
+    stills: list[VideoStillView] = []
+    assessment: VideoAssessmentView | None = None
+    tracked_objects: int | None = None
+    model: str | None = None
+    provenance: Provenance | None = None
+    outline_error: str | None = None
+    completed_at: datetime | None = None
+
+
 class JobView(Out):
     id: uuid.UUID
     kind: JobKind
@@ -156,6 +193,7 @@ class ReportSummary(Out):
     incident: IncidentBrief | None
     is_sample: bool
     has_audio: bool
+    has_video: bool
     thumbnail: MediaRef | None
     open_duplicate_suggestions: int = 0
 
@@ -172,6 +210,7 @@ class ReportDetail(ReportSummary):
     redacted: bool = False
     redaction_status: RedactionStatus | None = None
     audio: MediaRef | None
+    video: VideoView | None = None
     analysis: AnalysisView
     segmentations: list[SegmentationView]
     jobs: list[JobView]
@@ -387,6 +426,8 @@ class AppConfig(BaseModel):
     categories: list[HazardCategory]
     max_image_mb: int
     max_audio_seconds: int
+    max_video_mb: int
+    max_video_seconds: int
     map_bounds: dict[str, float]
 
 
@@ -398,6 +439,7 @@ class UsageBucket(BaseModel):
     output_tokens: int
     images: int
     audio_seconds: float
+    video_frames: int
     estimated_cost_usd: Decimal
     avg_latency_ms: float | None
 
@@ -418,6 +460,7 @@ class ModelCallView(Out):
     reasoning_tokens: int | None
     image_count: int
     audio_ms: int | None
+    video_frames: int
     estimated_cost_usd: Decimal
 
 

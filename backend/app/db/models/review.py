@@ -15,6 +15,7 @@ from app.db.models.enums import (
     RedactionStatus,
     SegmentationStatus,
     SuggestionStatus,
+    VideoStatus,
 )
 from app.db.models.media import Media
 from app.db.models.reports import Report
@@ -100,6 +101,34 @@ class Redaction(UUIDPk, Timestamps, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     redacted_image: Mapped[Media | None] = relationship(foreign_keys=[redacted_media_id], lazy="joined")
+
+
+class VideoTrack(UUIDPk, Timestamps, Base):
+    """SAM 3.1 tracking + Muse Spark description for one report's clip.
+
+    Tracking follows the concept across frames (stable object ids); three stills with the
+    outlines drawn on are stored as `tracked_still` media so clients need no frame sync.
+    """
+
+    __tablename__ = "video_tracks"
+
+    report_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("reports.id", ondelete="CASCADE"), unique=True)
+    # Set when the worker transcodes the upload; null while queued or when transcoding failed.
+    media_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("media.id", ondelete="CASCADE"))
+    # Resolved in the worker from the photo analysis; null skips tracking (description only).
+    concept: Mapped[str | None] = mapped_column(String(64))
+    status: Mapped[VideoStatus] = mapped_column(str_enum(VideoStatus, "video_status"), default=VideoStatus.queued)
+    # Meta Files API id of the uploaded display clip, reused for tracking + description.
+    file_id: Mapped[str | None] = mapped_column(String(64))
+    # Sampled frames: [{frame_index, time_s, still_media_id, regions: [{object_id, box, confidence}]}].
+    frames: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)
+    # Validated VideoAssessment: flow, spread, and what the clip adds over the photo.
+    assessment: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    tracked_objects: Mapped[int | None]
+    model: Mapped[str | None] = mapped_column(String(64))
+    provenance: Mapped[Provenance | None] = mapped_column(str_enum(Provenance, "provenance"))
+    error_code: Mapped[str | None] = mapped_column(String(64))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class FixCheck(UUIDPk, Timestamps, Base):

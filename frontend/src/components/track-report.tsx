@@ -10,6 +10,7 @@ import { usePolling, useApi } from "@/lib/hooks";
 import type { ReportDetail } from "@/lib/types";
 import { AnalysisPanel } from "./analysis-panel";
 import { CategoryBadge, PrivacyBlurredBadge, SampleBadge, StatusBadge } from "./badges";
+import { VideoSection } from "./video-section";
 import { FixCheckForm, FixCheckResult } from "./fix-check";
 import { ResidentFacts } from "./resident-facts";
 import { SegmentationViewer } from "./segmentation-viewer";
@@ -31,7 +32,9 @@ export function isProcessing(report: ReportDetail): boolean {
     report.redaction_status === "queued" ||
     report.redaction_status === "running" ||
     report.segmentations.some((s) => s.status === "queued" || s.status === "running") ||
-    report.fix_checks.some((c) => c.status === "queued" || c.status === "running")
+    report.fix_checks.some((c) => c.status === "queued" || c.status === "running") ||
+    report.video?.status === "queued" ||
+    report.video?.status === "running"
   );
 }
 
@@ -180,9 +183,15 @@ export function TrackReport() {
         </div>
       </div>
 
+      {report.video && (
+        <div className="mt-6">
+          <VideoSection video={report.video} />
+        </div>
+      )}
+
       <div className="mt-8 flex flex-wrap items-center gap-4">
         <LinkButton href="/report" variant="secondary">Report another hazard</LinkButton>
-        <p className="text-[12.5px] text-ink-3">Only people with this link, and MtaaSense reviewers, can see your photo.</p>
+        <p className="text-[12.5px] text-ink-3">Only people with this link, and MtaaSense reviewers, can see your photo{report.video ? " and clip" : ""}.</p>
       </div>
     </Page>
   );

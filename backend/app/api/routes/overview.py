@@ -172,5 +172,7 @@ def app_config() -> AppConfig:
         categories=list(HazardCategory),
         max_image_mb=s.max_image_bytes // (1024 * 1024),
         max_audio_seconds=s.max_audio_seconds,
+        max_video_mb=s.max_video_bytes // (1024 * 1024),
+        max_video_seconds=s.max_video_seconds,
         map_bounds=UGANDA_BOUNDS,
     )

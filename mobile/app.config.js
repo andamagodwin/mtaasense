@@ -30,12 +30,13 @@ module.exports = {
       'expo-image-picker',
       {
         cameraPermission:
-          'MtaaSense uses the camera so you can photograph a road or drainage hazard to report it.',
+          'MtaaSense uses the camera so you can photograph or film a road or drainage hazard to report it.',
         photosPermission:
-          'MtaaSense opens your photo library so you can attach an existing photo of a hazard.',
+          'MtaaSense opens your photo library so you can attach an existing photo or clip of a hazard.',
         microphonePermission: false,
       },
     ],
+    'expo-video',
     [
       'expo-location',
       {

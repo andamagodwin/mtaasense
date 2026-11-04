@@ -130,11 +130,50 @@ export interface ReportSummary {
   incident: IncidentBrief | null;
   is_sample: boolean;
   has_audio: boolean;
+  has_video: boolean;
   thumbnail: MediaRef | null;
   open_duplicate_suggestions: number;
 }
 
 export type RedactionStatus = "queued" | "running" | "completed" | "failed";
+
+export type VideoStatus = "queued" | "running" | "completed" | "failed";
+
+export interface VideoAssessment {
+  hazard_visible: boolean;
+  summary: string;
+  motion: string;
+  spread: string;
+  changes_through_clip: string;
+  confidence: string;
+  uncertainties: string[];
+}
+
+export interface TrackedRegion {
+  object_id: string;
+  box: Record<string, number>;
+  confidence: number | null;
+}
+
+export interface VideoStill {
+  image: MediaRef;
+  time_s: number;
+  track_count: number;
+  regions: TrackedRegion[];
+}
+
+export interface ReportVideo {
+  status: VideoStatus;
+  concept: string | null;
+  clip: MediaRef | null;
+  stills: VideoStill[];
+  assessment: VideoAssessment | null;
+  tracked_objects: number | null;
+  model: string | null;
+  provenance: Provenance | null;
+  outline_error: string | null;
+  completed_at: string | null;
+}
 
 export interface ReportDetail extends ReportSummary {
   voice_transcript: string | null;
@@ -148,6 +187,7 @@ export interface ReportDetail extends ReportSummary {
   redacted: boolean;
   redaction_status: RedactionStatus | null;
   audio: MediaRef | null;
+  video: ReportVideo | null;
   analysis: AnalysisView;
   segmentations: SegmentationView[];
   jobs: JobView[];
@@ -363,6 +403,8 @@ export interface AppConfig {
   categories: HazardCategory[];
   max_image_mb: number;
   max_audio_seconds: number;
+  max_video_mb: number;
+  max_video_seconds: number;
   map_bounds: { min_lat: number; max_lat: number; min_lon: number; max_lon: number };
 }
 
@@ -374,6 +416,7 @@ export interface UsageBucket {
   output_tokens: number;
   images: number;
   audio_seconds: number;
+  video_frames: number;
   estimated_cost_usd: string;
   avg_latency_ms: number | null;
 }

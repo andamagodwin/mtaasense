@@ -27,6 +27,7 @@ os.environ.update(
         "REPORT_RATE_LIMIT_PER_HOUR": "1000",
         "LOGIN_RATE_LIMIT_PER_15MIN": "1000",
         "DUPLICATE_MODEL_ASSIST": "false",
+        "RAIN_ENABLED": "false",
         "LOG_LEVEL": "WARNING",
     }
 )

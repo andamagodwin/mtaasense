@@ -211,6 +211,17 @@ export interface MapFeatures {
   unlocated_reports: number;
 }
 
+export interface RainWarning {
+  active: boolean;
+  available: boolean;
+  expected_mm_24h: number;
+  peak_hour: string | null;
+  peak_hour_mm: number | null;
+  fetched_at: string | null;
+  threshold_mm: number;
+  source: string;
+}
+
 export interface AppConfig {
   model_api_configured: boolean;
   segmentation_concepts: string[];

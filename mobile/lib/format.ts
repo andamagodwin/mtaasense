@@ -127,5 +127,18 @@ export function formatCoords(lat: number, lon: number): string {
   return `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
 }
 
+export function formatHour(iso: string): string {
+  const at = new Date(iso);
+  const time = new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hour12: true }).format(at);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const thatDay = new Date(at);
+  thatDay.setHours(0, 0, 0, 0);
+  const daysOut = Math.round((thatDay.getTime() - today.getTime()) / 86400000);
+  if (daysOut <= 0) return time;
+  if (daysOut === 1) return `${time} tomorrow`;
+  return `${time} ${new Intl.DateTimeFormat('en-GB', { weekday: 'short' }).format(at)}`;
+}
+
 export const mmss = (s: number) =>
   `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;

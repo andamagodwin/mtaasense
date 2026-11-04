@@ -22,7 +22,8 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 | Model-assisted duplicate comparison (Muse Spark, two+ images) | **Verified live** | Labels restricted to backend-supplied IDs |
 | Repair checks (Muse Spark before/after + SAM 3.1 on both photos) | **Verified live (2 pairs)** | Same photo resent: *same spot, not repaired*; another street: *different spot*. No real repaired pair tested yet |
 | Privacy blur (SAM 3.1 faces/plates + local Gaussian blur) | **Verified live** | 4/4 faces and 1/1 plate blurred on seed photos; alignment checked visually |
-| Backend tests | **66 passing** | `uv run pytest` (real PostGIS, mocked Meta transport) |
+| Rain warning (Open-Meteo Kampala forecast, free, no key) | **Verified live** | Real 48h fetch + 24h window checked; queue boost covered by tests |
+| Backend tests | **78 passing** | `uv run pytest` (real PostGIS, mocked Meta transport) |
 | Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build && pnpm build:vinext` |
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
 | Backend on the Contabo VPS | **Deployed** at <https://api.mtaasense.com> | Docker Compose behind a Cloudflare Tunnel (the VPS's ports 80/443 belong to another app); `/ready` reports database, migrations, media and model API OK |
@@ -64,6 +65,10 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
    the check as the evidence, which the public incident record then shows.
 10. **Usage** (`/admin`, admin only): estimated spend vs. budget, per-day spend, per-operation and per-model
     tables, every model call, and the latest evaluation results.
+11. **Rain warning**: a free Open-Meteo forecast for Kampala. When 10+ mm is expected in the next 24 hours,
+    the map shows a warning with a count of open blocked drains, blocked drains jump to the top of the review
+    queue, and the app's map tab lists open drain incidents longest-waiting first under "Clear before tonight's
+    rain". When the forecast is unreachable there is simply no warning.
 
 Every AI result carries its **provenance**: *Live model call*, *Cached result*, or *Demo fixture*.
 
@@ -104,6 +109,9 @@ Key decisions:
   blurred copy is stored as a `redacted` media variant. Non-reviewer views only ever receive that copy; the
   original is only minted for reviewers. Until the blur finishes, residents see a placeholder; when AI is
   unavailable the unblurred photo is served so the app keeps working.
+- **Rain warning without new infrastructure.** One Kampala-wide Open-Meteo forecast, cached in-process for
+  30 minutes (no migration, no key, no budget impact). Provider failures degrade to "no warning", and the
+  review-queue boost is a sort flag (`rain_boosted`) on the existing reports endpoint.
 
 ```
 backend/app
@@ -113,7 +121,7 @@ backend/app
   schemas/        API + structured-output schemas
   services/       meta_client, analysis, segmentation, transcription, duplicate_matching, review, reports,
                   media (+storage abstraction), jobs, lifecycle, pricing, usage_tracking, rate_limit, fixtures,
-                  fix_verification, redaction
+                  fix_verification, redaction, rain
   workers/        runner
 backend/alembic   migrations        backend/tests   pytest suite        backend/eval   evaluation harness
 backend/seed      sample images, attribution, seed + fixture scripts
@@ -264,6 +272,7 @@ Errors are always `{"error": {"code", "message", "request_id"}}`.
 | `POST /incidents/{id}/fix-checks` (multipart) | reviewer | Same, compared with the primary (or a chosen linked) report |
 | `GET/POST /reports/{id}/notes`, `/incidents/{id}/notes`; `GET …/audit` | reviewer | Notes and audit history |
 | `GET /map/features`, `GET /stats`, `GET /config` | public | Map data (no photos or text), counts, client config |
+| `GET /rain` | public | Heavy-rain warning for Kampala (next 24h, cached 30 min); never errors when the provider is down |
 | `GET /review/summary` | reviewer | Dashboard counts |
 | `GET /jobs/{id}` | reviewer or receipt | Job status |
 | `GET /media/{id}?exp&sig` | signed URL | Private media (URLs minted only for authorised viewers) |
@@ -336,7 +345,7 @@ and any label not in the list sent is discarded. Reviewer decisions are never ov
 ```bash
 cd backend
 docker compose -f ../docker-compose.yml exec db psql -U mtaasense -c "CREATE DATABASE mtaasense_test"   # once
-uv run pytest            # 66 tests
+uv run pytest            # 78 tests
 uv run ruff check . && uv run mypy app      # lint + strict typing
 cd ../frontend && pnpm typecheck && pnpm lint && pnpm build
 ```

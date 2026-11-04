@@ -1,10 +1,10 @@
 import hmac
 import uuid
 from datetime import timedelta
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, File, Form, Header, Query, Response, UploadFile, status
-from sqlalchemy import ColumnElement, func, or_, select
+from sqlalchemy import ColumnElement, case, func, or_, select
 
 from app.api.dependencies import DB, Fingerprint, OptionalUser, Reviewer
 from app.api.serializers import (
@@ -39,6 +39,7 @@ from app.schemas.api import (
 from app.services import rate_limit, review
 from app.services.fix_verification import create_fix_check
 from app.services.jobs import enqueue
+from app.services.rain import get_warning
 from app.services.redaction import ensure_redactions
 from app.services.reports import NewReport, create_report, existing_for_key
 from app.services.segmentation import request_segmentation
@@ -217,17 +218,19 @@ def list_reports(
     if sample is not None:
         conditions.append(Report.is_sample.is_(sample))
     total = db.scalar(select(func.count()).select_from(Report).where(*conditions)) or 0
-    rows = (
-        db.scalars(select(Report).where(*conditions).order_by(Report.created_at.desc()).limit(limit).offset(offset))
-        .unique()
-        .all()
-    )
+    # Heavy rain forecast: blocked drains jump to the top of the queue, newest first within each group.
+    boosted = get_warning().active
+    ordering: list[ColumnElement[Any]] = [Report.created_at.desc()]
+    if boosted:
+        ordering.insert(0, case((Report.hazard_category == HazardCategory.blocked_drainage, 0), else_=1))
+    rows = db.scalars(select(Report).where(*conditions).order_by(*ordering).limit(limit).offset(offset)).unique().all()
     counts = open_suggestion_counts(db, [r.id for r in rows])
     return Page(
         items=[report_summary(r, open_suggestions=counts.get(r.id, 0)) for r in rows],
         total=total,
         limit=limit,
         offset=offset,
+        rain_boosted=boosted,
     )
 
 

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { colors } from "@/lib/colors";
-import { CATEGORY_HEX, CATEGORY_LABEL, formatDate, timeAgo } from "@/lib/format";
+import { CATEGORY_HEX, CATEGORY_LABEL, formatDate, formatHour, timeAgo } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
 import type { HazardCategory, IncidentStatus } from "@/lib/types";
 import { CategoryBadge, IncidentStatusBadge, PriorityBadge, SampleBadge, SeverityBadge } from "../badges";
@@ -27,6 +27,10 @@ export function MapExplorer() {
   const query = { category: category ? [category] : [], status: statuses, include_unreviewed: true };
   const features = useApi(() => api.mapFeatures(query), JSON.stringify(query));
   const data = features.data;
+  const rain = useApi((signal) => api.rain(signal), "rain");
+  const openDrains = (data?.incidents ?? []).filter(
+    (i) => i.hazard_category === "blocked_drainage" && i.status === "confirmed",
+  ).length;
 
   const selectedIncident = selection?.kind === "incident" ? data?.incidents.find((i) => i.id === selection.id) : undefined;
   const selectedReport = selection?.kind === "report" ? data?.reports.find((r) => r.id === selection.id) : undefined;
@@ -46,6 +50,27 @@ export function MapExplorer() {
             <h1 className="text-lg font-semibold tracking-tight">Incident map</h1>
             <span className="text-[12.5px] text-ink-3">{features.loading ? "Loading…" : `${total} on map`}</span>
           </div>
+          {rain.data?.active && (
+            <Callout
+              tone="warn"
+              title="Heavy rain expected"
+              action={
+                <button
+                  type="button"
+                  onClick={() => setCategory("blocked_drainage")}
+                  className="rounded-lg border border-warn-line bg-surface px-2.5 py-1.5 text-[12.5px] font-medium text-warn-ink hover:bg-sunken"
+                >
+                  Show drains
+                </button>
+              }
+            >
+              {rain.data.expected_mm_24h} mm in the next 24 hours
+              {rain.data.peak_hour && `, heaviest around ${formatHour(rain.data.peak_hour)}`}.{" "}
+              {data
+                ? `${openDrains} open blocked drain${openDrains === 1 ? "" : "s"} could flood.`
+                : "Blocked drains could flood."}
+            </Callout>
+          )}
           <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Hazard type">
             {[null, ...CATEGORIES].map((c) => {
               const on = category === c;

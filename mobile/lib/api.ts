@@ -7,6 +7,7 @@ import type {
   FixCheck,
   MapFeatures,
   MediaRef,
+  RainWarning,
   ReportCreated,
   ReportDetail,
   SegmentationView,
@@ -145,6 +146,7 @@ export const api = {
   config: (signal?: AbortSignal) => request<AppConfig>('/config', { signal }),
   mapFeatures: (signal?: AbortSignal) =>
     request<MapFeatures>('/map/features', { query: { include_unreviewed: true }, signal }),
+  rain: (signal?: AbortSignal) => request<RainWarning>('/rain', { signal }),
 
   submitReport: (form: FormData, idempotencyKey: string, onProgress?: (f: number) => void) =>
     upload<ReportCreated>('/reports', form, {

@@ -149,6 +149,19 @@ export function formatDateTime(iso: string): string {
   }).format(new Date(iso));
 }
 
+export function formatHour(iso: string): string {
+  const at = new Date(iso);
+  const time = new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: true }).format(at);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const thatDay = new Date(at);
+  thatDay.setHours(0, 0, 0, 0);
+  const daysOut = Math.round((thatDay.getTime() - today.getTime()) / 86400000);
+  if (daysOut <= 0) return time;
+  if (daysOut === 1) return `${time} tomorrow`;
+  return `${time} ${new Intl.DateTimeFormat("en-GB", { weekday: "short" }).format(at)}`;
+}
+
 export function formatDistance(m: number | null | undefined): string {
   if (m === null || m === undefined) return "Unknown";
   if (m < 1000) return `${Math.round(m)} m`;

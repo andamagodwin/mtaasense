@@ -221,6 +221,18 @@ export interface Page<T> {
   total: number;
   limit: number;
   offset: number;
+  rain_boosted: boolean;
+}
+
+export interface RainWarning {
+  active: boolean;
+  available: boolean;
+  expected_mm_24h: number;
+  peak_hour: string | null;
+  peak_hour_mm: number | null;
+  fetched_at: string | null;
+  threshold_mm: number;
+  source: string;
 }
 
 export interface DuplicateSignals {

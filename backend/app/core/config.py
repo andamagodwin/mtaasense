@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     duplicate_window_days: int = 45
     duplicate_max_candidates: int = 8
 
+    # Rain warning (Open-Meteo, free, no key). One Kampala-wide forecast, cached in-process.
+    rain_enabled: bool = True
+    rain_heavy_mm_24h: float = 10.0
+    rain_cache_minutes: int = 30
+
     # Worker
     worker_poll_seconds: float = 1.5
     worker_job_timeout_seconds: int = 600

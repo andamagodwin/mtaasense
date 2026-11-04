@@ -202,6 +202,8 @@ class Page[T](BaseModel):
     total: int
     limit: int
     offset: int
+    # True when heavy rain is forecast and blocked drains were sorted first.
+    rain_boosted: bool = False
 
 
 class DuplicateSuggestionView(Out):
@@ -330,6 +332,20 @@ class PublicStats(BaseModel):
     incidents_resolved: int
     reports_under_review: int
     sample_records: int
+
+
+class RainWarningView(BaseModel):
+    """Heavy rain expected in Kampala in the next 24 hours. `available` is false when the
+    forecast could not be fetched; clients then show nothing."""
+
+    active: bool
+    available: bool
+    expected_mm_24h: float
+    peak_hour: datetime | None
+    peak_hour_mm: float | None
+    fetched_at: datetime | None
+    threshold_mm: float
+    source: str = "open-meteo"
 
 
 class ReviewSummary(BaseModel):

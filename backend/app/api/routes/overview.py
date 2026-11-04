@@ -10,9 +10,10 @@ from app.api.serializers import incident_summary, latlon
 from app.core.config import get_settings
 from app.db.models import DuplicateSuggestion, Incident, Report
 from app.db.models.enums import HazardCategory, IncidentStatus, ReportStatus, SuggestionStatus
-from app.schemas.api import AppConfig, MapFeatures, MapReport, PublicStats, ReviewSummary
+from app.schemas.api import AppConfig, MapFeatures, MapReport, PublicStats, RainWarningView, ReviewSummary
 from app.services.geo import UGANDA_BOUNDS
 from app.services.lifecycle import REVIEWABLE
+from app.services.rain import get_warning
 from app.services.segmentation import CONCEPTS
 
 router = APIRouter(tags=["overview"])
@@ -99,6 +100,20 @@ def map_features(
 
 def _count(db: DB, model: type[Any], *conditions: ColumnElement[bool]) -> int:
     return db.scalar(select(func.count()).select_from(model).where(*conditions)) or 0
+
+
+@router.get("/rain", response_model=RainWarningView)
+def rain_warning() -> RainWarningView:
+    warning = get_warning()
+    return RainWarningView(
+        active=warning.active,
+        available=warning.available,
+        expected_mm_24h=warning.expected_mm_24h,
+        peak_hour=warning.peak_hour,
+        peak_hour_mm=warning.peak_hour_mm,
+        fetched_at=warning.fetched_at,
+        threshold_mm=warning.threshold_mm,
+    )
 
 
 @router.get("/stats", response_model=PublicStats)

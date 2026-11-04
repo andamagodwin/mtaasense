@@ -16,6 +16,7 @@ import type {
   Page,
   Priority,
   PublicStats,
+  RainWarning,
   ReportCreated,
   ReportDetail,
   ReportStatus,
@@ -140,6 +141,7 @@ const tokenHeader = (token?: string | null): Record<string, string> | undefined 
 export const api = {
   config: () => request<AppConfig>("/config"),
   stats: () => request<PublicStats>("/stats"),
+  rain: (signal?: AbortSignal) => request<RainWarning>("/rain", { signal }),
 
   submitReport: (form: FormData, idempotencyKey: string, onProgress?: (f: number) => void) =>
     upload<ReportCreated>("/reports", form, { headers: { "Idempotency-Key": idempotencyKey }, onProgress }),

@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CategoryDot } from '@/components/badges';
 import { hazardsGeoJSON, type HazardProperties } from '@/components/map/features';
+import { Callout } from '@/components/ui/feedback';
 import { Text } from '@/components/ui/Text';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/cn';
@@ -13,16 +14,18 @@ import { KAMPALA, MAP_STYLE_URL } from '@/lib/config';
 import {
   CATEGORIES,
   CATEGORY_LABEL,
+  formatHour,
   REPORT_STATUS_LABEL,
   SEVERITY_LABEL,
   timeAgo,
 } from '@/lib/format';
 import { useApi } from '@/lib/hooks';
-import type { HazardCategory, MapFeatures } from '@/lib/types';
+import type { HazardCategory, IncidentSummary, MapFeatures } from '@/lib/types';
 import { colors } from '@/theme/tokens';
 
 export default function MapScreen() {
   const features = useApi((signal) => api.mapFeatures(signal), 'map-features');
+  const rain = useApi((signal) => api.rain(signal), 'rain');
   const [filter, setFilter] = useState<HazardCategory | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -31,6 +34,15 @@ export default function MapScreen() {
     [features.data, filter]
   );
   const total = data?.features.length ?? 0;
+  // Open blocked drains, longest waiting first: the "clear before tonight's rain" list.
+  const drains = useMemo(
+    () =>
+      (features.data?.incidents ?? [])
+        .filter((i) => i.hazard_category === 'blocked_drainage' && i.status === 'confirmed')
+        .sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    [features.data]
+  );
+  const warning = rain.data?.active ? rain.data : null;
 
   return (
     <View className="flex-1 bg-paper">
@@ -109,6 +121,19 @@ export default function MapScreen() {
             />
           ))}
         </ScrollView>
+        {warning && (
+          <View className="mx-4">
+            <Callout tone="warn" title="Heavy rain expected">
+              {warning.expected_mm_24h} mm in the next 24 hours
+              {warning.peak_hour && `, heaviest around ${formatHour(warning.peak_hour)}`}.{' '}
+              {features.data
+                ? drains.length > 0
+                  ? `${drains.length} open blocked drain${drains.length === 1 ? '' : 's'} below.`
+                  : 'No open blocked drains right now.'
+                : 'Checking open drains…'}
+            </Callout>
+          </View>
+        )}
       </SafeAreaView>
 
       {selectedId && features.data && (
@@ -118,6 +143,47 @@ export default function MapScreen() {
           onClose={() => setSelectedId(null)}
         />
       )}
+      {warning && !selectedId && drains.length > 0 && (
+        <ClearList drains={drains} onPick={setSelectedId} />
+      )}
+    </View>
+  );
+}
+
+function ClearList({
+  drains,
+  onPick,
+}: {
+  drains: IncidentSummary[];
+  onPick: (id: string) => void;
+}) {
+  return (
+    <View className="absolute inset-x-4 bottom-4 max-h-[42%] gap-1 rounded-[14px] border border-line bg-surface p-4">
+      <Text className="font-bold text-[15px]">Clear before tonight&apos;s rain</Text>
+      <Text className="text-[12.5px] text-ink-3">
+        {drains.length} open blocked drain{drains.length === 1 ? '' : 's'}, longest waiting first.
+        Tap one to see it.
+      </Text>
+      <ScrollView showsVerticalScrollIndicator={false} className="mt-1">
+        {drains.map((d) => (
+          <Pressable
+            key={d.id}
+            accessibilityRole="button"
+            onPress={() => onPick(d.id)}
+            className="flex-row items-center gap-2.5 border-t border-line py-2.5 active:bg-sunken">
+            <CategoryDot category={d.hazard_category} />
+            <View className="flex-1 gap-0.5">
+              <Text className="font-semibold text-[14px]" numberOfLines={1}>
+                {d.title}
+              </Text>
+              <Text className="font-mono text-[12px] text-ink-3">
+                {d.reference} · {d.report_count} report{d.report_count === 1 ? '' : 's'} ·{' '}
+                {timeAgo(d.created_at)}
+              </Text>
+            </View>
+          </Pressable>
+        ))}
+      </ScrollView>
     </View>
   );
 }

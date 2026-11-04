@@ -119,6 +119,13 @@ function ReportTable({ statuses, hasLocation, searchable, empty }: { statuses?: 
 
   return (
     <Card>
+      {page?.rain_boosted && (
+        <div className="border-b border-line px-5 py-3">
+          <Callout tone="warn" title="Heavy rain expected in the next 24 hours">
+            Blocked drains are first in the queue so they can be confirmed before the rain.
+          </Callout>
+        </div>
+      )}
       {searchable && (
         <div className="border-b border-line px-5 py-3">
           <div className="relative max-w-sm">

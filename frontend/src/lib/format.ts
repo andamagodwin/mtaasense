@@ -1,6 +1,8 @@
 import { colors } from "./colors";
 import type {
   AnalysisStatus,
+  FixAssessment,
+  FixVerdict,
   HazardCategory,
   ModelVerdict,
   Priority,
@@ -76,6 +78,21 @@ export const PROVENANCE_LABEL: Record<Provenance, string> = {
   live: "Live model call",
   cached: "Cached result",
   fixture: "Demo fixture",
+};
+
+export const FIX_VERDICT_LABEL: Record<FixVerdict, string> = {
+  repaired: "Looks repaired",
+  partially_repaired: "Partly repaired",
+  not_repaired: "Not repaired yet",
+  different_place: "Different spot",
+  insufficient_evidence: "Can't tell from the photos",
+};
+
+export const SAME_PLACE_LABEL: Record<FixAssessment["same_place"], string> = {
+  same: "Same spot as the original photo",
+  likely_same: "Probably the same spot",
+  unclear: "Can't confirm it's the same spot",
+  different: "Looks like a different spot",
 };
 
 export const VERDICT_LABEL: Record<ModelVerdict, string> = {

@@ -1,7 +1,8 @@
 """Background worker: `python -m app.workers.runner`.
 
 Pipeline per report: analyze_report -> (segment_image for the suggested concept) + match_duplicates.
-Matching always runs, even when AI analysis is unavailable, using resident-provided data.
+Matching always runs, even when AI analysis is unavailable, using resident-provided data. verify_fix jobs
+compare an incident's "after" photo with the original.
 """
 
 import logging
@@ -20,6 +21,7 @@ from app.db.session import session_scope
 from app.services import jobs
 from app.services.analysis import AnalysisFailed, mark_analysis_unavailable, run_analysis
 from app.services.duplicate_matching import run_matching
+from app.services.fix_verification import FixCheckFailed, mark_fix_check_failed, run_fix_check
 from app.services.segmentation import (
     SegmentationFailed,
     mark_segmentation_failed,
@@ -67,10 +69,14 @@ def process(
             run_segmentation(segmentation_id, job_id)
         elif kind == JobKind.match_duplicates:
             run_matching(report_id, job_id)
+        elif kind == JobKind.verify_fix:
+            run_fix_check(uuid.UUID(str(options["fix_check_id"])), job_id)
         with session_scope() as db:
             jobs.mark_succeeded(db, job_id)
-    except (AnalysisFailed, SegmentationFailed) as exc:
-        _fail(job_id, kind, report_id, segmentation_id, exc.code, exc.retryable, attempts, max_attempts)
+    except (AnalysisFailed, SegmentationFailed, FixCheckFailed) as exc:
+        _fail(
+            job_id, kind, report_id, segmentation_id, exc.code, exc.retryable, attempts, max_attempts, options=options
+        )
     except Exception as exc:
         logger.exception("job_crashed", extra={"fields": {"job_id": str(job_id), "kind": kind.value}})
         _fail(
@@ -83,6 +89,7 @@ def process(
             attempts,
             max_attempts,
             detail=type(exc).__name__,
+            options=options,
         )
 
 
@@ -96,6 +103,7 @@ def _fail(
     attempts: int,
     max_attempts: int,
     detail: str | None = None,
+    options: dict[str, object] | None = None,
 ) -> None:
     # Missing credentials or budget are not transient: don't burn retries on them.
     if code in ("not_configured", "budget_exhausted", "auth_failed", "billing_not_configured"):
@@ -120,6 +128,8 @@ def _fail(
             _queue_follow_ups(report_id, segment=False)
     elif kind == JobKind.segment_image and not will_retry and segmentation_id is not None:
         mark_segmentation_failed(segmentation_id, code)
+    elif kind == JobKind.verify_fix and not will_retry and options:
+        mark_fix_check_failed(uuid.UUID(str(options["fix_check_id"])), code)
 
 
 def main() -> None:

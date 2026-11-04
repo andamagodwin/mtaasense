@@ -4,6 +4,7 @@
 import { API_BASE, API_ORIGIN } from './config';
 import type {
   AppConfig,
+  FixCheck,
   MapFeatures,
   MediaRef,
   ReportCreated,
@@ -154,6 +155,11 @@ export const api = {
     upload<TranscriptionResult>('/transcriptions', form, { onProgress }),
   report: (id: string, token: string, signal?: AbortSignal) =>
     request<ReportDetail>(`/reports/${id}`, { headers: tokenHeader(token), signal }),
+  checkFix: (id: string, form: FormData, token: string, onProgress?: (f: number) => void) =>
+    upload<FixCheck>(`/reports/${id}/fix-checks`, form, {
+      headers: tokenHeader(token),
+      onProgress,
+    }),
   segment: (id: string, prompt: string, token: string) =>
     request<SegmentationView>(`/reports/${id}/segment`, {
       method: 'POST',

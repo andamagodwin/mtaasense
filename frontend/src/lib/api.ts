@@ -6,6 +6,7 @@ import type {
   AuditView,
   DuplicateSuggestionView,
   EvaluationSummary,
+  FixCheck,
   IncidentDetail,
   IncidentSummary,
   IncidentStatus,
@@ -146,6 +147,8 @@ export const api = {
     upload<TranscriptionResult>("/transcriptions", form, { onProgress }),
   report: (id: string, token?: string | null, signal?: AbortSignal) =>
     request<ReportDetail>(`/reports/${id}`, { headers: tokenHeader(token), signal }),
+  checkFix: (id: string, form: FormData, token?: string | null, onProgress?: (f: number) => void) =>
+    upload<FixCheck>(`/reports/${id}/fix-checks`, form, { headers: tokenHeader(token), onProgress }),
   segment: (id: string, prompt: string, token?: string | null) =>
     request<SegmentationView>(`/reports/${id}/segment`, { method: "POST", body: { prompt }, headers: tokenHeader(token) }),
 
@@ -179,8 +182,10 @@ export const api = {
   reportAudit: (id: string) => request<AuditView[]>(`/reports/${id}/audit`),
   updateIncident: (
     id: string,
-    body: Partial<{ title: string; summary: string; status: IncidentStatus; priority: Priority; severity: Severity; hazard_category: HazardCategory; resolution_note: string; note: string }>,
+    body: Partial<{ title: string; summary: string; status: IncidentStatus; priority: Priority; severity: Severity; hazard_category: HazardCategory; resolution_note: string; fix_check_id: string; note: string }>,
   ) => request<IncidentDetail>(`/incidents/${id}`, { method: "PATCH", body }),
+  checkIncidentFix: (id: string, form: FormData, onProgress?: (f: number) => void) =>
+    upload<FixCheck>(`/incidents/${id}/fix-checks`, form, { onProgress }),
   incidentNotes: (id: string) => request<NoteView[]>(`/incidents/${id}/notes`),
   addIncidentNote: (id: string, body: string) =>
     request<NoteView>(`/incidents/${id}/notes`, { method: "POST", body: { body } }),

@@ -10,6 +10,7 @@ import { usePolling, useApi } from "@/lib/hooks";
 import type { ReportDetail } from "@/lib/types";
 import { AnalysisPanel } from "./analysis-panel";
 import { CategoryBadge, SampleBadge, StatusBadge } from "./badges";
+import { FixCheckForm, FixCheckResult } from "./fix-check";
 import { ResidentFacts } from "./resident-facts";
 import { SegmentationViewer } from "./segmentation-viewer";
 import { LinkButton } from "./ui/button";
@@ -27,7 +28,8 @@ export function isProcessing(report: ReportDetail): boolean {
     report.status === "submitted" ||
     report.status === "processing" ||
     report.analysis.status === "running" ||
-    report.segmentations.some((s) => s.status === "queued" || s.status === "running")
+    report.segmentations.some((s) => s.status === "queued" || s.status === "running") ||
+    report.fix_checks.some((c) => c.status === "queued" || c.status === "running")
   );
 }
 
@@ -101,6 +103,31 @@ export function TrackReport() {
           A reviewer consolidated this report into “{report.incident.title}”. Your original photo and words are kept as
           part of the evidence.
         </Callout>
+      )}
+
+      {report.incident && (report.incident.status === "confirmed" || report.fix_checks.length > 0) && (
+        <Card className="mb-6">
+          <CardHeader
+            title="Has it been fixed?"
+            description="Send a new photo of the same spot. Muse Spark compares it with your original and SAM 3.1 outlines what's left, then a reviewer decides whether to close the incident."
+          />
+          <CardBody className="space-y-6">
+            {report.incident.status === "confirmed" && (
+              <FixCheckForm
+                hint="Stand where you took the first photo so the two can be compared."
+                onSubmit={async (form) => {
+                  await api.checkFix(report.id, form, token);
+                  state.reload();
+                }}
+              />
+            )}
+            {report.fix_checks.map((check) => (
+              <div key={check.id} className="border-t border-line pt-6 first:border-0 first:pt-0">
+                <FixCheckResult check={check} />
+              </div>
+            ))}
+          </CardBody>
+        </Card>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">

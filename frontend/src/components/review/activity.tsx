@@ -81,6 +81,8 @@ const ACTION_LABEL: Record<string, string> = {
   category_corrected: "Category corrected",
   note_added: "Note added",
   transcription_rerun: "Voice note re-transcribed",
+  fix_check_submitted: "Repair photo sent",
+  fix_check_completed: "Repair check completed",
 };
 
 function describe(e: AuditView): string | null {
@@ -93,6 +95,7 @@ function describe(e: AuditView): string | null {
   if (e.action === "duplicate_rejected" || e.action === "duplicate_deferred") return `candidate ${String(d.candidate_report)}`;
   if (e.action.startsWith("analysis_") && d.code) return String(d.code).replaceAll("_", " ");
   if (e.action === "incident_created") return String(d.title ?? "");
+  if (e.action === "fix_check_completed") return `${String(d.verdict).replaceAll("_", " ")} · same spot: ${String(d.same_place).replaceAll("_", " ")}`;
   if (e.action.startsWith("incident_") && d.status) {
     const s = d.status as { from: string; to: string };
     return `${s.from} → ${s.to}`;

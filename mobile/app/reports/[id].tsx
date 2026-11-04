@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, RefreshControl, ScrollView, Share, View } fro
 
 import { StatusBadge } from '@/components/badges';
 import { EvidencePhoto } from '@/components/track/EvidencePhoto';
+import { FixCheckCard } from '@/components/track/FixCheckCard';
 import { AnalysisCard, ResidentFacts } from '@/components/track/ReportSections';
 import { isProcessing, Timeline } from '@/components/track/Timeline';
 import { Button } from '@/components/ui/Button';
@@ -128,6 +129,8 @@ export default function TrackReportScreen() {
             part of the evidence.
           </Callout>
         )}
+
+        <FixCheckCard report={report} token={token!} onSent={state.reload} />
 
         <Card className="p-4">
           <Timeline report={report} />

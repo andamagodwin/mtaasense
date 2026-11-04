@@ -145,6 +145,48 @@ export interface ReportDetail extends ReportSummary {
   segmentations: SegmentationView[];
   jobs: JobView[];
   allowed_actions: string[];
+  fix_checks: FixCheck[];
+}
+
+export type FixCheckStatus = "queued" | "running" | "completed" | "failed";
+export type FixVerdict = "repaired" | "partially_repaired" | "not_repaired" | "different_place" | "insufficient_evidence";
+
+export interface FixAssessment {
+  same_place: "same" | "likely_same" | "unclear" | "different";
+  verdict: FixVerdict;
+  before_condition: string;
+  after_condition: string;
+  visible_changes: string;
+  reasoning: string;
+  remaining_concerns: string[];
+}
+
+export interface FixImage {
+  image: MediaRef;
+  regions: SegmentationRegion[] | null;
+  width: number | null;
+  height: number | null;
+  coverage: number | null;
+}
+
+/** An "after" photo compared with a report's original photo. Advisory: a reviewer still resolves. */
+export interface FixCheck {
+  id: string;
+  created_at: string;
+  completed_at: string | null;
+  status: FixCheckStatus;
+  verdict: FixVerdict | null;
+  assessment: FixAssessment | null;
+  concept: string | null;
+  outline_error: string | null;
+  before_report_id: string;
+  before: FixImage;
+  after: FixImage;
+  submitted_by: string;
+  note: string | null;
+  model: string | null;
+  provenance: Provenance | null;
+  error_code: string | null;
 }
 
 export interface ReportCreated {
@@ -224,6 +266,8 @@ export interface IncidentDetail extends IncidentSummary {
   reports: ReportSummary[] | null;
   first_reported_at: string | null;
   last_reported_at: string | null;
+  resolution_check: { id: string; verdict: FixVerdict | null; completed_at: string | null } | null;
+  fix_checks: FixCheck[] | null;
 }
 
 export interface MapReport {

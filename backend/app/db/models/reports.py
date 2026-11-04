@@ -119,6 +119,10 @@ class Incident(UUIDPk, Timestamps, Base):
     created_by_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     resolution_note: Mapped[str | None] = mapped_column(Text)
+    # The fix check a reviewer cited when resolving, if any.
+    resolution_fix_check_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("fix_checks.id", ondelete="SET NULL", use_alter=True)
+    )
     is_sample: Mapped[bool] = mapped_column(default=False)
 
     reports: Mapped[list[Report]] = relationship(

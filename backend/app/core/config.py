@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     # Backstop that holds even if forwarded-for headers are spoofed to evade the per-client limit.
     public_global_rate_limit_per_hour: int = 300
     transcription_rate_limit_per_hour: int = 20
+    fix_check_rate_limit_per_hour: int = 6
     login_rate_limit_per_15min: int = 10
 
     # Duplicate matching

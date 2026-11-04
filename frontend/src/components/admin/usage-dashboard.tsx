@@ -21,6 +21,7 @@ const OPERATION_LABEL: Record<string, string> = {
   segmentation: "Segmentation (SAM 3.1)",
   transcription: "Transcription (Muse Voice)",
   duplicate_assessment: "Duplicate comparison (Muse Spark)",
+  fix_verification: "Repair check (Muse Spark)",
 };
 
 export function UsageDashboard() {

@@ -1,6 +1,13 @@
 import { colors } from '@/theme/tokens';
 
-import type { AnalysisStatus, HazardCategory, ReportStatus, Severity } from './types';
+import type {
+  AnalysisStatus,
+  FixCheck,
+  FixVerdict,
+  HazardCategory,
+  ReportStatus,
+  Severity,
+} from './types';
 
 export const CATEGORIES: HazardCategory[] = [
   'pothole',
@@ -14,6 +21,21 @@ export const CATEGORY_LABEL: Record<HazardCategory, string> = {
   road_surface_damage: 'Damaged road surface',
   blocked_drainage: 'Blocked drainage',
   flooding: 'Localized flooding',
+};
+
+export const FIX_VERDICT_LABEL: Record<FixVerdict, string> = {
+  repaired: 'Looks repaired',
+  partially_repaired: 'Partly repaired',
+  not_repaired: 'Not repaired yet',
+  different_place: 'Different spot',
+  insufficient_evidence: 'Can’t tell from the photos',
+};
+
+export const SAME_PLACE_LABEL: Record<NonNullable<FixCheck['assessment']>['same_place'], string> = {
+  same: 'Same spot as your original photo',
+  likely_same: 'Probably the same spot',
+  unclear: 'Can’t confirm it’s the same spot',
+  different: 'Looks like a different spot',
 };
 
 export const CATEGORY_HINT: Record<HazardCategory, string> = {

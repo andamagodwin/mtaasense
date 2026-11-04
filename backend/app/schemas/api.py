@@ -7,6 +7,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.db.models.enums import (
     AnalysisStatus,
+    FixCheckStatus,
+    FixVerdict,
     HazardCategory,
     IncidentStatus,
     JobKind,
@@ -21,7 +23,7 @@ from app.db.models.enums import (
     SuggestionStatus,
     UserRole,
 )
-from app.schemas.analysis import HazardAssessment
+from app.schemas.analysis import FixAssessment, HazardAssessment
 
 
 class Out(BaseModel):
@@ -71,6 +73,42 @@ class SegmentationView(Out):
     provenance: Provenance | None
     error_code: str | None
     created_at: datetime
+    completed_at: datetime | None
+
+
+class FixImageView(BaseModel):
+    image: MediaRef
+    # SAM outline of the check's concept on this photo, in the photo's pixel frame.
+    regions: list[SegmentationRegion] | None = None
+    width: int | None = None
+    height: int | None = None
+    coverage: float | None = None
+
+
+class FixCheckView(BaseModel):
+    id: uuid.UUID
+    created_at: datetime
+    completed_at: datetime | None
+    status: FixCheckStatus
+    verdict: FixVerdict | None
+    assessment: FixAssessment | None
+    concept: str | None
+    outline_error: str | None
+    before_report_id: uuid.UUID
+    before: FixImageView
+    after: FixImageView
+    submitted_by: str
+    note: str | None
+    model: str | None
+    provenance: Provenance | None
+    error_code: str | None
+
+
+class FixCheckBrief(BaseModel):
+    """What the public sees about the evidence behind a resolution."""
+
+    id: uuid.UUID
+    verdict: FixVerdict | None
     completed_at: datetime | None
 
 
@@ -129,6 +167,8 @@ class ReportDetail(ReportSummary):
     segmentations: list[SegmentationView]
     jobs: list[JobView]
     allowed_actions: list[str]
+    # "After" photos compared with this report's photo.
+    fix_checks: list[FixCheckView] = []
 
 
 class ReportCreated(BaseModel):
@@ -199,6 +239,8 @@ class IncidentDetail(IncidentSummary):
     reports: list[ReportSummary] | None = None
     first_reported_at: datetime | None
     last_reported_at: datetime | None
+    resolution_check: FixCheckBrief | None = None
+    fix_checks: list[FixCheckView] | None = None
 
 
 class IncidentUpdate(BaseModel):
@@ -211,6 +253,8 @@ class IncidentUpdate(BaseModel):
     severity: Severity | None = None
     hazard_category: HazardCategory | None = None
     resolution_note: str | None = Field(default=None, max_length=4000)
+    # A completed fix check of this incident, cited as the evidence when resolving.
+    fix_check_id: uuid.UUID | None = None
     note: str | None = Field(default=None, max_length=2000)
 
 

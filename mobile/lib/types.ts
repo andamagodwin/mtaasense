@@ -120,6 +120,37 @@ export interface ReportDetail extends ReportSummary {
   audio: MediaRef | null;
   analysis: AnalysisView;
   segmentations: SegmentationView[];
+  fix_checks: FixCheck[];
+}
+
+export type FixVerdict =
+  'repaired' | 'partially_repaired' | 'not_repaired' | 'different_place' | 'insufficient_evidence';
+
+export interface FixImage {
+  image: MediaRef;
+  regions: SegmentationRegion[] | null;
+  width: number | null;
+  height: number | null;
+  coverage: number | null;
+}
+
+/** A newer photo of the spot compared with the report's original. A reviewer still decides. */
+export interface FixCheck {
+  id: string;
+  created_at: string;
+  status: 'queued' | 'running' | 'completed' | 'failed';
+  verdict: FixVerdict | null;
+  assessment: {
+    same_place: 'same' | 'likely_same' | 'unclear' | 'different';
+    visible_changes: string;
+    reasoning: string;
+    remaining_concerns: string[];
+  } | null;
+  concept: string | null;
+  before: FixImage;
+  after: FixImage;
+  provenance: Provenance | null;
+  error_code: string | null;
 }
 
 export interface ReportCreated {

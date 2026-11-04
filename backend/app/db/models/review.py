@@ -7,7 +7,15 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, Timestamps, UUIDPk, str_enum, utcnow
-from app.db.models.enums import ModelVerdict, Provenance, SegmentationStatus, SuggestionStatus
+from app.db.models.enums import (
+    FixCheckStatus,
+    FixVerdict,
+    ModelVerdict,
+    Provenance,
+    SegmentationStatus,
+    SuggestionStatus,
+)
+from app.db.models.media import Media
 from app.db.models.reports import Report
 from app.db.models.users import User
 
@@ -69,6 +77,40 @@ class Segmentation(UUIDPk, Timestamps, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     __table_args__ = (UniqueConstraint("media_id", "prompt", name="uq_segmentation_media_prompt"),)
+
+
+class FixCheck(UUIDPk, Timestamps, Base):
+    """An "after" photo of an incident and the model's before/after comparison.
+
+    Advisory only: a reviewer still resolves the incident, and can cite a check as the evidence.
+    """
+
+    __tablename__ = "fix_checks"
+
+    incident_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("incidents.id", ondelete="CASCADE"), index=True)
+    # The report whose photo is the "before": the resident's own report, or the incident's primary report.
+    before_report_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("reports.id", ondelete="CASCADE"))
+    image_media_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("media.id", ondelete="RESTRICT"))
+    display_media_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("media.id", ondelete="RESTRICT"))
+    # Exactly one submitter: a signed-in reviewer, or a resident through their report's receipt token.
+    submitted_by_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    resident_report_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("reports.id", ondelete="SET NULL"))
+    note: Mapped[str | None] = mapped_column(String(500))
+    status: Mapped[FixCheckStatus] = mapped_column(
+        str_enum(FixCheckStatus, "fix_check_status"), default=FixCheckStatus.queued
+    )
+    verdict: Mapped[FixVerdict | None] = mapped_column(str_enum(FixVerdict, "fix_verdict"))
+    assessment: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # SAM outlines of the same concept on both photos: {concept, before: {...}, after: {...}} or {error}.
+    masks: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    model: Mapped[str | None] = mapped_column(String(64))
+    provenance: Mapped[Provenance | None] = mapped_column(str_enum(Provenance, "provenance"))
+    error_code: Mapped[str | None] = mapped_column(String(64))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    before_report: Mapped[Report] = relationship(foreign_keys=[before_report_id], lazy="joined")
+    display_image: Mapped[Media] = relationship(foreign_keys=[display_media_id], lazy="joined")
+    submitted_by: Mapped[User | None] = relationship(lazy="joined")
 
 
 class ReviewNote(UUIDPk, Base):

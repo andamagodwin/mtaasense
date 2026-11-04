@@ -1,16 +1,28 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, File, Form, Query, UploadFile, status
 from sqlalchemy import ColumnElement, func, select
 
-from app.api.dependencies import DB, OptionalUser, Reviewer
-from app.api.serializers import incident_detail, incident_summary
-from app.core.errors import NotFound
-from app.db.models import AuditEvent, Incident, ReviewNote
+from app.api.dependencies import DB, Fingerprint, OptionalUser, Reviewer
+from app.api.routes.reports import read_limited
+from app.api.serializers import fix_check_view, incident_detail, incident_summary
+from app.core.config import get_settings
+from app.core.errors import NotFound, ValidationFailed
+from app.db.models import AuditEvent, Incident, Report, ReviewNote
 from app.db.models.enums import HazardCategory, IncidentStatus, Priority
-from app.schemas.api import AuditView, IncidentDetail, IncidentSummary, IncidentUpdate, NoteCreate, NoteView, Page
+from app.schemas.api import (
+    AuditView,
+    FixCheckView,
+    IncidentDetail,
+    IncidentSummary,
+    IncidentUpdate,
+    NoteCreate,
+    NoteView,
+    Page,
+)
 from app.services import review
+from app.services.fix_verification import create_fix_check
 
 router = APIRouter(tags=["incidents"])
 
@@ -61,6 +73,32 @@ def patch_incident(db: DB, incident_id: uuid.UUID, body: IncidentUpdate, user: R
     db.commit()
     db.refresh(incident)
     return incident_detail(db, incident, reviewer=True)
+
+
+@router.post("/incidents/{incident_id}/fix-checks", response_model=FixCheckView, status_code=status.HTTP_202_ACCEPTED)
+async def check_incident_fix(
+    db: DB,
+    fp: Fingerprint,
+    incident_id: uuid.UUID,
+    user: Reviewer,
+    image: Annotated[UploadFile, File(description="A recent photo of the same spot")],
+    note: Annotated[str | None, Form(max_length=500)] = None,
+    before_report_id: Annotated[uuid.UUID | None, Form()] = None,
+) -> FixCheckView:
+    """Compare a recent photo with a report's original photo. Advisory: resolving stays a reviewer decision."""
+    incident = db.get(Incident, incident_id)
+    if incident is None:
+        raise NotFound("Incident not found.")
+    # Compare with the incident's primary report unless the reviewer picks another linked report.
+    before_id = before_report_id or incident.primary_report_id
+    before = db.get(Report, before_id) if before_id else None
+    if before is None or before.incident_id != incident.id:
+        raise ValidationFailed("Choose a report linked to this incident to compare with.", code="invalid_before_report")
+    data = await read_limited(image, get_settings().max_image_bytes, "photo")
+    check, _ = create_fix_check(db, incident, data, before=before, fingerprint=fp, user=user, note=note)
+    db.commit()
+    db.refresh(check)
+    return fix_check_view(check)
 
 
 @router.get("/incidents/{incident_id}/notes", response_model=list[NoteView])

@@ -20,6 +20,7 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 | SAM 3.1 segmentation (`sam-3.1`, streamed, official `meta-sam-parser`) | **Verified live** | Real masks rendered over photos; alignment checked visually |
 | Muse Voice Transcribe (`muse-voice-transcribe-1.0`, `/v1/asr/transcribe`) | **Verified live (English, 1 synthetic clip)** | Not tested on real Ugandan speakers or Luganda |
 | Model-assisted duplicate comparison (Muse Spark, two+ images) | **Verified live** | Labels restricted to backend-supplied IDs |
+| Repair checks (Muse Spark before/after + SAM 3.1 on both photos) | **Verified live (2 pairs)** | Same photo resent: *same spot, not repaired*; another street: *different spot*. No real repaired pair tested yet |
 | Backend tests | **52 passing** | `uv run pytest` (real PostGIS, mocked Meta transport) |
 | Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build && pnpm build:vinext` |
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
@@ -52,7 +53,12 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
    OpenFreeMap/MapLibre map with category/status filters and an accessible list.
 7. **Track** (`/track/{id}#token`): the resident's receipt page with live processing status. The receipt token is
    in the URL fragment, so it never appears in server logs.
-8. **Usage** (`/admin`, admin only): estimated spend vs. budget, per-day spend, per-operation and per-model
+8. **Repair check**: once a report is part of a confirmed incident, the resident (from their tracking page or
+   the app) or a reviewer sends a new photo of the spot. Muse Spark compares it with the original (same spot?
+   repaired, partly repaired, not repaired?), and SAM 3.1 outlines the same concept on both photos so the change
+   is visible and measured as a share of the photo. It is advice: a reviewer resolves the incident and can cite
+   the check as the evidence, which the public incident record then shows.
+9. **Usage** (`/admin`, admin only): estimated spend vs. budget, per-day spend, per-operation and per-model
    tables, every model call, and the latest evaluation results.
 
 Every AI result carries its **provenance**: *Live model call*, *Cached result*, or *Demo fixture*.
@@ -244,7 +250,9 @@ Errors are always `{"error": {"code", "message", "request_id"}}`.
 | `GET /duplicate-suggestions` · `/{id}` | reviewer | Duplicate queue / detail |
 | `POST /duplicate-suggestions/{id}/decision` `{confirm\|reject\|defer}` | reviewer | Decide a pair |
 | `GET /incidents` · `/{id}` | public (reports only for reviewers) | Incidents |
-| `PATCH /incidents/{id}` | reviewer | Status (resolve needs a note), title, priority, severity, category |
+| `PATCH /incidents/{id}` | reviewer | Status (resolve needs a note, may cite a completed `fix_check_id`), title, priority, severity, category |
+| `POST /reports/{id}/fix-checks` (multipart) | receipt (rate-limited) or reviewer | Send an "after" photo for a confirmed incident |
+| `POST /incidents/{id}/fix-checks` (multipart) | reviewer | Same, compared with the primary (or a chosen linked) report |
 | `GET/POST /reports/{id}/notes`, `/incidents/{id}/notes`; `GET …/audit` | reviewer | Notes and audit history |
 | `GET /map/features`, `GET /stats`, `GET /config` | public | Map data (no photos or text), counts, client config |
 | `GET /review/summary` | reviewer | Dashboard counts |

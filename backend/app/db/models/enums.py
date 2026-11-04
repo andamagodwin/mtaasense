@@ -104,6 +104,7 @@ class JobKind(StrEnum):
     analyze_report = "analyze_report"
     segment_image = "segment_image"
     match_duplicates = "match_duplicates"
+    verify_fix = "verify_fix"
 
 
 class JobStatus(StrEnum):
@@ -125,3 +126,21 @@ class ModelOperation(StrEnum):
     segmentation = "segmentation"
     transcription = "transcription"
     duplicate_assessment = "duplicate_assessment"
+    fix_verification = "fix_verification"
+
+
+class FixCheckStatus(StrEnum):
+    queued = "queued"
+    running = "running"
+    completed = "completed"
+    failed = "failed"
+
+
+class FixVerdict(StrEnum):
+    """The model's reading of an "after" photo. Advisory: only a reviewer resolves an incident."""
+
+    repaired = "repaired"
+    partially_repaired = "partially_repaired"
+    not_repaired = "not_repaired"
+    different_place = "different_place"
+    insufficient_evidence = "insufficient_evidence"

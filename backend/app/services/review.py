@@ -8,8 +8,9 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import InvalidTransition, ValidationFailed
 from app.core.security import new_reference
-from app.db.models import AuditEvent, DuplicateSuggestion, Incident, Report, ReviewNote, User
+from app.db.models import AuditEvent, DuplicateSuggestion, FixCheck, Incident, Report, ReviewNote, User
 from app.db.models.enums import (
+    FixCheckStatus,
     HazardCategory,
     IncidentStatus,
     Priority,
@@ -225,6 +226,12 @@ def update_incident(db: Session, incident: Incident, actor: User, change: Incide
         if change.status == IncidentStatus.resolved:
             if not (change.resolution_note and change.resolution_note.strip()):
                 raise ValidationFailed("Describe how the resolution was confirmed.", code="resolution_note_required")
+            if change.fix_check_id is not None:
+                check = db.get(FixCheck, change.fix_check_id)
+                if check is None or check.incident_id != incident.id or check.status != FixCheckStatus.completed:
+                    raise ValidationFailed("Cite a completed repair check of this incident.", code="invalid_fix_check")
+                incident.resolution_fix_check_id = check.id
+                diff["fix_check"] = {"from": None, "to": str(check.id)}
             incident.resolved_at = datetime.now(UTC)
             incident.resolution_note = change.resolution_note.strip()
             for report in incident.reports:
@@ -232,6 +239,7 @@ def update_incident(db: Session, incident: Incident, actor: User, change: Incide
                     transition_report(report, ReportStatus.resolved)
         else:
             incident.resolved_at = None
+            incident.resolution_fix_check_id = None
             for report in incident.reports:
                 if report.status == ReportStatus.resolved:
                     is_primary = report.id == incident.primary_report_id

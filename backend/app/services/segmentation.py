@@ -31,7 +31,7 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.errors import ValidationFailed
 from app.core.logging import log_event
-from app.db.models import AuditEvent, ProcessingJob, Report, Segmentation
+from app.db.models import AuditEvent, Media, ProcessingJob, Report, Segmentation
 from app.db.models.enums import JobKind, ModelOperation, Provenance, SegmentationStatus
 from app.db.session import session_scope
 from app.services import pricing
@@ -142,6 +142,46 @@ def request_segmentation(db: Any, report: Report, prompt: str) -> tuple[Segmenta
     return seg, job
 
 
+def segment_media(media: Media, prompt: str, ctx: CallContext) -> tuple[list[dict[str, Any]], int, int]:
+    """One live SAM 3.1 call for a stored image. Returns (regions, frame_width, frame_height)."""
+    settings = get_settings()
+    client = get_meta_client()
+    image_url, width, height = image_data_url(media, settings.display_image_max_edge)
+    payload = {
+        "model": settings.segmentation_model,
+        "input": [
+            {
+                "type": "message",
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": prompt},
+                    {"type": "input_image", "image_url": image_url},
+                ],
+            }
+        ],
+        "metadata": {"include_confidence": "true"},
+        "store": False,
+    }
+    try:
+        events, _ = client.stream_response(ctx, payload, image_count=1, cost=pricing.sam_image_cost(1))
+    except ModelAPIError as exc:
+        raise SegmentationFailed(exc.code, retryable=exc.retryable) from exc
+    regions, frame = parse_sam_events(events)
+    frame_w, frame_h = frame or (width, height)
+    return regions, frame_w, frame_h
+
+
+def coverage(regions: list[dict[str, Any]], frame_w: int, frame_h: int) -> float:
+    """Share of the frame covered by the masks. Masks are rasters scaled into their boxes."""
+    total = 0.0
+    for r in regions:
+        box, mask = r["box"], r["mask"]
+        if mask["width"] and mask["height"]:
+            scale = (box["right"] - box["left"]) * (box["bottom"] - box["top"]) / (mask["width"] * mask["height"])
+            total += mask["area_px"] * scale
+    return min(1.0, total / (frame_w * frame_h)) if frame_w and frame_h else 0.0
+
+
 def run_segmentation(segmentation_id: uuid.UUID, job_id: uuid.UUID | None = None) -> Provenance:
     settings = get_settings()
     with session_scope() as db:
@@ -158,32 +198,10 @@ def run_segmentation(segmentation_id: uuid.UUID, job_id: uuid.UUID | None = None
     fixture = fixture_for(sha, is_sample=sample, section=f"segmentation:{prompt}")
     provenance = Provenance.live
     try:
-        client = get_meta_client()
-        if not client.configured and fixture is not None:
+        if not get_meta_client().configured and fixture is not None:
             raise SegmentationFailed("not_configured", retryable=False)
-        image_url, width, height = image_data_url(display, settings.display_image_max_edge)
-        payload = {
-            "model": settings.segmentation_model,
-            "input": [
-                {
-                    "type": "message",
-                    "role": "user",
-                    "content": [
-                        {"type": "input_text", "text": prompt},
-                        {"type": "input_image", "image_url": image_url},
-                    ],
-                }
-            ],
-            "metadata": {"include_confidence": "true"},
-            "store": False,
-        }
         ctx = CallContext(ModelOperation.segmentation, report_id=report_id, job_id=job_id)
-        try:
-            events, _ = client.stream_response(ctx, payload, image_count=1, cost=pricing.sam_image_cost(1))
-        except ModelAPIError as exc:
-            raise SegmentationFailed(exc.code, retryable=exc.retryable) from exc
-        regions, frame = parse_sam_events(events)
-        frame_w, frame_h = frame or (width, height)
+        regions, frame_w, frame_h = segment_media(display, prompt, ctx)
     except SegmentationFailed:
         if fixture is None:
             raise

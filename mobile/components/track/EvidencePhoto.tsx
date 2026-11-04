@@ -5,8 +5,47 @@ import Svg, { Path } from 'react-native-svg';
 
 import { Text } from '@/components/ui/Text';
 import { mediaUrl } from '@/lib/api';
-import type { MediaRef, SegmentationView } from '@/lib/types';
+import type { MediaRef, SegmentationRegion, SegmentationView } from '@/lib/types';
 import { colors } from '@/theme/tokens';
+
+/** SAM's outlines over a photo laid out with `contentFit="contain"` in the same box. */
+export function MaskOverlay({
+  regions,
+  width,
+  height,
+}: {
+  regions: SegmentationRegion[];
+  width: number;
+  height: number;
+}) {
+  return (
+    <Svg
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
+      style={StyleSheet.absoluteFill}
+      pointerEvents="none">
+      {regions.map((r) => {
+        // Mask paths use pixel-centre coordinates; boxes are half-open source pixels (as on the web).
+        const sx = (r.box.right - r.box.left) / r.mask.width;
+        const sy = (r.box.bottom - r.box.top) / r.mask.height;
+        return (
+          <Path
+            key={r.object_id}
+            d={r.mask.svg_path}
+            transform={`translate(${r.box.left} ${r.box.top}) scale(${sx} ${sy}) translate(0.5 0.5)`}
+            fill={colors.highlight.DEFAULT}
+            fillOpacity={0.32}
+            fillRule="evenodd"
+            stroke="#ffffff"
+            strokeWidth={2}
+            vectorEffect="non-scaling-stroke"
+            strokeLinejoin="round"
+          />
+        );
+      })}
+    </Svg>
+  );
+}
 
 /** The submitted photo with SAM's hazard outline drawn over it once segmentation has finished. */
 export function EvidencePhoto({
@@ -37,33 +76,7 @@ export function EvidencePhoto({
           accessibilityLabel="Your submitted photo"
           style={StyleSheet.absoluteFill}
         />
-        {active?.regions && (
-          <Svg
-            viewBox={`0 0 ${W} ${H}`}
-            preserveAspectRatio="xMidYMid meet"
-            style={StyleSheet.absoluteFill}
-            pointerEvents="none">
-            {active.regions.map((r) => {
-              // Mask paths use pixel-centre coordinates; boxes are half-open source pixels (as on the web).
-              const sx = (r.box.right - r.box.left) / r.mask.width;
-              const sy = (r.box.bottom - r.box.top) / r.mask.height;
-              return (
-                <Path
-                  key={r.object_id}
-                  d={r.mask.svg_path}
-                  transform={`translate(${r.box.left} ${r.box.top}) scale(${sx} ${sy}) translate(0.5 0.5)`}
-                  fill={colors.highlight.DEFAULT}
-                  fillOpacity={0.32}
-                  fillRule="evenodd"
-                  stroke="#ffffff"
-                  strokeWidth={2}
-                  vectorEffect="non-scaling-stroke"
-                  strokeLinejoin="round"
-                />
-              );
-            })}
-          </Svg>
-        )}
+        {active?.regions && <MaskOverlay regions={active.regions} width={W} height={H} />}
       </View>
       {/* Progress is on the timeline; the caption only names what was outlined. */}
       {active && (

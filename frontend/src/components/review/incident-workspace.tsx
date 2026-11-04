@@ -6,9 +6,10 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { CATEGORY_LABEL, formatDateTime, PRIORITY_LABEL, SEVERITY_LABEL, formatCoords } from "@/lib/format";
-import { useApi } from "@/lib/hooks";
-import type { HazardCategory, IncidentDetail, Priority, Severity } from "@/lib/types";
-import { CategoryBadge, IncidentStatusBadge, PriorityBadge, SampleBadge, SeverityBadge, StatusBadge } from "../badges";
+import { useApi, usePolling } from "@/lib/hooks";
+import type { FixCheck, HazardCategory, IncidentDetail, Priority, Severity } from "@/lib/types";
+import { Badge, CategoryBadge, IncidentStatusBadge, PriorityBadge, SampleBadge, SeverityBadge, StatusBadge } from "../badges";
+import { FixCheckForm, FixCheckResult } from "../fix-check";
 import { useRequireReviewer } from "../session";
 import { Button } from "../ui/button";
 import { Card, CardBody, CardHeader, KeyValue } from "../ui/card";
@@ -24,6 +25,8 @@ export function IncidentWorkspace() {
   const session = useRequireReviewer();
   const incident = useApi(() => api.incident(id), session.allowed ? id : null);
   const [auditKey, setAuditKey] = useState(0);
+  const comparing = incident.data?.fix_checks?.some((c) => c.status === "queued" || c.status === "running") ?? false;
+  usePolling(incident.reload, 3000, comparing);
 
   if (incident.error) return <Page width="narrow"><Callout tone="danger">{incident.error.message}</Callout></Page>;
   if (!incident.data) return <Page><Skeleton className="h-[600px]" /></Page>;
@@ -75,6 +78,7 @@ export function IncidentWorkspace() {
               ))}
             </ul>
           </Card>
+          <RepairChecks incident={inc} onChecked={incident.reload} onResolved={done} />
           {inc.reports && inc.reports.length > 1 && (
             <Card>
               <CardHeader title="Evidence gallery" description="All photos submitted for this incident, oldest first." />
@@ -149,6 +153,85 @@ function StatusAction({ incident, onDone }: { incident: IncidentDetail; onDone: 
       >
         <Field label="How was the resolution confirmed?" htmlFor="res-note">
           <Textarea id="res-note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Site visit on 30 Oct: pothole patched; photo attached to the work order." />
+        </Field>
+        {error && <Callout tone="danger" className="mt-3">{error}</Callout>}
+      </Dialog>
+    </>
+  );
+}
+
+function RepairChecks({ incident, onChecked, onResolved }: { incident: IncidentDetail; onChecked: () => void; onResolved: (i: IncidentDetail) => void }) {
+  const checks = incident.fix_checks ?? [];
+  const open = incident.status === "confirmed";
+  if (!open && checks.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader
+        title="Repair checks"
+        description="Compare a recent photo of the spot with the original. Muse Spark judges the repair and SAM 3.1 outlines what remains. It's advice: you decide when to resolve."
+      />
+      <CardBody className="space-y-6">
+        {open && (
+          <FixCheckForm
+            hint="Use a photo taken from about the same spot and angle as the original report."
+            onSubmit={async (form) => {
+              await api.checkIncidentFix(incident.id, form);
+              onChecked();
+            }}
+          />
+        )}
+        {checks.map((check) => (
+          <div key={check.id} className="border-t border-line pt-6 first:border-0 first:pt-0">
+            <FixCheckResult
+              check={check}
+              action={
+                incident.resolution_check?.id === check.id ? (
+                  <Badge className="border-success-line bg-success-soft text-success-ink">Cited when resolving</Badge>
+                ) : open && (check.verdict === "repaired" || check.verdict === "partially_repaired") ? (
+                  <ResolveWithCheck incident={incident} check={check} onDone={onResolved} />
+                ) : null
+              }
+            />
+          </div>
+        ))}
+      </CardBody>
+    </Card>
+  );
+}
+
+function ResolveWithCheck({ incident, check, onDone }: { incident: IncidentDetail; check: FixCheck; onDone: (i: IncidentDetail) => void }) {
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState(
+    `Repair photo from ${check.submitted_by.toLowerCase() === "resident" ? "a resident" : check.submitted_by}, ${formatDateTime(check.created_at)}: ${check.assessment?.visible_changes ?? ""}`.trim(),
+  );
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function resolve() {
+    setBusy(true);
+    setError(null);
+    try {
+      onDone(await api.updateIncident(incident.id, { status: "resolved", resolution_note: note.trim(), fix_check_id: check.id }));
+      setOpen(false);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Couldn't update the incident.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <Button size="sm" onClick={() => setOpen(true)} icon={<TickCircle className="size-4" />}>Resolve with this evidence</Button>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Resolve using this repair photo"
+        description="The model's reading is a review aid. Resolve only if the photos convince you the hazard is fixed."
+        footer={<><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={() => void resolve()} loading={busy} disabled={!note.trim()}>Mark resolved</Button></>}
+      >
+        <Field label="Resolution note" htmlFor={`fix-note-${check.id}`}>
+          <Textarea id={`fix-note-${check.id}`} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
         {error && <Callout tone="danger" className="mt-3">{error}</Callout>}
       </Dialog>

@@ -7,15 +7,22 @@ from fastapi import APIRouter, File, Form, Header, Query, Response, UploadFile, 
 from sqlalchemy import ColumnElement, func, or_, select
 
 from app.api.dependencies import DB, Fingerprint, OptionalUser, Reviewer
-from app.api.serializers import open_suggestion_counts, report_detail, report_summary, suggestion_view
+from app.api.serializers import (
+    fix_check_view,
+    open_suggestion_counts,
+    report_detail,
+    report_summary,
+    suggestion_view,
+)
 from app.core.config import get_settings
-from app.core.errors import Forbidden, NotFound, PayloadTooLarge, ValidationFailed
+from app.core.errors import Forbidden, InvalidTransition, NotFound, PayloadTooLarge, ValidationFailed
 from app.core.security import derive_token, hash_token
-from app.db.models import AuditEvent, DuplicateSuggestion, ProcessingJob, Report, ReviewNote, User
+from app.db.models import AuditEvent, DuplicateSuggestion, Incident, ProcessingJob, Report, ReviewNote, User
 from app.db.models.enums import HazardCategory, JobKind, LocationSource, ReportStatus
 from app.schemas.api import (
     AuditView,
     DuplicateSuggestionView,
+    FixCheckView,
     JobView,
     NoteCreate,
     NoteView,
@@ -30,6 +37,7 @@ from app.schemas.api import (
     TranscriptionResult,
 )
 from app.services import rate_limit, review
+from app.services.fix_verification import create_fix_check
 from app.services.jobs import enqueue
 from app.services.reports import NewReport, create_report, existing_for_key
 from app.services.segmentation import request_segmentation
@@ -128,6 +136,41 @@ async def submit_report(
     return ReportCreated(
         id=report.id, reference=report.reference, receipt_token=receipt, status=report.status, job_id=job.id
     )
+
+
+@router.post("/reports/{report_id}/fix-checks", response_model=FixCheckView, status_code=status.HTTP_202_ACCEPTED)
+async def check_report_fix(
+    db: DB,
+    fp: Fingerprint,
+    report_id: uuid.UUID,
+    user: OptionalUser,
+    image: Annotated[UploadFile, File(description="A recent photo of the same spot")],
+    note: Annotated[str | None, Form(max_length=500)] = None,
+    x_report_token: Annotated[str | None, Header(max_length=128)] = None,
+) -> FixCheckView:
+    """A resident sends a new photo of the spot they reported; the model compares it with their original."""
+    settings = get_settings()
+    report = load_report(db, report_id, user, x_report_token)
+    incident = db.get(Incident, report.incident_id) if report.incident_id else None
+    if incident is None:
+        raise InvalidTransition("A repair can be checked once a reviewer has confirmed this report as an incident.")
+    if user is None:
+        rate_limit.hit(db, f"fix:{fp}", settings.fix_check_rate_limit_per_hour, timedelta(hours=1))
+        rate_limit.hit(db, "fix:global", settings.public_global_rate_limit_per_hour, timedelta(hours=1))
+    data = await read_limited(image, settings.max_image_bytes, "photo")
+    check, _ = create_fix_check(
+        db,
+        incident,
+        data,
+        before=report,
+        fingerprint=fp,
+        user=user,
+        resident_report=None if user else report,
+        note=note,
+    )
+    db.commit()
+    db.refresh(check)
+    return fix_check_view(check)
 
 
 @router.post("/transcriptions", response_model=TranscriptionResult)

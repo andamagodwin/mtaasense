@@ -7,12 +7,15 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.security import sign_media
-from app.db.models import DuplicateSuggestion, Incident, Media, ProcessingJob, Report, Segmentation
+from app.db.models import DuplicateSuggestion, FixCheck, Incident, Media, ProcessingJob, Report, Segmentation
 from app.db.models.enums import SuggestionStatus
-from app.schemas.analysis import HazardAssessment
+from app.schemas.analysis import FixAssessment, HazardAssessment
 from app.schemas.api import (
     AnalysisView,
     DuplicateSuggestionView,
+    FixCheckBrief,
+    FixCheckView,
+    FixImageView,
     IncidentBrief,
     IncidentDetail,
     IncidentSummary,
@@ -68,6 +71,50 @@ def media_ref(media: Media | None) -> MediaRef | None:
         height=media.height,
         duration_ms=media.duration_ms,
         size_bytes=media.size_bytes,
+    )
+
+
+def _fix_image(media: Media, outline: dict[str, Any] | None) -> FixImageView:
+    image = media_ref(media)
+    assert image is not None
+    if not outline:
+        return FixImageView(image=image)
+    return FixImageView(
+        image=image,
+        regions=outline.get("regions"),
+        width=outline.get("width"),
+        height=outline.get("height"),
+        coverage=outline.get("coverage"),
+    )
+
+
+def fix_check_view(check: FixCheck) -> FixCheckView:
+    masks = check.masks or {}
+    assessment = None
+    if check.assessment:
+        try:
+            assessment = FixAssessment.model_validate(
+                {k: v for k, v in check.assessment.items() if k in FixAssessment.model_fields}
+            )
+        except ValidationError:
+            assessment = None
+    return FixCheckView(
+        id=check.id,
+        created_at=check.created_at,
+        completed_at=check.completed_at,
+        status=check.status,
+        verdict=check.verdict,
+        assessment=assessment,
+        concept=masks.get("concept"),
+        outline_error=masks.get("error"),
+        before_report_id=check.before_report_id,
+        before=_fix_image(check.before_report.display_image, masks.get("before")),
+        after=_fix_image(check.display_image, masks.get("after")),
+        submitted_by=check.submitted_by.display_name if check.submitted_by else "Resident",
+        note=check.note,
+        model=check.model,
+        provenance=check.provenance,
+        error_code=check.error_code,
     )
 
 
@@ -136,6 +183,10 @@ def report_detail(db: Session, report: Report, *, reviewer: bool) -> ReportDetai
     segs = db.scalars(
         select(Segmentation).where(Segmentation.report_id == report.id).order_by(Segmentation.created_at)
     ).all()
+    # Residents and reviewers see the "after" photos compared against this report's own photo.
+    checks = db.scalars(
+        select(FixCheck).where(FixCheck.before_report_id == report.id).order_by(FixCheck.created_at.desc())
+    ).all()
     jobs = (
         db.scalars(
             select(ProcessingJob)
@@ -168,6 +219,7 @@ def report_detail(db: Session, report: Report, *, reviewer: bool) -> ReportDetai
         segmentations=[SegmentationView.model_validate(s) for s in segs],
         jobs=[JobView.model_validate(j) for j in jobs],
         allowed_actions=allowed_actions(report) if reviewer else [],
+        fix_checks=[fix_check_view(c) for c in checks],
     )
 
 
@@ -192,6 +244,14 @@ def incident_summary(incident: Incident) -> IncidentSummary:
 def incident_detail(db: Session, incident: Incident, *, reviewer: bool) -> IncidentDetail:
     reports = incident.reports
     counts = open_suggestion_counts(db, [r.id for r in reports]) if reviewer else {}
+    resolution = db.get(FixCheck, incident.resolution_fix_check_id) if incident.resolution_fix_check_id else None
+    checks = (
+        db.scalars(
+            select(FixCheck).where(FixCheck.incident_id == incident.id).order_by(FixCheck.created_at.desc())
+        ).all()
+        if reviewer
+        else []
+    )
     return IncidentDetail(
         **incident_summary(incident).model_dump(),
         summary=incident.summary,
@@ -200,6 +260,12 @@ def incident_detail(db: Session, incident: Incident, *, reviewer: bool) -> Incid
         reports=[report_summary(r, open_suggestions=counts.get(r.id, 0)) for r in reports] if reviewer else None,
         first_reported_at=min((r.created_at for r in reports), default=None),
         last_reported_at=max((r.created_at for r in reports), default=None),
+        resolution_check=FixCheckBrief(
+            id=resolution.id, verdict=resolution.verdict, completed_at=resolution.completed_at
+        )
+        if resolution
+        else None,
+        fix_checks=[fix_check_view(c) for c in checks] if reviewer else None,
     )
 
 

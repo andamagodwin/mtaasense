@@ -103,3 +103,17 @@ class DuplicateAssessment(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     comparisons: list[ModelComparison] = Field(max_length=10)
+
+
+class FixAssessment(BaseModel):
+    """Muse Spark's comparison of an incident's original photo with a later "after" photo."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    same_place: Literal["same", "likely_same", "unclear", "different"]
+    verdict: Literal["repaired", "partially_repaired", "not_repaired", "different_place", "insufficient_evidence"]
+    before_condition: str = Field(max_length=600)
+    after_condition: str = Field(max_length=600)
+    visible_changes: str = Field(max_length=600)
+    reasoning: str = Field(max_length=800)
+    remaining_concerns: list[str] = Field(max_length=4)

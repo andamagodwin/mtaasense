@@ -138,13 +138,16 @@ export function ReportWorkspace() {
 
           <TabPanel id="ai" value={tab}>
             <Card>
-              <CardBody className="space-y-4">
-                <div className="flex justify-end">
-                  <Button variant="ghost" size="sm" onClick={() => void api.reanalyze(r.id).then(() => refresh())} icon={<Refresh2 className="size-3.5" />} disabled={processing}>
-                    Re-analyse
-                  </Button>
-                </div>
-                <AnalysisPanel analysis={r.analysis} reporterCategory={r.reporter_category} />
+              <CardBody>
+                <AnalysisPanel
+                  analysis={r.analysis}
+                  reporterCategory={r.reporter_category}
+                  action={
+                    <Button variant="ghost" size="sm" onClick={() => void api.reanalyze(r.id).then(() => refresh())} icon={<Refresh2 className="size-3.5" />} disabled={processing}>
+                      Re-analyse
+                    </Button>
+                  }
+                />
               </CardBody>
             </Card>
           </TabPanel>

@@ -26,7 +26,8 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 | Video reports (clip + SAM 3.1 tracking + Spark motion description) | **Verified live** | Water tracked across all 50 frames of a test clip; 3 outlined stills checked visually |
 | Elvis, the review assistant (Muse Spark function calling over the review data; proposes decisions, the reviewer confirms) | **Verified live (local data)** | Triage, incident summaries, a KCCA work order and a reject proposal confirmed through the UI and audited as the reviewer |
 | Ask the map (public Muse Spark Q&A over map data only; cited records ringed on the map) | **Verified live (local data)** | English and Luganda questions; tests check residents' words never reach it |
-| Backend tests | **102 passing** | `uv run pytest` (real PostGIS, mocked Meta transport; ffmpeg seams mocked) |
+| Elvis hands-free voice (Muse Voice Transcribe realtime with server turn detection, relayed through the API; answers read aloud by the browser) | **Verified live (local data)** | Spoken questions answered, a record opened by voice and a suggestion cancelled by voice; the microphone was a recorded clip in headless Chrome |
+| Backend tests | **109 passing** | `uv run pytest` (real PostGIS, mocked Meta transport; ffmpeg seams mocked) |
 | Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build && pnpm build:vinext` |
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
 | Backend on the Contabo VPS | **Deployed** at <https://api.mtaasense.com> | Docker Compose behind a Cloudflare Tunnel (the VPS's ports 80/443 belong to another app); `/ready` reports database, migrations, media and model API OK |

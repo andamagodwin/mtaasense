@@ -100,12 +100,23 @@ AI outputs (the photo analysis, duplicate verdicts and repair checks) are prelim
 such. You never change anything yourself. When a decision clearly follows from the evidence, or the reviewer \
 asks you to act, call propose_action: the reviewer sees it as a button and decides. Propose at most three \
 actions per answer, each with a one-sentence reason grounded in the evidence. Proposals appear as \
-buttons below your answer. When asked to draft something, \
+buttons below your answer. When the reviewer asks to open, show or go to a record or a list, call \
+open_page and it opens in their dashboard. When asked to draft something, \
 such as a work order or a message to a council engineer, write it ready to copy.
 
 {rules}
 
 Today is {today} in Kampala."""
+
+VOICE_RULES = """
+
+The reviewer is talking to you hands-free. Their words come from speech recognition, so allow for misheard \
+words: a reference may arrive spelled out or with spaces, such as "M S Y F G B S 5" for MS-YFGBS5, and place \
+names may be spelled oddly. Always write references in their exact form, such as MS-YFGBS5, so they link. \
+Your answer will be read aloud, so answer in one to three short spoken sentences, \
+with no lists, headings or symbols, and mention at most three references. If they ask to open something or \
+for the next report, open it with open_page and say in a few words what it is. Propose at most one action at \
+a time, say it in one sentence, and end by asking them to say confirm or cancel."""
 
 MAP_INSTRUCTIONS = """\
 You answer questions from members of the public on the MtaaSense incident map, which shows potholes, damaged \
@@ -195,12 +206,25 @@ def _since(args: dict[str, Any]) -> datetime | None:
     return datetime.now(UTC) - timedelta(days=max(1, min(int(days), 365))) if days else None
 
 
+_DIGIT_WORDS = {"two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9"}
+
+
+def _reference(ref: str) -> str:
+    """A reference as written, also when it came from speech: "m s y f g b s five" or "MS YFGBS5" is MS-YFGBS5."""
+    words = re.split(r"[\s.\-_,]+", ref.strip())
+    compact = "".join(_DIGIT_WORDS.get(w.lower(), w) for w in words).upper()
+    for prefix in ("INC", "MS"):
+        if compact.startswith(prefix) and len(compact) == len(prefix) + 6:
+            return f"{prefix}-{compact[len(prefix) :]}"
+    return ref.strip().upper()
+
+
 def _find_incident(db: Session, ref: str) -> Incident | None:
     ref = (ref or "").strip()
     try:
         return db.get(Incident, uuid.UUID(ref))
     except ValueError:
-        return db.scalar(select(Incident).where(func.upper(Incident.reference) == ref.upper()))
+        return db.scalar(select(Incident).where(func.upper(Incident.reference) == _reference(ref)))
 
 
 def _find_report(db: Session, ref: str) -> Report | None:
@@ -208,7 +232,7 @@ def _find_report(db: Session, ref: str) -> Report | None:
     try:
         return db.get(Report, uuid.UUID(ref))
     except ValueError:
-        return db.scalar(select(Report).where(func.upper(Report.reference) == ref.upper()))
+        return db.scalar(select(Report).where(func.upper(Report.reference) == _reference(ref)))
 
 
 # --------------------------------------------------------------------------- run state
@@ -222,6 +246,8 @@ class Trail:
     reports: dict[str, dict[str, Any]] = field(default_factory=dict)
     proposals: list[dict[str, Any]] = field(default_factory=list)
     tools: list[str] = field(default_factory=list)
+    # A page open_page asked the dashboard to show: {"href": ..., "label": ...}.
+    navigate: dict[str, str] | None = None
 
     def incident(self, inc: Incident) -> None:
         self.incidents[inc.reference] = {
@@ -788,6 +814,50 @@ def _propose(run: Run, a: dict[str, Any]) -> dict[str, Any]:
     return {"proposed": True, "shown_to_reviewer_as": label, "note": "The reviewer decides; nothing has changed."}
 
 
+_PAGES = {
+    "overview": ("/review", "the overview"),
+    "queue": ("/review/queue", "the review queue"),
+    "duplicates": ("/review/duplicates", "the duplicate queue"),
+    "incidents": ("/review/incidents", "the incidents list"),
+    "reports": ("/review/reports", "all reports"),
+    "map": ("/map", "the map"),
+    "profile": ("/profile", "the reviewer's profile"),
+}
+
+
+def _open_page(run: Run, a: dict[str, Any]) -> dict[str, Any]:
+    page, ref = a["page"], (a.get("reference") or "").strip()
+    if page == "record":
+        if not ref:
+            raise ToolError("Give the reference of the record to open.")
+        if _reference(ref).startswith("INC-"):
+            inc = _find_incident(run.db, ref)
+            if inc is None:
+                raise ToolError(f"No incident {ref}. Search for it first.")
+            run.trail.incident(inc)
+            href, label = f"/review/incidents/{inc.id}", inc.reference
+        else:
+            r = _find_report(run.db, ref)
+            if r is None:
+                raise ToolError(f"No report {ref}. Search for it first.")
+            run.trail.report(r)
+            href, label = f"/review/reports/{r.id}", r.reference
+    elif page == "duplicate_pair":
+        try:
+            s = run.db.get(DuplicateSuggestion, uuid.UUID(ref))
+        except ValueError:
+            s = None
+        if s is None:
+            raise ToolError("reference must be a suggestion_id from list_duplicate_suggestions or get_report.")
+        run.trail.report(s.source_report)
+        run.trail.report(s.candidate_report)
+        href, label = f"/review/duplicates/{s.id}", f"{s.source_report.reference} and {s.candidate_report.reference}"
+    else:
+        href, label = _PAGES[page]
+    run.trail.navigate = {"href": href, "label": label}
+    return {"opened": label, "note": "It is now showing in the reviewer's dashboard."}
+
+
 # --------------------------------------------------------------------------- tool registry
 
 
@@ -964,6 +1034,29 @@ TOOLS: list[Tool] = [
         lambda a: "Preparing a suggestion for you",
         REVIEW,
     ),
+    Tool(
+        "open_page",
+        "Open a page in the reviewer's dashboard: a record by reference, a duplicate pair by suggestion_id, or "
+        "one of the lists. Opening changes nothing.",
+        {
+            "page": {"type": "string", "enum": ["record", "duplicate_pair", *_PAGES]},
+            "reference": _nullable(
+                "string", "For record: INC-XXXXXX or MS-XXXXXX. For duplicate_pair: the suggestion_id. Else null."
+            ),
+        },
+        _open_page,
+        lambda a: (
+            "Opening "
+            + (
+                a.get("reference") or "the record"
+                if a.get("page") == "record"
+                else _PAGES[a["page"]][1]
+                if a.get("page") in _PAGES
+                else "the duplicate pair"
+            )
+        ),
+        REVIEW,
+    ),
 ]
 
 
@@ -1047,6 +1140,8 @@ def answer(mode: Mode, request: AssistantRequest) -> Iterator[dict[str, Any]]:
     today = datetime.now(KAMPALA_TZ).strftime("%A %d %B %Y, %H:%M")
     template = REVIEW_INSTRUCTIONS if mode == "review" else MAP_INSTRUCTIONS
     instructions = template.format(rules=_SHARED_RULES, today=today)
+    if request.voice:
+        instructions += VOICE_RULES
     items = _history(request, _context_text(mode, request.context, trail))
     operation = ModelOperation.review_assistant if mode == "review" else ModelOperation.map_assistant
 
@@ -1097,7 +1192,9 @@ def answer(mode: Mode, request: AssistantRequest) -> Iterator[dict[str, Any]]:
                 tools=",".join(trail.tools),
                 latency_ms=int((time.monotonic() - started) * 1000),
             )
-            yield _event("answer", text=text, refs=trail.cited(text), proposals=trail.proposals)
+            yield _event(
+                "answer", text=text, refs=trail.cited(text), proposals=trail.proposals, navigate=trail.navigate
+            )
             return
 
         items += output

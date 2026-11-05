@@ -42,8 +42,8 @@ def client_fingerprint(request: Request) -> str:
 Fingerprint = Annotated[str, Depends(client_fingerprint)]
 
 
-def optional_user(request: Request, db: DB) -> User | None:
-    token = request.cookies.get(get_settings().session_cookie_name)
+def user_for_token(db: Session, token: str | None) -> User | None:
+    """The active user signed in with this session cookie value, if any."""
     if not token:
         return None
     session = db.scalar(select(AuthSession).where(AuthSession.token_hash == hash_token(token)))
@@ -54,13 +54,21 @@ def optional_user(request: Request, db: DB) -> User | None:
     return session.user
 
 
+def optional_user(request: Request, db: DB) -> User | None:
+    return user_for_token(db, request.cookies.get(get_settings().session_cookie_name))
+
+
+def is_reviewer(user: User) -> bool:
+    return user.role in (UserRole.reviewer, UserRole.admin)
+
+
 OptionalUser = Annotated[User | None, Depends(optional_user)]
 
 
 def require_reviewer(user: OptionalUser) -> User:
     if user is None:
         raise Unauthorized("Sign in as a reviewer to continue.")
-    if user.role not in (UserRole.reviewer, UserRole.admin):
+    if not is_reviewer(user):
         raise Forbidden("Reviewer access is required.")
     return user
 

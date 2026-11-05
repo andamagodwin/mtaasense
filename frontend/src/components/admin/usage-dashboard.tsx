@@ -28,6 +28,7 @@ const OPERATION_LABEL: Record<string, string> = {
   video_description: "Clip description (Muse Spark)",
   review_assistant: "Elvis, review assistant (Muse Spark)",
   map_assistant: "Ask the map (Muse Spark)",
+  voice_assistant: "Elvis hands-free voice (Muse Voice realtime)",
 };
 
 export function UsageDashboard() {

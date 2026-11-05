@@ -1,13 +1,14 @@
 "use client";
 
 import { clsx } from "clsx";
-import { ArrowUp, Copy, Stop, TickCircle } from "iconsax-reactjs";
+import { ArrowUp, Copy, Microphone2, Stop, TickCircle } from "iconsax-reactjs";
 import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ApiError } from "@/lib/api";
 import {
   ask,
   type AssistantContext,
   type AssistantMode,
+  type AssistantNavigate,
   type AssistantProposal,
   type AssistantRef,
   type AssistantTurn,
@@ -19,7 +20,9 @@ export interface Exchange {
   question: string;
   progress: string[];
   pending: boolean;
-  answer?: { text: string; refs: AssistantRef[]; proposals: AssistantProposal[] };
+  /** Asked aloud in hands-free mode. */
+  voice?: boolean;
+  answer?: { text: string; refs: AssistantRef[]; proposals: AssistantProposal[]; navigate?: AssistantNavigate | null };
   error?: string;
 }
 
@@ -28,6 +31,8 @@ export function useConversation(
   mode: AssistantMode,
   context: () => AssistantContext | undefined,
   onAnswer?: (refs: AssistantRef[]) => void,
+  /** Called once per question when it has an answer or an error. */
+  onSettled?: (exchange: Exchange) => void,
 ) {
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const controller = useRef<AbortController | null>(null);
@@ -35,7 +40,7 @@ export function useConversation(
   const busy = exchanges.some((e) => e.pending);
 
   const send = useCallback(
-    async (question: string) => {
+    async (question: string, options?: { voice?: boolean }) => {
       const q = question.trim();
       if (!q || busy) return;
       const id = nextId.current++;
@@ -50,8 +55,13 @@ export function useConversation(
             : [],
         )
         .slice(-16);
-      setExchanges((prev) => [...prev, { id, question: q, progress: [], pending: true }]);
-      const update = (fn: (e: Exchange) => Exchange) => setExchanges((prev) => prev.map((e) => (e.id === id ? fn(e) : e)));
+      let latest: Exchange = { id, question: q, progress: [], pending: true, voice: options?.voice };
+      setExchanges((prev) => [...prev, latest]);
+      const update = (fn: (e: Exchange) => Exchange) => {
+        latest = fn(latest);
+        const next = latest;
+        setExchanges((prev) => prev.map((e) => (e.id === id ? next : e)));
+      };
       const abort = new AbortController();
       controller.current = abort;
       try {
@@ -62,11 +72,16 @@ export function useConversation(
           (event) => {
             if (event.type === "progress") update((e) => ({ ...e, progress: [...e.progress, event.text] }));
             else if (event.type === "answer") {
-              update((e) => ({ ...e, pending: false, answer: { text: event.text, refs: event.refs, proposals: event.proposals } }));
+              update((e) => ({
+                ...e,
+                pending: false,
+                answer: { text: event.text, refs: event.refs, proposals: event.proposals, navigate: event.navigate },
+              }));
               onAnswer?.(event.refs);
             } else update((e) => ({ ...e, pending: false, error: event.message }));
           },
           abort.signal,
+          options,
         );
       } catch (err) {
         const stopped = err instanceof DOMException && err.name === "AbortError";
@@ -78,9 +93,10 @@ export function useConversation(
       } finally {
         update((e) => (e.pending ? { ...e, pending: false, error: e.error ?? "The assistant didn't answer. Try again." } : e));
         if (controller.current === abort) controller.current = null;
+        onSettled?.(latest);
       }
     },
-    [busy, context, exchanges, mode, onAnswer],
+    [busy, context, exchanges, mode, onAnswer, onSettled],
   );
 
   const stop = useCallback(() => controller.current?.abort(), []);
@@ -204,6 +220,7 @@ export function ExchangeView({
     <div className="space-y-3 animate-fade-in">
       <div className="flex justify-end">
         <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-accent-soft px-3.5 py-2 text-[14px] leading-relaxed text-accent-ink">
+          {exchange.voice && <Microphone2 className="-mt-0.5 mr-1.5 inline size-3.5 opacity-70" aria-label="Spoken" />}
           {question}
         </p>
       </div>
@@ -244,6 +261,7 @@ export function Composer({
   placeholder,
   autoFocus,
   className,
+  onVoice,
 }: {
   onSend: (text: string) => void;
   onStop: () => void;
@@ -251,6 +269,8 @@ export function Composer({
   placeholder: string;
   autoFocus?: boolean;
   className?: string;
+  /** Shows a microphone button that switches to hands-free voice. */
+  onVoice?: () => void;
 }) {
   const [text, setText] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -296,6 +316,17 @@ export function Composer({
         aria-label={placeholder}
         className="max-h-[132px] min-h-[36px] flex-1 resize-none bg-transparent py-2 text-[14px] leading-snug text-ink outline-none placeholder:text-ink-3 focus-visible:outline-none"
       />
+      {onVoice && !busy && !text.trim() && (
+        <button
+          type="button"
+          onClick={onVoice}
+          className="grid size-9 shrink-0 place-items-center rounded-xl text-ink-2 hover:bg-sunken hover:text-ink"
+          aria-label="Talk hands-free"
+          title="Talk hands-free"
+        >
+          <Microphone2 className="size-[18px]" />
+        </button>
+      )}
       {busy ? (
         <button
           type="button"

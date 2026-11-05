@@ -40,8 +40,14 @@ export interface AssistantProposal {
 
 export type AssistantEvent =
   | { type: "progress"; text: string }
-  | { type: "answer"; text: string; refs: AssistantRef[]; proposals: AssistantProposal[] }
+  | { type: "answer"; text: string; refs: AssistantRef[]; proposals: AssistantProposal[]; navigate?: AssistantNavigate | null }
   | { type: "error"; message: string };
+
+/** A page the review assistant opened for the reviewer. */
+export interface AssistantNavigate {
+  href: string;
+  label: string;
+}
 
 export interface AssistantTurn {
   role: "user" | "assistant";
@@ -61,13 +67,14 @@ export async function ask(
   context: AssistantContext | undefined,
   onEvent: (event: AssistantEvent) => void,
   signal?: AbortSignal,
+  options?: { voice?: boolean },
 ): Promise<void> {
   let res: Response;
   try {
     res = await fetch(`/api/v1/assistant/${mode}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-      body: JSON.stringify({ messages, context }),
+      body: JSON.stringify({ messages, context, ...(options?.voice ? { voice: true } : {}) }),
       credentials: "same-origin",
       cache: "no-store",
       signal,

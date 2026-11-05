@@ -22,6 +22,8 @@ export default defineConfig({
     },
     env: {
       ASSETS: bindings.assets(),
+      // Where worker.ts forwards WebSockets (the API's public origin, the same one next.config rewrites to).
+      API_ORIGIN: bindings.text((process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000").replace(/\/$/, "")),
     },
   }),
 });

@@ -560,6 +560,8 @@ class AssistantRequest(BaseModel):
 
     messages: list[AssistantTurn] = Field(min_length=1, max_length=24)
     context: AssistantContext | None = None
+    # The question was spoken and the answer will be read aloud: keep it short and plain.
+    voice: bool = False
 
     @model_validator(mode="after")
     def _ends_with_question(self) -> "AssistantRequest":

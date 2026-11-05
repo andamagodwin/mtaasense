@@ -74,6 +74,11 @@ class Settings(BaseSettings):
     assistant_max_output_tokens: int = 2500
     assistant_rate_limit_per_hour: int = 20
     assistant_reviewer_rate_limit_per_hour: int = 120
+    # Hands-free voice for Elvis: the browser streams the microphone through us to Muse Voice Transcribe.
+    voice_realtime_url: str = "wss://api.meta.ai/v1/asr/realtime"
+    voice_max_session_seconds: int = 900
+    voice_idle_seconds: int = 300
+    voice_sessions_per_hour: int = 30
 
     # Duplicate matching
     duplicate_radius_m: float = 150.0

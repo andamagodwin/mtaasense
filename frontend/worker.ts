@@ -5,12 +5,14 @@
  *   vinext passes external redirect destinations through untouched, dropping the query string.)
  * - Byte ranges for the hero reel. Workers static assets ignore `Range` and always send the whole file,
  *   and Safari will not play a <video> whose server does that.
+ * - WebSockets under /api/v1/ (Elvis's hands-free voice) go straight to the API. vinext's rewrite proxy drops
+ *   the Upgrade header, so it can only carry ordinary requests.
  */
 import vinext from "vinext/server/fetch-handler";
 
 export * from "vinext/server/fetch-handler";
 
-type Env = { ASSETS: { fetch(request: Request): Promise<Response> } };
+type Env = { ASSETS: { fetch(request: Request): Promise<Response> }; API_ORIGIN: string };
 
 const worker = {
   ...vinext,
@@ -20,6 +22,10 @@ const worker = {
       url.protocol = "https:";
       url.hostname = "mtaasense.com";
       return Response.redirect(url.toString(), 308);
+    }
+    if (url.pathname.startsWith("/api/v1/") && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
+      // Passing the original request keeps the Upgrade handshake, the session cookie and the Origin header.
+      return fetch(`${env.API_ORIGIN}${url.pathname}${url.search}`, request);
     }
     if (url.pathname.startsWith("/hero/") && (request.method === "GET" || request.method === "HEAD")) {
       const asset = await env.ASSETS.fetch(new Request(url));

@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { ReviewDashboard } from "@/components/review/dashboard";
+import { ReviewOverview } from "@/components/review/overview";
 import { Skeleton } from "@/components/ui/feedback";
 import { Page } from "@/components/ui/page";
 
-export const metadata: Metadata = { title: "Review workspace" };
+export const metadata: Metadata = { title: "Review dashboard" };
 
 export default function ReviewPage() {
   return (
     <Suspense fallback={<Page><Skeleton className="h-96" /></Page>}>
-      <ReviewDashboard />
+      <ReviewOverview />
     </Suspense>
   );
 }

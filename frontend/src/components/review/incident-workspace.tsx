@@ -39,7 +39,7 @@ export function IncidentWorkspace() {
   return (
     <Page>
       <PageHeader
-        back={{ href: "/review?tab=incidents", label: "Incidents" }}
+        back={{ href: "/review/incidents", label: "Incidents" }}
         meta={<span className="font-mono">{inc.reference}</span>}
         title={inc.title}
         description={

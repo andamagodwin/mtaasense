@@ -58,7 +58,7 @@ export function ReportWorkspace() {
   return (
     <Page>
       <PageHeader
-        back={{ href: "/review", label: "Review workspace" }}
+        back={{ href: "/review/queue", label: "Review queue" }}
         meta={`Submitted ${formatDateTime(r.created_at)}`}
         title={
           <>

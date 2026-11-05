@@ -228,7 +228,7 @@ export function MapExplorer() {
             <p className="flex items-start gap-2 border-t border-line px-5 py-3 text-[12.5px] leading-relaxed text-ink-3">
               <LocationSlash className="mt-0.5 size-3.5 shrink-0" />
               {data.unlocated_incidents + data.unlocated_reports} record{data.unlocated_incidents + data.unlocated_reports === 1 ? " has" : "s have"} no location and {data.unlocated_incidents + data.unlocated_reports === 1 ? "isn’t" : "aren’t"} plotted. We never guess coordinates.
-              {user && <Link href="/review?tab=unlocated" className="underline">See them</Link>}
+              {user && <Link href="/review/unlocated" className="underline">See them</Link>}
             </p>
           )}
         </div>

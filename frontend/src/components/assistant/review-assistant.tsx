@@ -13,6 +13,12 @@ import { Button } from "../ui/button";
 import { Composer, ExchangeView, Starters, useConversation } from "./conversation";
 
 const UUID = "[0-9a-f-]{36}";
+const ASK_EVENT = "mtaasense:ask-assistant";
+
+/** Open the review assistant from anywhere in the dashboard, optionally asking a question straight away. */
+export function askAssistant(question?: string) {
+  window.dispatchEvent(new CustomEvent<string | undefined>(ASK_EVENT, { detail: question }));
+}
 
 /** The record open in the review workspace, so "this incident" means something. */
 function contextFor(pathname: string): AssistantContext | undefined {
@@ -161,6 +167,19 @@ export function ReviewAssistant() {
   }, [pathname]);
   const getContext = useCallback(() => contextFor(pathRef.current), []);
   const convo = useConversation("review", getContext);
+  const sendRef = useRef(convo.send);
+  useEffect(() => {
+    sendRef.current = convo.send;
+  });
+  useEffect(() => {
+    const onAsk = (e: Event) => {
+      const question = (e as CustomEvent<string | undefined>).detail;
+      setOpen(true);
+      if (question) void sendRef.current(question);
+    };
+    window.addEventListener(ASK_EVENT, onAsk);
+    return () => window.removeEventListener(ASK_EVENT, onAsk);
+  }, []);
   const scroller = useRef<HTMLDivElement>(null);
   const last = convo.exchanges.at(-1);
 
@@ -193,7 +212,7 @@ export function ReviewAssistant() {
       {open && (
         <aside
           aria-label="Review assistant"
-          className="fixed inset-x-0 bottom-0 top-14 z-40 flex flex-col border-l border-line bg-paper shadow-[var(--shadow-pop)] animate-fade-in sm:left-auto sm:w-[440px]"
+          className="fixed inset-x-0 bottom-0 top-14 z-40 flex flex-col lg:top-0 border-l border-line bg-paper shadow-[var(--shadow-pop)] animate-fade-in sm:left-auto sm:w-[440px]"
         >
           <header className="flex items-start justify-between gap-3 border-b border-line bg-surface px-4 py-3">
             <div className="flex items-start gap-2.5">

@@ -1,9 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import { IBM_Plex_Mono, Manrope } from "next/font/google";
 import { SessionProvider } from "@/components/session";
-import { SiteHeader, SiteHeaderFallback } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import { colors } from "@/lib/colors";
 import "./globals.css";
 
@@ -49,15 +46,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <SessionProvider>
-          <Suspense fallback={<SiteHeaderFallback />}>
-            <SiteHeader />
-          </Suspense>
-          <main id="main" className="flex flex-1 flex-col">
-            {children}
-          </main>
-          <SiteFooter />
-        </SessionProvider>
+        {/* The public site (app/(site)) adds the header and footer; the review dashboard (app/(dashboard)) its sidebar. */}
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
   );

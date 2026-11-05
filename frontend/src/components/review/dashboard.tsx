@@ -1,112 +1,21 @@
 "use client";
 
-import { clsx } from "clsx";
 import { ArrowRight, DirectInbox, Hierarchy, LocationSlash, SearchNormal1 } from "iconsax-reactjs";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { PRIORITY_LABEL, REPORT_STATUS_LABEL, formatDate, pct, timeAgo } from "@/lib/format";
 import { useApi, usePolling } from "@/lib/hooks";
 import type { ReportStatus, ReportSummary } from "@/lib/types";
 import { CategoryBadge, IncidentStatusBadge, PriorityBadge, SampleBadge, SeverityBadge, StatusBadge, VerdictBadge } from "../badges";
-import { useRequireReviewer } from "../session";
 import { Card } from "../ui/card";
 import { Callout, EmptyState, Skeleton } from "../ui/feedback";
 import { Input } from "../ui/field";
-import { Page, PageHeader } from "../ui/page";
 import { Thumb } from "./thumb";
 
-const TABS = [
-  { id: "queue", label: "Review queue" },
-  { id: "duplicates", label: "Duplicates" },
-  { id: "incidents", label: "Incidents" },
-  { id: "unlocated", label: "Unlocated" },
-  { id: "all", label: "All reports" },
-] as const;
-type Tab = (typeof TABS)[number]["id"];
+// The review lists the dashboard sidebar links to. Each polls on its own so decisions show up quickly.
 
-export function ReviewDashboard() {
-  const session = useRequireReviewer();
-  const params = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const tab = (TABS.find((t) => t.id === params.get("tab"))?.id ?? "queue") as Tab;
-  const summary = useApi(() => api.reviewSummary(), session.allowed ? "summary" : null);
-  usePolling(summary.reload, 10000, session.allowed);
-
-  if (!session.allowed) {
-    return <Page><Skeleton className="h-96" /></Page>;
-  }
-
-  const s = summary.data;
-  // The counts live on the tabs themselves, so there is one place to look and one place to click.
-  const counts: Record<Tab, number | undefined> = {
-    queue: s?.reports_awaiting_review,
-    duplicates: s?.potential_duplicates,
-    incidents: s ? s.incidents_confirmed + s.incidents_resolved : undefined,
-    unlocated: s?.unlocated_reports,
-    all: s?.reports_total,
-  };
-  const setTab = (t: Tab) => router.replace(`${pathname}?tab=${t}`, { scroll: false });
-
-  return (
-    <Page>
-      <PageHeader
-        title="Review workspace"
-        description="Check AI assessments against the original evidence, link duplicate reports and manage incidents."
-      />
-
-      {s && s.processing_failures > 0 && (
-        <Callout tone="warn" className="mb-6">
-          {s.processing_failures} report{s.processing_failures === 1 ? "" : "s"} failed AI processing and{" "}
-          {s.processing_failures === 1 ? "is" : "are"} waiting in the review queue.
-        </Callout>
-      )}
-
-      <div className="mb-6 flex gap-1 overflow-x-auto border-b border-line" role="tablist">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
-            className={clsx(
-              "-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-[14px] transition-colors",
-              tab === t.id ? "border-accent font-medium text-ink" : "border-transparent text-ink-3 hover:text-ink",
-            )}
-          >
-            {t.label}
-            {counts[t.id] !== undefined && (
-              <span
-                className={clsx(
-                  "rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums",
-                  t.id === "queue" && counts.queue ? "bg-accent-soft text-accent-ink" : "bg-sunken text-ink-3",
-                )}
-              >
-                {counts[t.id]}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {tab === "queue" && <ReportTable statuses={["under_review", "processing_failed"]} empty="No reports are waiting for review." />}
-      {tab === "all" && <ReportTable searchable empty="No reports have been submitted yet." />}
-      {tab === "unlocated" && <ReportTable hasLocation={false} empty="Every report has a location." />}
-      {tab === "duplicates" && <DuplicateList />}
-      {tab === "incidents" && <IncidentTable />}
-
-      {s && s.sample_records > 0 && (
-        <p className="mt-6 text-[12.5px] text-ink-3">
-          Includes {s.sample_records} sample record{s.sample_records === 1 ? "" : "s"}, marked <SampleBadge />
-        </p>
-      )}
-    </Page>
-  );
-}
-
-function ReportTable({ statuses, hasLocation, searchable, empty }: { statuses?: ReportStatus[]; hasLocation?: boolean; searchable?: boolean; empty: string }) {
+export function ReportTable({ statuses, hasLocation, searchable, empty }: { statuses?: ReportStatus[]; hasLocation?: boolean; searchable?: boolean; empty: string }) {
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
   const limit = 25;
@@ -192,7 +101,7 @@ function ReportRow({ report: r }: { report: ReportSummary }) {
   );
 }
 
-function DuplicateList() {
+export function DuplicateList() {
   const list = useApi(() => api.suggestions({ limit: 50 }), "suggestions");
   usePolling(list.reload, 8000, true);
   if (list.error) return <Callout tone="danger">{list.error.message}</Callout>;
@@ -239,7 +148,7 @@ function PairSide({ report, label }: { report: ReportSummary; label: string }) {
   );
 }
 
-function IncidentTable() {
+export function IncidentTable() {
   const list = useApi(() => api.incidents({ limit: 100 }), "incidents");
   if (list.error) return <Callout tone="danger">{list.error.message}</Callout>;
   if (!list.data) return <Skeleton className="h-40" />;

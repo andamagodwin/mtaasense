@@ -29,6 +29,7 @@ const OPERATION_LABEL: Record<string, string> = {
   review_assistant: "Elvis, review assistant (Muse Spark)",
   map_assistant: "Ask the map (Muse Spark)",
   voice_assistant: "Elvis hands-free voice (Muse Voice realtime)",
+  site_assistant: "Ask MtaaSense, website (Muse Spark)",
 };
 
 export function UsageDashboard() {

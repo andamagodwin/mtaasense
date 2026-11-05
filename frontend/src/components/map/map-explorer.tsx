@@ -23,7 +23,12 @@ export function MapExplorer() {
   // Two decisions at most: one hazard type (or all), and whether resolved incidents stay on the map.
   const [category, setCategory] = useState<HazardCategory | null>(null);
   const [includeResolved, setIncludeResolved] = useState(true);
-  const [selection, setSelection] = useState<Selection>(null);
+  // `/map?incident=<id>` opens with that incident selected (links from the website assistant use it).
+  const [selection, setSelection] = useState<Selection>(() => {
+    if (typeof window === "undefined") return null;
+    const id = new URLSearchParams(window.location.search).get("incident");
+    return id && /^[0-9a-f-]{36}$/i.test(id) ? { kind: "incident", id } : null;
+  });
   // Records the last Ask the map answer cited, ringed on the map.
   const [highlight, setHighlight] = useState<AssistantRef[]>([]);
   const bounds = useRef<Bounds | null>(null);

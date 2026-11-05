@@ -58,6 +58,17 @@ def map_assistant(db: DB, fp: Fingerprint, body: AssistantRequest) -> StreamingR
     return _stream(assistant.answer("map", body))
 
 
+@router.post("/assistant/site")
+def site_assistant(db: DB, fp: Fingerprint, body: AssistantRequest) -> StreamingResponse:
+    """Public questions about MtaaSense on the website. Sees only what the public map shows."""
+    settings = get_settings()
+    rate_limit.hit(db, f"assistant:site:{fp}", settings.assistant_rate_limit_per_hour, timedelta(hours=1))
+    rate_limit.hit(db, "assistant:global", settings.public_global_rate_limit_per_hour, timedelta(hours=1))
+    body.context = None
+    body.voice = False
+    return _stream(assistant.answer("site", body))
+
+
 def _voice_access(token: str | None) -> tuple[uuid.UUID | None, str | None]:
     """The reviewer behind this session cookie and whether they may start a voice session."""
     settings = get_settings()

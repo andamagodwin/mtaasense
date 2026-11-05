@@ -5,7 +5,7 @@
 import { ApiError, parseError } from "./api";
 import type { HazardCategory, LatLon } from "./types";
 
-export type AssistantMode = "review" | "map";
+export type AssistantMode = "review" | "map" | "site";
 
 /** A record the answer cites: linked in the text and highlighted on the map. */
 export interface AssistantRef {

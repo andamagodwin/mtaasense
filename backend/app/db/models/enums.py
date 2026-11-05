@@ -139,6 +139,7 @@ class ModelOperation(StrEnum):
     review_assistant = "review_assistant"
     map_assistant = "map_assistant"
     voice_assistant = "voice_assistant"
+    site_assistant = "site_assistant"
 
 
 class FixCheckStatus(StrEnum):

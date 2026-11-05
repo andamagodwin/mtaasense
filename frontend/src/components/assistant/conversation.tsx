@@ -2,6 +2,7 @@
 
 import { clsx } from "clsx";
 import { ArrowUp, Copy, Microphone2, Stop, TickCircle } from "iconsax-reactjs";
+import Link from "next/link";
 import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ApiError } from "@/lib/api";
 import {
@@ -110,15 +111,40 @@ export function useConversation(
 
 // ----------------------------------------------------------------------------- answer text
 
-const INLINE = /(\*\*[^*\n]+\*\*|\b(?:INC|MS)-[2-9A-HJKMNP-Z]{6}\b)/g;
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-function Inline({ text, refs, renderRef }: { text: string; refs: Map<string, AssistantRef>; renderRef: (ref: AssistantRef) => ReactNode }) {
+/** Bold, cited references and, when given, phrases that become links (such as a button's name). */
+function inlinePattern(links?: Record<string, string>): RegExp {
+  const phrases = Object.keys(links ?? {}).map(escape);
+  const extra = phrases.length > 0 ? `|${phrases.join("|")}` : "";
+  return new RegExp(`(\\*\\*[^*\\n]+\\*\\*|\\b(?:INC|MS)-[2-9A-HJKMNP-Z]{6}\\b${extra})`, "g");
+}
+
+function Inline({
+  text,
+  refs,
+  renderRef,
+  links,
+}: {
+  text: string;
+  refs: Map<string, AssistantRef>;
+  renderRef: (ref: AssistantRef) => ReactNode;
+  links?: Record<string, string>;
+}) {
+  const link = (phrase: string, children: ReactNode, key: number) => (
+    <Link key={key} href={links![phrase]} className="font-medium text-accent underline-offset-2 hover:underline">
+      {children}
+    </Link>
+  );
   return (
     <>
-      {text.split(INLINE).map((part, i) => {
+      {text.split(inlinePattern(links)).map((part, i) => {
         if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
-          return <strong key={i} className="font-semibold text-ink">{part.slice(2, -2)}</strong>;
+          const inner = part.slice(2, -2);
+          const bold = <strong className="font-semibold text-ink">{inner}</strong>;
+          return links?.[inner] ? link(inner, bold, i) : <Fragment key={i}>{bold}</Fragment>;
         }
+        if (links?.[part]) return link(part, part, i);
         const ref = refs.get(part);
         return ref ? <Fragment key={i}>{renderRef(ref)}</Fragment> : <Fragment key={i}>{part}</Fragment>;
       })}
@@ -156,7 +182,17 @@ function toBlocks(text: string): Block[] {
 }
 
 /** The model's plain-text answer: paragraphs, lists, bold, and cited references as links. */
-export function AnswerText({ text, refs, renderRef }: { text: string; refs: AssistantRef[]; renderRef: (ref: AssistantRef) => ReactNode }) {
+export function AnswerText({
+  text,
+  refs,
+  renderRef,
+  links,
+}: {
+  text: string;
+  refs: AssistantRef[];
+  renderRef: (ref: AssistantRef) => ReactNode;
+  links?: Record<string, string>;
+}) {
   const byRef = new Map(refs.map((r) => [r.reference, r]));
   return (
     <div className="space-y-2.5 text-[14px] leading-relaxed text-ink-2">
@@ -166,7 +202,7 @@ export function AnswerText({ text, refs, renderRef }: { text: string; refs: Assi
             {block.lines.map((line, j) => (
               <Fragment key={j}>
                 {j > 0 && <br />}
-                <Inline text={line} refs={byRef} renderRef={renderRef} />
+                <Inline text={line} refs={byRef} renderRef={renderRef} links={links} />
               </Fragment>
             ))}
           </p>
@@ -174,7 +210,7 @@ export function AnswerText({ text, refs, renderRef }: { text: string; refs: Assi
           <ul key={i} className={clsx("space-y-1.5 pl-5", block.kind === "ol" ? "list-decimal" : "list-disc marker:text-ink-3")}>
             {block.items.map((item, j) => (
               <li key={j}>
-                <Inline text={item} refs={byRef} renderRef={renderRef} />
+                <Inline text={item} refs={byRef} renderRef={renderRef} links={links} />
               </li>
             ))}
           </ul>
@@ -210,10 +246,13 @@ export function ExchangeView({
   exchange,
   renderRef,
   footer,
+  links,
 }: {
   exchange: Exchange;
   renderRef: (ref: AssistantRef) => ReactNode;
   footer?: (answer: NonNullable<Exchange["answer"]>) => ReactNode;
+  /** Phrases in answers that become links, e.g. {"Report a hazard": "/report"}. */
+  links?: Record<string, string>;
 }) {
   const { question, progress, pending, answer, error } = exchange;
   return (
@@ -242,7 +281,7 @@ export function ExchangeView({
       )}
       {answer && (
         <div className="space-y-3">
-          <AnswerText text={answer.text} refs={answer.refs} renderRef={renderRef} />
+          <AnswerText text={answer.text} refs={answer.refs} renderRef={renderRef} links={links} />
           {footer?.(answer)}
           <CopyButton text={answer.text} />
         </div>

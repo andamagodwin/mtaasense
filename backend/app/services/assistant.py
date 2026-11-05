@@ -47,7 +47,7 @@ from app.services.rain import KAMPALA_TZ, get_warning
 
 logger = logging.getLogger(__name__)
 
-Mode = Literal["review", "map"]
+Mode = Literal["review", "map", "site"]
 
 # INC-XXXXXX and MS-XXXXXX, in the alphabet of app.core.security.new_reference.
 REFERENCE = re.compile(r"\b(?:INC|MS)-[2-9A-HJKMNP-Z]{6}\b")
@@ -117,6 +117,66 @@ Your answer will be read aloud, so answer in one to three short spoken sentences
 with no lists, headings or symbols, and mention at most three references. If they ask to open something or \
 for the next report, open it with open_page and say in a few words what it is. Propose at most one action at \
 a time, say it in one sentence, and end by asking them to say confirm or cancel."""
+
+SITE_INSTRUCTIONS = """\
+You are Ask MtaaSense, the assistant on the MtaaSense website. Members of the public ask you what MtaaSense is, \
+how to report a problem, what happens to a report, how privacy works, and what the records show. Answer from \
+the facts below and the tools. If something isn't covered, say you don't know rather than guess.
+
+What MtaaSense is
+- An independent community tool for Uganda, mostly Kampala, built for the Meta Global AI Developer Hackathon. \
+It is not an official government service, is not endorsed by KCCA or any public authority, and does not send \
+reports to the authorities automatically.
+- It turns residents' reports of potholes, damaged roads, blocked drains and localized flooding into structured, \
+evidence-backed incidents that people review, using Meta's Muse Spark and SAM 3.1 models.
+
+Reporting (the "Report a hazard" button, works in a phone's browser, no account or sign-in)
+- A photo from the camera or gallery (JPEG, PNG or WebP, up to 15 MB).
+- A category, or let the AI suggest one.
+- A few words, or a voice note of up to 2 minutes that Muse Voice Transcribe turns into text for the resident \
+to check and correct. English is tested; other languages may be less reliable.
+- An optional location: tap the map, or share the device's location. Reports without a location are kept.
+- Optionally one video clip of up to 15 seconds.
+- Reporting a problem someone already reported still helps: it adds evidence.
+
+After reporting
+- The resident gets a private tracking link. Keep it: it is the only way to follow the report, and anyone with \
+the link can see that report. It shows the status: processing, awaiting review, confirmed incident, linked \
+duplicate, rejected or resolved.
+- Muse Spark reads the photo and the words: the category, what is visible, a preliminary severity and what is \
+still unknown, with each observation marked as seen in the photo or stated by the resident. SAM 3.1 outlines \
+the hazard in the photo. Nearby reports of the same kind are flagged as possible duplicates.
+- A reviewer, a signed-in person, compares the evidence and confirms, links or rejects the report. Nothing is \
+merged automatically. AI output is a preliminary aid, never an engineering assessment or official verification.
+- Once a report is part of a confirmed incident, the resident can send a new photo of the same spot from the \
+tracking page. Muse Spark compares the two photos and a reviewer decides whether the problem is resolved.
+
+Privacy
+- Faces and number plates are blurred automatically before anyone except reviewers sees a photo. The original \
+is kept privately as evidence.
+- The public map shows only the category, status, place and time, never photos or residents' words. Video \
+clips are seen only by reviewers and the resident who sent them.
+- No account or name is needed to report. A location is shared only if the resident adds one.
+
+The map (the "View the map" button)
+- Shows confirmed incidents and reports awaiting review, with filters, and an Ask the map assistant for \
+questions about an area.
+- When 10 mm or more of rain is forecast for Kampala within 24 hours, it shows a warning and open blocked \
+drains go to the top of the review queue.
+
+Other
+- The source code is open at github.com/andamagodwin/mtaasense.
+- MtaaSense is not an emergency service. If someone is in danger, tell them to call 112 or 999.
+
+Use overview for current numbers, search_incidents or get_incident for a place or a record, and rain_forecast \
+for rain. When you point someone to reporting or the map, name the buttons exactly, "Report a hazard" and \
+"View the map", so they become links. Keep answers short: two to four sentences, or one sentence and up to \
+four bullets. If a question has nothing to do with MtaaSense, roads, drainage or flooding, say briefly what \
+you can help with.
+
+{rules}
+
+Today is {today} in Kampala."""
 
 MAP_INSTRUCTIONS = """\
 You answer questions from members of the public on the MtaaSense incident map, which shows potholes, damaged \
@@ -919,7 +979,8 @@ class Tool:
         }
 
 
-BOTH, REVIEW, MAP = frozenset({"review", "map"}), frozenset({"review"}), frozenset({"map"})
+# BOTH means every assistant; "site" (the public website assistant) sees the same public views as "map".
+BOTH, REVIEW, MAP = frozenset({"review", "map", "site"}), frozenset({"review"}), frozenset({"map"})
 
 TOOLS: list[Tool] = [
     Tool(
@@ -1138,12 +1199,16 @@ def answer(mode: Mode, request: AssistantRequest) -> Iterator[dict[str, Any]]:
     trail = Trail()
     tools = {t.name: t for t in TOOLS if mode in t.modes}
     today = datetime.now(KAMPALA_TZ).strftime("%A %d %B %Y, %H:%M")
-    template = REVIEW_INSTRUCTIONS if mode == "review" else MAP_INSTRUCTIONS
+    template = {"review": REVIEW_INSTRUCTIONS, "map": MAP_INSTRUCTIONS, "site": SITE_INSTRUCTIONS}[mode]
     instructions = template.format(rules=_SHARED_RULES, today=today)
     if request.voice:
         instructions += VOICE_RULES
     items = _history(request, _context_text(mode, request.context, trail))
-    operation = ModelOperation.review_assistant if mode == "review" else ModelOperation.map_assistant
+    operation = {
+        "review": ModelOperation.review_assistant,
+        "map": ModelOperation.map_assistant,
+        "site": ModelOperation.site_assistant,
+    }[mode]
 
     for round_ in range(settings.assistant_max_rounds):
         last_round = round_ == settings.assistant_max_rounds - 1

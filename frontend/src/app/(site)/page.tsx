@@ -1,4 +1,5 @@
 import { Camera, Hierarchy, MagicStar, Scanning, ShieldTick, UserTick } from "iconsax-reactjs";
+import { SiteAssistant } from "@/components/assistant/site-assistant";
 import { HeroReel } from "@/components/hero/hero-reel";
 import { LiveStats } from "@/components/live-stats";
 import { LinkButton } from "@/components/ui/button";
@@ -117,6 +118,7 @@ export default function HomePage() {
           ))}
         </section>
       </div>
+      <SiteAssistant />
     </>
   );
 }

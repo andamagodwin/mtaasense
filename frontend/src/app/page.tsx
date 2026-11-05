@@ -49,10 +49,6 @@ export default function HomePage() {
     <>
       <HeroReel>
         <div className="animate-rise">
-          <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[12.5px] text-white/80 backdrop-blur-sm">
-            <span className="size-1.5 rounded-full bg-highlight" />
-            Community infrastructure intelligence · Uganda
-          </p>
           <h1 className="max-w-[17ch] text-[34px] font-semibold leading-[1.08] tracking-[-0.02em] sm:text-[52px]">
             From a photo on the street to an evidence‑backed incident.
           </h1>

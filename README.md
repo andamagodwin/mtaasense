@@ -24,7 +24,9 @@ reviewers a workspace to compare evidence and consolidate reports into canonical
 | Privacy blur (SAM 3.1 faces/plates + local Gaussian blur) | **Verified live** | 4/4 faces and 1/1 plate blurred on seed photos; alignment checked visually |
 | Rain warning (Open-Meteo Kampala forecast, free, no key) | **Verified live** | Real 48h fetch + 24h window checked; queue boost covered by tests |
 | Video reports (clip + SAM 3.1 tracking + Spark motion description) | **Verified live** | Water tracked across all 50 frames of a test clip; 3 outlined stills checked visually |
-| Backend tests | **90 passing** | `uv run pytest` (real PostGIS, mocked Meta transport; ffmpeg seams mocked) |
+| Review assistant (Muse Spark function calling over the review data; proposes decisions, the reviewer confirms) | **Verified live (local data)** | Triage, incident summaries, a KCCA work order and a reject proposal confirmed through the UI and audited as the reviewer |
+| Ask the map (public Muse Spark Q&A over map data only; cited records ringed on the map) | **Verified live (local data)** | English and Luganda questions; tests check residents' words never reach it |
+| Backend tests | **97 passing** | `uv run pytest` (real PostGIS, mocked Meta transport; ffmpeg seams mocked) |
 | Frontend type-check, lint, production build | **Passing** | `pnpm typecheck && pnpm lint && pnpm build && pnpm build:vinext` |
 | Backend Docker image | **Builds and passes `/ready`** | smoke-tested locally |
 | Backend on the Contabo VPS | **Deployed** at <https://api.mtaasense.com> | Docker Compose behind a Cloudflare Tunnel (the VPS's ports 80/443 belong to another app); `/ready` reports database, migrations, media and model API OK |

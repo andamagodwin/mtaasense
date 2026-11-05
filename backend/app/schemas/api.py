@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.db.models.enums import (
     AnalysisStatus,
@@ -477,3 +477,51 @@ class UsageReport(BaseModel):
     pricing_source: str
     pricing_retrieved: str
     note: str
+
+
+# --------------------------------------------------------------------------- assistants
+
+
+class AssistantTurn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=6000)
+
+
+class MapBounds(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    south: float = Field(ge=-90, le=90)
+    west: float = Field(ge=-180, le=180)
+    north: float = Field(ge=-90, le=90)
+    east: float = Field(ge=-180, le=180)
+
+
+class AssistantContext(BaseModel):
+    """What the person is looking at: the record open in the review workspace, or the map view."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    incident_id: uuid.UUID | None = None
+    report_id: uuid.UUID | None = None
+    suggestion_id: uuid.UUID | None = None
+    bounds: MapBounds | None = None
+
+
+class AssistantRequest(BaseModel):
+    """The conversation so far, oldest first, ending with the new question. The server keeps no chat state."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    messages: list[AssistantTurn] = Field(min_length=1, max_length=24)
+    context: AssistantContext | None = None
+
+    @model_validator(mode="after")
+    def _ends_with_question(self) -> "AssistantRequest":
+        last = self.messages[-1]
+        if last.role != "user":
+            raise ValueError("The last message must be the new question.")
+        if len(last.content) > 1000:
+            raise ValueError("Keep the question under 1,000 characters.")
+        return self

@@ -9,10 +9,11 @@ import { Callout } from "../ui/feedback";
 import { createMap, loadMapLibre } from "./maplibre";
 
 export type Selection = { kind: "incident" | "report"; id: string } | null;
+export type Bounds = { south: number; west: number; north: number; east: number };
 
 const NEUTRAL = colors.ink[3];
 
-function toGeoJSON(features: MapFeatures, selection: Selection): {
+function toGeoJSON(features: MapFeatures, selection: Selection, highlight: Set<string>): {
   incidents: GeoJSON.FeatureCollection;
   reports: GeoJSON.FeatureCollection;
 } {
@@ -31,6 +32,7 @@ function toGeoJSON(features: MapFeatures, selection: Selection): {
             resolved: i.status === "resolved",
             count: i.report_count,
             selected: selection?.kind === "incident" && selection.id === i.id,
+            highlighted: highlight.has(i.id),
           },
         })),
     },
@@ -44,6 +46,7 @@ function toGeoJSON(features: MapFeatures, selection: Selection): {
           id: r.id,
           color: r.hazard_category ? CATEGORY_HEX[r.hazard_category] : NEUTRAL,
           selected: selection?.kind === "report" && selection.id === r.id,
+          highlighted: highlight.has(r.id),
         },
       })),
     },
@@ -54,11 +57,16 @@ export function IncidentMap({
   features,
   selection,
   onSelect,
+  highlight = [],
+  onBoundsChange,
   className,
 }: {
   features: MapFeatures | null;
   selection: Selection;
   onSelect: (s: Selection) => void;
+  /** Ids ringed in the highlight colour (records an assistant answer cites); the map fits them in view. */
+  highlight?: string[];
+  onBoundsChange?: (bounds: Bounds) => void;
   className?: string;
 }) {
   const container = useRef<HTMLDivElement>(null);
@@ -67,9 +75,12 @@ export function IncidentMap({
   const [failed, setFailed] = useState(false);
   const fitted = useRef(false);
   const onSelectRef = useRef(onSelect);
+  const onBoundsRef = useRef(onBoundsChange);
   useEffect(() => {
     onSelectRef.current = onSelect;
+    onBoundsRef.current = onBoundsChange;
   });
+  const highlightKey = highlight.join(",");
 
   useEffect(() => {
     let cancelled = false;
@@ -110,6 +121,33 @@ export function IncidentMap({
           filter: ["==", ["get", "selected"], true],
           paint: { "circle-radius": 18, "circle-color": ["get", "color"], "circle-opacity": 0.18 },
         });
+        // Rings around records an assistant answer cites.
+        map.addLayer({
+          id: "incident-highlight",
+          type: "circle",
+          source: "incidents",
+          filter: ["==", ["get", "highlighted"], true],
+          paint: {
+            "circle-radius": ["+", 13, ["*", 1.6, ["min", ["get", "count"], 6]]],
+            "circle-color": colors.highlight.DEFAULT,
+            "circle-opacity": 0.12,
+            "circle-stroke-color": colors.highlight.DEFAULT,
+            "circle-stroke-width": 2.5,
+          },
+        });
+        map.addLayer({
+          id: "report-highlight",
+          type: "circle",
+          source: "reports",
+          filter: ["==", ["get", "highlighted"], true],
+          paint: {
+            "circle-radius": 12,
+            "circle-color": colors.highlight.DEFAULT,
+            "circle-opacity": 0.12,
+            "circle-stroke-color": colors.highlight.DEFAULT,
+            "circle-stroke-width": 2.5,
+          },
+        });
         map.addLayer({
           id: "reports",
           type: "circle",
@@ -141,6 +179,13 @@ export function IncidentMap({
           map.on("mouseenter", layer, () => map && (map.getCanvas().style.cursor = "pointer"));
           map.on("mouseleave", layer, () => map && (map.getCanvas().style.cursor = ""));
         }
+        const reportBounds = () => {
+          if (!map) return;
+          const b = map.getBounds();
+          onBoundsRef.current?.({ south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() });
+        };
+        map.on("moveend", reportBounds);
+        reportBounds();
         setReady(true);
       });
     })();
@@ -156,7 +201,7 @@ export function IncidentMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!ready || !map || !features) return;
-    const data = toGeoJSON(features, selection);
+    const data = toGeoJSON(features, selection, new Set(highlightKey ? highlightKey.split(",") : []));
     (map.getSource("incidents") as GeoJSONSource | undefined)?.setData(data.incidents);
     (map.getSource("reports") as GeoJSONSource | undefined)?.setData(data.reports);
     const coords = [...data.incidents.features, ...data.reports.features].map(
@@ -169,7 +214,29 @@ export function IncidentMap({
         map.fitBounds(bounds, { padding: 64, maxZoom: 14, duration: 0 });
       });
     }
-  }, [ready, features, selection]);
+  }, [ready, features, selection, highlightKey]);
+
+  // Fit the records an answer cites, once per answer.
+  const fittedHighlight = useRef("");
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !features || !highlightKey || fittedHighlight.current === highlightKey) return;
+    const ids = new Set(highlightKey.split(","));
+    const coords = [
+      ...features.incidents.filter((i) => ids.has(i.id) && i.location).map((i) => [i.location!.lon, i.location!.lat] as [number, number]),
+      ...features.reports.filter((r) => ids.has(r.id)).map((r) => [r.location.lon, r.location.lat] as [number, number]),
+    ];
+    if (coords.length === 0) return;
+    fittedHighlight.current = highlightKey;
+    if (coords.length === 1) {
+      map.easeTo({ center: coords[0], zoom: Math.max(map.getZoom(), 14), duration: 600 });
+      return;
+    }
+    void loadMapLibre().then((maplibre) => {
+      const bounds = coords.reduce((b, c) => b.extend(c), new maplibre.LngLatBounds(coords[0], coords[0]));
+      map.fitBounds(bounds, { padding: 80, maxZoom: 15, duration: 600 });
+    });
+  }, [ready, features, highlightKey]);
 
   // Pan to a selection made from the list.
   useEffect(() => {

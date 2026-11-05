@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy import text
 
-from app.api.routes import admin, auth, duplicates, incidents, media, overview, reports
+from app.api.routes import admin, assistant, auth, duplicates, incidents, media, overview, reports
 from app.core.config import get_settings
 from app.core.errors import AppError
 from app.core.logging import configure_logging, log_event, request_id_var
@@ -93,7 +93,7 @@ async def unhandled_handler(_: Request, exc: Exception) -> JSONResponse:
     return _error(500, "internal_error", "Something went wrong on our side. Please try again.")
 
 
-for module in (reports, duplicates, incidents, overview, auth, media, admin):
+for module in (reports, duplicates, incidents, overview, auth, media, admin, assistant):
     app.include_router(module.router, prefix="/api/v1")
 
 

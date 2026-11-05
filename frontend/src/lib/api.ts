@@ -50,7 +50,7 @@ const FRIENDLY: Record<number, string> = {
   504: "The request took too long. Please try again.",
 };
 
-async function parseError(res: Response): Promise<ApiError> {
+export async function parseError(res: Response): Promise<ApiError> {
   try {
     const body = (await res.json()) as { error?: { code?: string; message?: string; details?: unknown } };
     if (body.error?.message) {

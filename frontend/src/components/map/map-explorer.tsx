@@ -3,8 +3,9 @@
 import { clsx } from "clsx";
 import { ArrowRight, CloseCircle, Layer, LocationSlash } from "iconsax-reactjs";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import type { AssistantRef } from "@/lib/assistant";
 import { colors } from "@/lib/colors";
 import { CATEGORY_HEX, CATEGORY_LABEL, formatDate, formatHour, timeAgo } from "@/lib/format";
 import { useApi } from "@/lib/hooks";
@@ -12,7 +13,8 @@ import type { HazardCategory, IncidentStatus } from "@/lib/types";
 import { CategoryBadge, IncidentStatusBadge, PriorityBadge, SampleBadge, SeverityBadge } from "../badges";
 import { useSession } from "../session";
 import { Callout, EmptyState, Skeleton } from "../ui/feedback";
-import { IncidentMap, type Selection } from "./incident-map";
+import { AskTheMap } from "./ask-the-map";
+import { IncidentMap, type Bounds, type Selection } from "./incident-map";
 
 const CATEGORIES: HazardCategory[] = ["pothole", "road_surface_damage", "blocked_drainage", "flooding"];
 
@@ -22,6 +24,25 @@ export function MapExplorer() {
   const [category, setCategory] = useState<HazardCategory | null>(null);
   const [includeResolved, setIncludeResolved] = useState(true);
   const [selection, setSelection] = useState<Selection>(null);
+  // Records the last Ask the map answer cited, ringed on the map.
+  const [highlight, setHighlight] = useState<AssistantRef[]>([]);
+  const bounds = useRef<Bounds | null>(null);
+  const selectionRef = useRef(selection);
+  useEffect(() => {
+    selectionRef.current = selection;
+  }, [selection]);
+  const assistantContext = useCallback(() => {
+    const s = selectionRef.current;
+    return { bounds: bounds.current ?? undefined, incident_id: s?.kind === "incident" ? s.id : undefined };
+  }, []);
+  const showAnswer = useCallback((refs: AssistantRef[]) => {
+    setHighlight(refs);
+    if (refs.length > 0) {
+      // Show everything so each cited record is on the map.
+      setCategory(null);
+      setIncludeResolved(true);
+    }
+  }, []);
 
   const statuses: IncidentStatus[] = includeResolved ? [] : ["confirmed"];
   const query = { category: category ? [category] : [], status: statuses, include_unreviewed: true };
@@ -50,6 +71,12 @@ export function MapExplorer() {
             <h1 className="text-lg font-semibold tracking-tight">Incident map</h1>
             <span className="text-[12.5px] text-ink-3">{features.loading ? "Loading…" : `${total} on map`}</span>
           </div>
+          <AskTheMap
+            context={assistantContext}
+            onAnswer={showAnswer}
+            onPick={(ref) => ref.location && setSelection({ kind: ref.kind, id: ref.id })}
+            highlighted={highlight.some((r) => r.location)}
+          />
           {rain.data?.active && (
             <Callout
               tone="warn"
@@ -207,7 +234,14 @@ export function MapExplorer() {
         </div>
       </aside>
       <div className="relative order-1 h-[52vh] lg:order-2 lg:h-auto lg:flex-1">
-        <IncidentMap features={data} selection={selection} onSelect={setSelection} className="absolute inset-0" />
+        <IncidentMap
+          features={data}
+          selection={selection}
+          onSelect={setSelection}
+          highlight={highlight.map((r) => r.id)}
+          onBoundsChange={(b) => (bounds.current = b)}
+          className="absolute inset-0"
+        />
       </div>
     </div>
   );

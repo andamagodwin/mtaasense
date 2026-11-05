@@ -136,6 +136,8 @@ class ModelOperation(StrEnum):
     file_upload = "file_upload"
     video_tracking = "video_tracking"
     video_description = "video_description"
+    review_assistant = "review_assistant"
+    map_assistant = "map_assistant"
 
 
 class FixCheckStatus(StrEnum):

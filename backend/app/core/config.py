@@ -68,6 +68,13 @@ class Settings(BaseSettings):
     fix_check_rate_limit_per_hour: int = 6
     login_rate_limit_per_15min: int = 10
 
+    # Assistants: the review assistant (reviewers) and Ask the map (public). Each question is one short
+    # tool loop with Muse Spark; the rounds cap bounds its cost.
+    assistant_max_rounds: int = 6
+    assistant_max_output_tokens: int = 2500
+    assistant_rate_limit_per_hour: int = 20
+    assistant_reviewer_rate_limit_per_hour: int = 120
+
     # Duplicate matching
     duplicate_radius_m: float = 150.0
     duplicate_window_days: int = 45

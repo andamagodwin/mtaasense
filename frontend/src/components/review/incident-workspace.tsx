@@ -8,23 +8,27 @@ import { api, ApiError } from "@/lib/api";
 import { CATEGORY_LABEL, formatDateTime, PRIORITY_LABEL, SEVERITY_LABEL, formatCoords } from "@/lib/format";
 import { useApi, usePolling } from "@/lib/hooks";
 import type { FixCheck, HazardCategory, IncidentDetail, Priority, Severity } from "@/lib/types";
-import { Badge, CategoryBadge, IncidentStatusBadge, PriorityBadge, SampleBadge, SeverityBadge, StatusBadge } from "../badges";
+import { Badge, CategoryBadge, IncidentStatusBadge, PriorityBadge, SampleBadge, SeverityBadge } from "../badges";
 import { FixCheckForm, FixCheckResult } from "../fix-check";
 import { useRequireReviewer } from "../session";
 import { Button } from "../ui/button";
-import { Card, CardBody, CardHeader, KeyValue } from "../ui/card";
+import { Card, CardBody, KeyValue } from "../ui/card";
 import { Dialog } from "../ui/dialog";
 import { Callout, Skeleton } from "../ui/feedback";
 import { Field, Input, Select, Textarea } from "../ui/field";
 import { Page, PageHeader } from "../ui/page";
+import { TabPanel, Tabs, useTab } from "../ui/tabs";
 import { AuditTrail, NotesPanel } from "./activity";
 import { Thumb } from "./thumb";
+
+const TABS = ["reports", "repairs", "details", "activity"] as const;
 
 export function IncidentWorkspace() {
   const { id } = useParams<{ id: string }>();
   const session = useRequireReviewer();
   const incident = useApi(() => api.incident(id), session.allowed ? id : null);
   const [auditKey, setAuditKey] = useState(0);
+  const [tab, setTab] = useTab(TABS, "reports");
   const comparing = incident.data?.fix_checks?.some((c) => c.status === "queued" || c.status === "running") ?? false;
   usePolling(incident.reload, 3000, comparing);
 
@@ -35,6 +39,9 @@ export function IncidentWorkspace() {
     incident.setData(next);
     setAuditKey((k) => k + 1);
   };
+  const reports = inc.reports ?? [];
+  const primary = reports.find((r) => r.id === inc.primary_report_id) ?? reports[0];
+  const checks = inc.fix_checks ?? [];
 
   return (
     <Page>
@@ -47,71 +54,78 @@ export function IncidentWorkspace() {
             <IncidentStatusBadge status={inc.status} />
             <CategoryBadge category={inc.hazard_category} />
             <PriorityBadge priority={inc.priority} />
-            <SeverityBadge severity={inc.severity} />
+            {inc.severity !== "undetermined" && <SeverityBadge severity={inc.severity} />}
             {inc.is_sample && <SampleBadge />}
           </span>
         }
         actions={<StatusAction incident={inc} onDone={done} />}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader title={`Linked reports (${inc.reports?.length ?? 0})`} />
-            <ul className="divide-y divide-line">
-              {inc.reports?.map((r) => (
-                <li key={r.id}>
-                  <Link href={`/review/reports/${r.id}`} className="flex items-center gap-4 px-5 py-3 hover:bg-sunken/60">
-                    <Thumb media={r.thumbnail} className="size-20" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-[13.5px] font-medium">{r.reference}</span>
-                        <StatusBadge status={r.status} />
-                        {r.id === inc.primary_report_id && <span className="text-[12px] text-ink-3">primary</span>}
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-[13px] text-ink-2">{r.description || r.ai_summary}</p>
-                      <p className="mt-0.5 text-[12px] text-ink-3">{formatDateTime(r.created_at)}{!r.location && " · no location"}</p>
-                    </div>
-                    <ArrowRight className="size-4 text-ink-3" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Card>
-          <RepairChecks incident={inc} onChecked={incident.reload} onResolved={done} />
-          {inc.reports && inc.reports.length > 1 && (
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+        <Card className="overflow-hidden lg:sticky lg:top-6">
+          {primary && <Thumb media={primary.thumbnail} className="aspect-[4/3] w-full rounded-none" />}
+          <CardBody className="space-y-4">
+            {inc.status === "resolved" && (
+              <Callout tone="success" title={`Resolved ${inc.resolved_at ? formatDateTime(inc.resolved_at) : ""}`}>{inc.resolution_note}</Callout>
+            )}
+            {inc.summary && <p className="text-[14px] leading-relaxed text-ink-2">{inc.summary}</p>}
+            <dl className="grid grid-cols-2 gap-3">
+              <KeyValue label="First reported">{inc.first_reported_at ? formatDateTime(inc.first_reported_at) : "None"}</KeyValue>
+              <KeyValue label="Latest report">{inc.last_reported_at ? formatDateTime(inc.last_reported_at) : "None"}</KeyValue>
+              <KeyValue label="Location">{inc.location ? <span className="font-mono text-[12.5px]">{formatCoords(inc.location.lat, inc.location.lon)}</span> : "Unknown"}</KeyValue>
+              <KeyValue label="Created">{formatDateTime(inc.created_at)}</KeyValue>
+            </dl>
+          </CardBody>
+        </Card>
+
+        <div className="min-w-0">
+          <Tabs
+            label="Incident details"
+            value={tab}
+            onChange={setTab}
+            items={[
+              { id: "reports", label: "Reports", count: reports.length },
+              { id: "repairs", label: "Repair checks", count: checks.length },
+              { id: "details", label: "Edit" },
+              { id: "activity", label: "Activity" },
+            ]}
+          />
+
+          <TabPanel id="reports" value={tab}>
             <Card>
-              <CardHeader title="Evidence gallery" />
-              <CardBody className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {inc.reports.map((r) => (
-                  <Link key={r.id} href={`/review/reports/${r.id}`} className="group">
-                    <Thumb media={r.thumbnail} className="aspect-[4/3] w-full transition-opacity group-hover:opacity-90" />
-                    <p className="mt-1 font-mono text-[12px] text-ink-3">{r.reference}</p>
-                  </Link>
+              <ul className="divide-y divide-line">
+                {reports.map((r) => (
+                  <li key={r.id}>
+                    <Link href={`/review/reports/${r.id}`} className="flex items-center gap-4 px-5 py-3 hover:bg-sunken/60">
+                      <Thumb media={r.thumbnail} className="size-16" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-mono text-[13.5px] font-medium">{r.reference}</span>
+                          {r.id === inc.primary_report_id && <span className="text-[12px] text-ink-3">primary</span>}
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-[13px] text-ink-2">{r.description || r.ai_summary}</p>
+                        <p className="mt-0.5 text-[12px] text-ink-3">{formatDateTime(r.created_at)}{!r.location && " · no location"}</p>
+                      </div>
+                      <ArrowRight className="size-4 text-ink-3" />
+                    </Link>
+                  </li>
                 ))}
-              </CardBody>
+              </ul>
             </Card>
-          )}
-        </div>
-        <div className="space-y-6">
-          <Card>
-            <CardHeader title="Incident record" />
-            <CardBody className="space-y-4">
-              {inc.summary && <p className="text-[14px] leading-relaxed text-ink-2">{inc.summary}</p>}
-              <dl className="grid grid-cols-2 gap-3">
-                <KeyValue label="First reported">{inc.first_reported_at ? formatDateTime(inc.first_reported_at) : "None"}</KeyValue>
-                <KeyValue label="Latest report">{inc.last_reported_at ? formatDateTime(inc.last_reported_at) : "None"}</KeyValue>
-                <KeyValue label="Location">{inc.location ? <span className="font-mono text-[12.5px]">{formatCoords(inc.location.lat, inc.location.lon)}</span> : "Unknown"}</KeyValue>
-                <KeyValue label="Created">{formatDateTime(inc.created_at)}</KeyValue>
-              </dl>
-              {inc.status === "resolved" && (
-                <Callout tone="success" title={`Marked resolved ${inc.resolved_at ? formatDateTime(inc.resolved_at) : ""}`}>{inc.resolution_note}</Callout>
-              )}
-            </CardBody>
-          </Card>
-          <EditIncident incident={inc} onDone={done} />
-          <NotesPanel kind="incident" id={inc.id} onAdded={() => setAuditKey((k) => k + 1)} />
-          <AuditTrail kind="incident" id={inc.id} refreshKey={auditKey} />
+          </TabPanel>
+
+          <TabPanel id="repairs" value={tab}>
+            <RepairChecks incident={inc} onChecked={incident.reload} onResolved={done} />
+          </TabPanel>
+
+          <TabPanel id="details" value={tab}>
+            <EditIncident incident={inc} onDone={done} />
+          </TabPanel>
+
+          <TabPanel id="activity" value={tab} className="space-y-6">
+            <NotesPanel kind="incident" id={inc.id} onAdded={() => setAuditKey((k) => k + 1)} />
+            <AuditTrail kind="incident" id={inc.id} refreshKey={auditKey} />
+          </TabPanel>
         </div>
       </div>
     </Page>
@@ -163,16 +177,13 @@ function StatusAction({ incident, onDone }: { incident: IncidentDetail; onDone: 
 function RepairChecks({ incident, onChecked, onResolved }: { incident: IncidentDetail; onChecked: () => void; onResolved: (i: IncidentDetail) => void }) {
   const checks = incident.fix_checks ?? [];
   const open = incident.status === "confirmed";
-  if (!open && checks.length === 0) return null;
+  if (!open && checks.length === 0) return <Card><CardBody className="text-[13.5px] text-ink-3">No repair photos were checked.</CardBody></Card>;
   return (
     <Card>
-      <CardHeader
-        title="Repair checks"
-      />
       <CardBody className="space-y-6">
         {open && (
           <FixCheckForm
-            hint="Use a photo taken from about the same spot and angle as the original report."
+            hint="Take it from about the same spot and angle as the original."
             onSubmit={async (form) => {
               await api.checkIncidentFix(incident.id, form);
               onChecked();
@@ -249,7 +260,6 @@ function EditIncident({ incident, onDone }: { incident: IncidentDetail; onDone: 
 
   return (
     <Card>
-      <CardHeader title="Edit incident" />
       <CardBody className="space-y-3">
         <Field label="Title" htmlFor="edit-title"><Input id="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} /></Field>
         <div className="grid grid-cols-3 gap-2">

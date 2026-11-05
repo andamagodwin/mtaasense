@@ -32,6 +32,7 @@ import { useApi, usePolling, type AsyncState } from "@/lib/hooks";
 import type { ReviewSummary } from "@/lib/types";
 import { ReviewAssistant } from "../assistant/review-assistant";
 import { LogoMark } from "../brand";
+import { CountCircle } from "../ui/count";
 import { useRequireReviewer } from "../session";
 import { Skeleton } from "../ui/feedback";
 import { Page } from "../ui/page";
@@ -112,21 +113,6 @@ function isActive(pathname: string, item: NavItem): boolean {
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
-/** A count in a circle. Every circle is the same size, whatever the number. */
-function CountCircle({ value, small }: { value: number; small?: boolean }) {
-  return (
-    <span
-      className={clsx(
-        "grid shrink-0 place-items-center rounded-full bg-accent font-mono font-medium leading-none tabular-nums text-white",
-        small ? "size-[18px] text-[9.5px]" : "size-[22px] text-[11px]",
-        value > 99 && (small ? "text-[7.5px]" : "text-[9px]"),
-      )}
-    >
-      {value > 99 ? "99+" : value}
-    </span>
-  );
-}
-
 function initials(name: string): string {
   return name
     .split(/\s+/)
@@ -162,7 +148,7 @@ function NavLink({ item, collapsed, onNavigate }: { item: NavItem; collapsed: bo
         />
         {collapsed && count > 0 && (
           <span className="absolute -right-3 -top-2.5">
-            <CountCircle value={count} small />
+            <CountCircle value={count} size="sm" />
           </span>
         )}
       </span>
@@ -174,6 +160,7 @@ function NavLink({ item, collapsed, onNavigate }: { item: NavItem; collapsed: bo
 
 function Sidebar({ collapsed = false, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
   const { user, signOut } = useRequireReviewer();
+  const pathname = usePathname();
   const secondary = SECONDARY.filter((item) => !item.admin || user?.role === "admin");
 
   return (
@@ -207,15 +194,23 @@ function Sidebar({ collapsed = false, onNavigate }: { collapsed?: boolean; onNav
       </nav>
 
       {user && (
-        <div className={clsx("flex shrink-0 items-center border-t border-paper/10 py-3", collapsed ? "flex-col gap-1 px-2" : "gap-2 px-4")}>
-          <span
-            className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-[13px] font-semibold text-white"
-            title={collapsed ? user.display_name : undefined}
-            aria-hidden
+        <div className={clsx("flex shrink-0 items-center border-t border-paper/10 py-3", collapsed ? "flex-col gap-1 px-2" : "gap-2 px-3")}>
+          <Link
+            href="/profile"
+            onClick={onNavigate}
+            aria-current={pathname === "/profile" ? "page" : undefined}
+            title={collapsed ? `${user.display_name}: profile` : "Your profile"}
+            className={clsx(
+              "flex min-w-0 items-center gap-2.5 rounded-lg transition-colors hover:bg-paper/10",
+              collapsed ? "p-0.5" : "flex-1 p-1",
+              pathname === "/profile" && "bg-paper/10",
+            )}
           >
-            {initials(user.display_name) || "?"}
-          </span>
-          {!collapsed && <p className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-paper">{user.display_name}</p>}
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-[13px] font-semibold text-white" aria-hidden>
+              {initials(user.display_name) || "?"}
+            </span>
+            {!collapsed && <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-paper">{user.display_name}</span>}
+          </Link>
           <Link
             href="/"
             className="grid size-9 place-items-center rounded-lg text-paper/50 hover:bg-paper/10 hover:text-paper"

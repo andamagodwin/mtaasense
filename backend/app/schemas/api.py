@@ -405,6 +405,50 @@ class UserView(Out):
     email: str
     display_name: str
     role: UserRole
+    created_at: datetime | None = None
+    last_login_at: datetime | None = None
+
+
+class ProfileUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: str = Field(min_length=2, max_length=120)
+
+
+class PasswordChange(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    current_password: str = Field(min_length=1, max_length=256)
+    new_password: str = Field(min_length=12, max_length=256)
+
+
+class SessionInfo(BaseModel):
+    id: uuid.UUID
+    created_at: datetime
+    expires_at: datetime
+    user_agent: str | None
+    current: bool
+
+
+class RecordRef(BaseModel):
+    id: uuid.UUID
+    reference: str
+
+
+class ActivityItem(BaseModel):
+    id: uuid.UUID
+    created_at: datetime
+    action: str
+    note: str | None
+    report: RecordRef | None
+    incident: RecordRef | None
+
+
+class ProfileActivity(BaseModel):
+    """What this reviewer has decided: counts by audit action, and the latest decisions."""
+
+    counts: dict[str, int]
+    recent: list[ActivityItem]
 
 
 class SessionView(BaseModel):

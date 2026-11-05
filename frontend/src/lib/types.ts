@@ -375,6 +375,30 @@ export interface UserView {
   email: string;
   display_name: string;
   role: UserRole;
+  created_at?: string | null;
+  last_login_at?: string | null;
+}
+
+export interface SessionInfo {
+  id: string;
+  created_at: string;
+  expires_at: string;
+  user_agent: string | null;
+  current: boolean;
+}
+
+export interface ActivityItem {
+  id: string;
+  created_at: string;
+  action: string;
+  note: string | null;
+  report: { id: string; reference: string } | null;
+  incident: { id: string; reference: string } | null;
+}
+
+export interface ProfileActivity {
+  counts: Record<string, number>;
+  recent: ActivityItem[];
 }
 
 export interface NoteView {

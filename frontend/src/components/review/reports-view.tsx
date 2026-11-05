@@ -4,6 +4,7 @@ import { clsx } from "clsx";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useReviewSummary } from "../dashboard/shell";
+import { CountCircle } from "../ui/count";
 import { Page, PageHeader } from "../ui/page";
 import { ReportTable } from "./dashboard";
 
@@ -36,9 +37,7 @@ export function ReportsView() {
               >
                 {f.label}
                 {f.id === "unlocated" && unlocated !== undefined && unlocated > 0 && (
-                  <span className="grid size-[20px] place-items-center rounded-full bg-ink-3/15 font-mono text-[10.5px] tabular-nums text-ink-2">
-                    {unlocated > 99 ? "99+" : unlocated}
-                  </span>
+                  <CountCircle value={unlocated} size="sm" tone="neutral" />
                 )}
               </Link>
             ))}

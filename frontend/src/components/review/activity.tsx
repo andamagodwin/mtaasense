@@ -59,7 +59,7 @@ export function NotesPanel({ kind, id, onAdded }: { kind: Kind; id: string; onAd
   );
 }
 
-const ACTION_LABEL: Record<string, string> = {
+export const ACTION_LABEL: Record<string, string> = {
   report_submitted: "Report submitted",
   analysis_completed: "AI analysis completed",
   analysis_unavailable: "AI analysis unavailable",

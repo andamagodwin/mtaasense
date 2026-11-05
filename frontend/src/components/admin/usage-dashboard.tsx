@@ -26,7 +26,7 @@ const OPERATION_LABEL: Record<string, string> = {
   file_upload: "Clip upload (Files API)",
   video_tracking: "Clip tracking (SAM 3.1)",
   video_description: "Clip description (Muse Spark)",
-  review_assistant: "Review assistant (Muse Spark)",
+  review_assistant: "Elvis, review assistant (Muse Spark)",
   map_assistant: "Ask the map (Muse Spark)",
 };
 

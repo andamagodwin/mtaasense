@@ -76,7 +76,7 @@ function RefLink({ item }: { item: AssistantRef }) {
 
 function run(p: AssistantProposal) {
   // The reason goes into the audit trail with the reviewer's decision.
-  const note = `Suggested by the review assistant: ${p.reason}`.slice(0, 2000);
+  const note = `Suggested by Elvis (review assistant): ${p.reason}`.slice(0, 2000);
   switch (p.action) {
     case "confirm_duplicate":
       return api.decide(p.target.id, "confirm", note);
@@ -120,7 +120,7 @@ function ProposalCard({ proposal }: { proposal: AssistantProposal }) {
 
   return (
     <div className={clsx("rounded-xl border p-3.5", state === "done" ? "border-success-line bg-success-soft" : "border-accent-line bg-accent-soft/60")}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-accent-ink">Suggested decision</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-accent-ink">Elvis suggests</p>
       <p className="mt-1 text-[14px] font-semibold text-ink">{proposal.label}</p>
       <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{proposal.reason}</p>
       {detail && <p className="mt-2 rounded-lg bg-surface/80 px-2.5 py-2 text-[13px] leading-relaxed text-ink-2">“{detail}”</p>}
@@ -203,12 +203,12 @@ export function ReviewAssistant() {
           className="fixed bottom-5 right-5 z-40 inline-flex h-12 items-center gap-2 rounded-full bg-ink pl-4 pr-5 text-[14px] font-medium text-paper shadow-[var(--shadow-pop)] transition-transform hover:-translate-y-0.5 animate-rise"
         >
           <MagicStar className="size-[18px] text-highlight" variant="Bold" />
-          Ask the assistant
+          Ask Elvis
         </button>
       )}
       {open && (
         <aside
-          aria-label="Review assistant"
+          aria-label="Elvis, the review assistant"
           className="fixed inset-x-0 bottom-0 top-14 z-40 flex flex-col lg:top-0 border-l border-line bg-paper shadow-[var(--shadow-pop)] animate-fade-in sm:left-auto sm:w-[440px]"
         >
           <header className="flex items-start justify-between gap-3 border-b border-line bg-surface px-4 py-3">
@@ -217,8 +217,8 @@ export function ReviewAssistant() {
                 <MagicStar className="size-4" variant="Bold" />
               </span>
               <div>
-                <h2 className="text-[15px] font-semibold">Review assistant</h2>
-                <p className="text-[12px] leading-snug text-ink-3">Muse Spark · suggests, you decide</p>
+                <h2 className="text-[15px] font-semibold">Elvis</h2>
+                <p className="text-[12px] leading-snug text-ink-3">Review assistant · suggests, you decide</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -227,7 +227,7 @@ export function ReviewAssistant() {
                   <Refresh className="size-4" />
                 </button>
               )}
-              <button type="button" onClick={() => setOpen(false)} className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-sunken hover:text-ink" aria-label="Close the assistant" title="Close">
+              <button type="button" onClick={() => setOpen(false)} className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-sunken hover:text-ink" aria-label="Close Elvis" title="Close">
                 <CloseCircle className="size-4" />
               </button>
             </div>
@@ -260,7 +260,7 @@ export function ReviewAssistant() {
               onSend={(q) => void convo.send(q)}
               onStop={convo.stop}
               busy={convo.busy}
-              placeholder={context ? "Ask about this record or anything else…" : "Ask about the queue, a place, an incident…"}
+              placeholder={context ? "Ask Elvis about this record…" : "Ask Elvis about the queue, a place, an incident…"}
               autoFocus
             />
           </div>

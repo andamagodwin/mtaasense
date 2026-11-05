@@ -15,6 +15,7 @@ import type {
   NoteView,
   Page,
   Priority,
+  ProfileActivity,
   PublicStats,
   RainWarning,
   ReportCreated,
@@ -22,6 +23,7 @@ import type {
   ReportStatus,
   ReportSummary,
   ReviewSummary,
+  SessionInfo,
   SegmentationView,
   Severity,
   HazardCategory,
@@ -164,6 +166,13 @@ export const api = {
   login: (email: string, password: string) =>
     request<UserView>("/auth/login", { method: "POST", body: { email, password } }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
+  updateMe: (display_name: string) => request<UserView>("/auth/me", { method: "PATCH", body: { display_name } }),
+  changePassword: (current_password: string, new_password: string) =>
+    request<void>("/auth/password", { method: "POST", body: { current_password, new_password } }),
+  sessions: () => request<SessionInfo[]>("/auth/sessions"),
+  revokeSession: (id: string) => request<void>(`/auth/sessions/${id}/revoke`, { method: "POST" }),
+  revokeOtherSessions: () => request<{ revoked: number }>("/auth/sessions/revoke-others", { method: "POST" }),
+  myActivity: () => request<ProfileActivity>("/auth/me/activity"),
   reviewSummary: () => request<ReviewSummary>("/review/summary"),
   reports: (query: { status?: ReportStatus[]; category?: HazardCategory; q?: string; has_location?: boolean; limit?: number; offset?: number }) =>
     request<Page<ReportSummary>>("/reports", { query }),

@@ -7,10 +7,7 @@ export const metadata: Metadata = { title: "Duplicates" };
 export default function DuplicatesPage() {
   return (
     <Page>
-      <PageHeader
-        title="Duplicates"
-        description="Pairs of reports that may describe the same problem, strongest match first. Only your decision links them."
-      />
+      <PageHeader title="Duplicates" />
       <DuplicateList />
     </Page>
   );

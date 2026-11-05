@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { PRIORITY_LABEL, REPORT_STATUS_LABEL, formatDate, pct, timeAgo } from "@/lib/format";
 import { useApi, usePolling } from "@/lib/hooks";
 import type { ReportStatus, ReportSummary } from "@/lib/types";
-import { CategoryBadge, IncidentStatusBadge, PriorityBadge, SampleBadge, SeverityBadge, StatusBadge, VerdictBadge } from "../badges";
+import { CategoryBadge, IncidentStatusBadge, SampleMark, SeverityBadge, StatusBadge, VerdictBadge } from "../badges";
 import { Card } from "../ui/card";
 import { Callout, EmptyState, Skeleton } from "../ui/feedback";
 import { Input } from "../ui/field";
@@ -15,7 +15,20 @@ import { Thumb } from "./thumb";
 
 // The review lists the dashboard sidebar links to. Each polls on its own so decisions show up quickly.
 
-export function ReportTable({ statuses, hasLocation, searchable, empty }: { statuses?: ReportStatus[]; hasLocation?: boolean; searchable?: boolean; empty: string }) {
+export function ReportTable({
+  statuses,
+  hasLocation,
+  searchable,
+  showStatus,
+  empty,
+}: {
+  statuses?: ReportStatus[];
+  hasLocation?: boolean;
+  searchable?: boolean;
+  /** Only lists that mix statuses show one per row. */
+  showStatus?: boolean;
+  empty: string;
+}) {
   const [q, setQ] = useState("");
   const [offset, setOffset] = useState(0);
   const limit = 25;
@@ -30,9 +43,7 @@ export function ReportTable({ statuses, hasLocation, searchable, empty }: { stat
     <Card>
       {page?.rain_boosted && (
         <div className="border-b border-line px-5 py-3">
-          <Callout tone="warn" title="Heavy rain expected in the next 24 hours">
-            Blocked drains are first in the queue so they can be confirmed before the rain.
-          </Callout>
+          <Callout tone="warn" title="Heavy rain expected: blocked drains first" />
         </div>
       )}
       {searchable && (
@@ -49,7 +60,7 @@ export function ReportTable({ statuses, hasLocation, searchable, empty }: { stat
       {page && page.items.length > 0 && (
         <>
           <ul className="divide-y divide-line">
-            {page.items.map((r) => <ReportRow key={r.id} report={r} />)}
+            {page.items.map((r) => <ReportRow key={r.id} report={r} showStatus={showStatus} />)}
           </ul>
           {page.total > limit && (
             <div className="flex items-center justify-between border-t border-line px-5 py-3 text-[13px] text-ink-3">
@@ -66,16 +77,16 @@ export function ReportTable({ statuses, hasLocation, searchable, empty }: { stat
   );
 }
 
-function ReportRow({ report: r }: { report: ReportSummary }) {
+function ReportRow({ report: r, showStatus }: { report: ReportSummary; showStatus?: boolean }) {
   return (
     <li>
-      <Link href={`/review/reports/${r.id}`} className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-paper">
+      <Link href={`/review/reports/${r.id}`} className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-sunken/60">
         <Thumb media={r.thumbnail} className="size-14" />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-[13.5px] font-medium">{r.reference}</span>
-            <StatusBadge status={r.status} />
-            {r.is_sample && <SampleBadge />}
+            {showStatus && <StatusBadge status={r.status} />}
+            {r.is_sample && <SampleMark />}
           </div>
           <p className="mt-1 line-clamp-1 text-[13.5px] text-ink-2">{r.ai_summary ?? r.description}</p>
           <p className="mt-0.5 text-[12px] text-ink-3">
@@ -87,11 +98,13 @@ function ReportRow({ report: r }: { report: ReportSummary }) {
         </div>
         <div className="hidden shrink-0 flex-wrap items-center justify-end gap-1.5 md:flex md:max-w-[340px]">
           <CategoryBadge category={r.hazard_category} />
-          {r.ai_severity && r.ai_severity !== "undetermined" && <SeverityBadge severity={r.ai_severity} />}
-          {r.ai_priority && r.ai_priority !== "routine" && <PriorityBadge priority={r.ai_priority} />}
+          {(r.ai_severity === "high" || r.ai_severity === "critical") && <SeverityBadge severity={r.ai_severity} prefix={false} />}
           {r.open_duplicate_suggestions > 0 && (
-            <span className="inline-flex h-[22px] items-center gap-1 rounded-md border border-warn-line bg-warn-soft px-1.5 text-[12px] font-medium text-warn-ink">
-              <Hierarchy className="size-3" /> {r.open_duplicate_suggestions} possible duplicate{r.open_duplicate_suggestions === 1 ? "" : "s"}
+            <span
+              className="inline-flex h-[22px] items-center gap-1 rounded-md border border-warn-line bg-warn-soft px-1.5 text-[12px] font-medium text-warn-ink"
+              title={`${r.open_duplicate_suggestions} possible duplicate${r.open_duplicate_suggestions === 1 ? "" : "s"}`}
+            >
+              <Hierarchy className="size-3" /> Duplicate?
             </span>
           )}
         </div>
@@ -107,9 +120,9 @@ export function DuplicateList() {
   if (list.error) return <Callout tone="danger">{list.error.message}</Callout>;
   if (!list.data) return <Skeleton className="h-40" />;
   if (list.data.items.length === 0)
-    return <Card><EmptyState icon={<Hierarchy className="size-5" />} title="No open duplicate suggestions">New reports are matched automatically against nearby reports of the same kind.</EmptyState></Card>;
+    return <Card><EmptyState icon={<Hierarchy className="size-5" />} title="No duplicates to compare" /></Card>;
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {list.data.items.map((s) => (
         <Link key={s.id} href={`/review/duplicates/${s.id}`} className="group rounded-[var(--radius-card)] border border-line bg-surface p-5 shadow-[var(--shadow-card)] transition-colors hover:border-line-strong">
           <div className="mb-3 flex items-center justify-between gap-2">
@@ -142,7 +155,7 @@ function PairSide({ report, label }: { report: ReportSummary; label: string }) {
       <div className="min-w-0">
         <p className="text-[11px] text-ink-3">{label}</p>
         <p className="font-mono text-[13px] font-medium">{report.reference}</p>
-        <p className="truncate text-[12px] text-ink-3">{REPORT_STATUS_LABEL[report.status]}</p>
+        {report.status !== "under_review" && <p className="truncate text-[12px] text-ink-3">{REPORT_STATUS_LABEL[report.status]}</p>}
       </div>
     </div>
   );
@@ -153,18 +166,18 @@ export function IncidentTable() {
   if (list.error) return <Callout tone="danger">{list.error.message}</Callout>;
   if (!list.data) return <Skeleton className="h-40" />;
   if (list.data.items.length === 0)
-    return <Card><EmptyState icon={<LocationSlash className="size-5" />} title="No incidents yet">Confirm a report (or a duplicate pair) to create the first canonical incident.</EmptyState></Card>;
+    return <Card><EmptyState icon={<LocationSlash className="size-5" />} title="No incidents yet" /></Card>;
   return (
     <Card>
       <ul className="divide-y divide-line">
         {list.data.items.map((i) => (
           <li key={i.id}>
-            <Link href={`/review/incidents/${i.id}`} className="flex items-center gap-4 px-5 py-3 hover:bg-paper">
+            <Link href={`/review/incidents/${i.id}`} className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-sunken/60">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-[13px] text-ink-3">{i.reference}</span>
                   <span className="text-[14px] font-medium">{i.title}</span>
-                  {i.is_sample && <SampleBadge />}
+                  {i.is_sample && <SampleMark />}
                 </div>
                 <p className="mt-0.5 text-[12px] text-ink-3">
                   {i.report_count} report{i.report_count === 1 ? "" : "s"} · updated {formatDate(i.updated_at)} · {PRIORITY_LABEL[i.priority]} priority
@@ -173,7 +186,7 @@ export function IncidentTable() {
               </div>
               <div className="hidden items-center gap-1.5 sm:flex">
                 <CategoryBadge category={i.hazard_category} />
-                <IncidentStatusBadge status={i.status} />
+                {i.status === "resolved" && <IncidentStatusBadge status={i.status} />}
               </div>
               <ArrowRight className="size-4 text-ink-3" />
             </Link>

@@ -57,11 +57,11 @@ export function IncidentWorkspace() {
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="space-y-6">
           <Card>
-            <CardHeader title={`Linked reports (${inc.reports?.length ?? 0})`} description="Each resident report keeps its own photo, words and timestamps." />
+            <CardHeader title={`Linked reports (${inc.reports?.length ?? 0})`} />
             <ul className="divide-y divide-line">
               {inc.reports?.map((r) => (
                 <li key={r.id}>
-                  <Link href={`/review/reports/${r.id}`} className="flex items-center gap-4 px-5 py-3 hover:bg-paper">
+                  <Link href={`/review/reports/${r.id}`} className="flex items-center gap-4 px-5 py-3 hover:bg-sunken/60">
                     <Thumb media={r.thumbnail} className="size-20" />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
@@ -81,7 +81,7 @@ export function IncidentWorkspace() {
           <RepairChecks incident={inc} onChecked={incident.reload} onResolved={done} />
           {inc.reports && inc.reports.length > 1 && (
             <Card>
-              <CardHeader title="Evidence gallery" description="All photos submitted for this incident, oldest first." />
+              <CardHeader title="Evidence gallery" />
               <CardBody className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {inc.reports.map((r) => (
                   <Link key={r.id} href={`/review/reports/${r.id}`} className="group">
@@ -168,7 +168,6 @@ function RepairChecks({ incident, onChecked, onResolved }: { incident: IncidentD
     <Card>
       <CardHeader
         title="Repair checks"
-        description="Compare a recent photo of the spot with the original. Muse Spark judges the repair and SAM 3.1 outlines what remains. It's advice: you decide when to resolve."
       />
       <CardBody className="space-y-6">
         {open && (
@@ -250,7 +249,7 @@ function EditIncident({ incident, onDone }: { incident: IncidentDetail; onDone: 
 
   return (
     <Card>
-      <CardHeader title="Edit incident" description="Reviewer decisions override model suggestions; changes are audited." />
+      <CardHeader title="Edit incident" />
       <CardBody className="space-y-3">
         <Field label="Title" htmlFor="edit-title"><Input id="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} /></Field>
         <div className="grid grid-cols-3 gap-2">

@@ -146,9 +146,6 @@ function ProposalCard({ proposal }: { proposal: AssistantProposal }) {
             <Button size="sm" variant="ghost" onClick={() => setState("dismissed")} disabled={state === "working"}>
               Dismiss
             </Button>
-            <Link href={hrefFor(proposal.target.kind, proposal.target.id)} className="ml-auto text-[12.5px] text-ink-3 underline underline-offset-2 hover:text-ink">
-              Check the evidence first
-            </Link>
           </>
         )}
       </div>
@@ -221,7 +218,7 @@ export function ReviewAssistant() {
               </span>
               <div>
                 <h2 className="text-[15px] font-semibold">Review assistant</h2>
-                <p className="text-[12px] leading-snug text-ink-3">Muse Spark reads the queue and the evidence. It suggests; you decide.</p>
+                <p className="text-[12px] leading-snug text-ink-3">Muse Spark · suggests, you decide</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -238,13 +235,7 @@ export function ReviewAssistant() {
 
           <div ref={scroller} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-5">
             {convo.exchanges.length === 0 && (
-              <div className="space-y-4">
-                <p className="text-[14px] leading-relaxed text-ink-2">
-                  Ask about the review queue, a place, or the record you have open. Answers cite references you can open, and any
-                  decision it suggests waits for your confirmation.
-                </p>
-                <Starters items={startersFor(context)} onPick={(q) => void convo.send(q)} />
-              </div>
+              <Starters items={startersFor(context)} onPick={(q) => void convo.send(q)} />
             )}
             {convo.exchanges.map((exchange) => (
               <ExchangeView

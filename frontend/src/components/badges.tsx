@@ -153,6 +153,19 @@ export function SampleBadge() {
   );
 }
 
+/** SampleBadge without the words, for lists where it would repeat on every row. */
+export function SampleMark() {
+  return (
+    <span
+      className="inline-grid size-[18px] shrink-0 place-items-center rounded-full border border-dashed border-line-strong text-ink-3"
+      title="Sample data: a seeded demonstration record, not a real submission"
+    >
+      <Driver className="size-2.5" />
+      <span className="sr-only">Sample data</span>
+    </span>
+  );
+}
+
 const verdictTone: Record<ModelVerdict, string> = {
   likely_same: "border-accent-line bg-accent-soft text-accent-ink",
   possibly_same: "border-warn-line bg-warn-soft text-warn-ink",

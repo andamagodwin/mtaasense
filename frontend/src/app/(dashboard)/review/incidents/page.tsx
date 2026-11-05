@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Incidents" };
 export default function IncidentsPage() {
   return (
     <Page>
-      <PageHeader title="Incidents" description="Confirmed problems, each grouping one or more reports, most recently updated first." />
+      <PageHeader title="Incidents" />
       <IncidentTable />
     </Page>
   );

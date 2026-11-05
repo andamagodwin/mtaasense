@@ -107,7 +107,7 @@ export function AuditTrail({ kind, id, refreshKey }: { kind: Kind; id: string; r
   const audit = useApi(() => (kind === "report" ? api.reportAudit(id) : api.incidentAudit(id)), `audit:${kind}:${id}:${refreshKey}`);
   return (
     <Card>
-      <CardHeader title="Audit history" description="Append-only record of system and reviewer actions." />
+      <CardHeader title="Audit history" />
       <CardBody>
         {!audit.data && <Skeleton className="h-24" />}
         <ol className="relative space-y-3 border-l border-line pl-4">

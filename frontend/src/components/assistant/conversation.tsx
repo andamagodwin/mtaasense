@@ -227,10 +227,7 @@ export function ExchangeView({
         <div className="space-y-3">
           <AnswerText text={answer.text} refs={answer.refs} renderRef={renderRef} />
           {footer?.(answer)}
-          <div className="flex items-center gap-2">
-            <CopyButton text={answer.text} />
-            <span className="text-[11.5px] text-ink-3">Muse Spark · check the records before acting</span>
-          </div>
+          <CopyButton text={answer.text} />
         </div>
       )}
       {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-[13px] text-danger">{error}</p>}

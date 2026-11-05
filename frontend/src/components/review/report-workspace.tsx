@@ -58,7 +58,7 @@ export function ReportWorkspace() {
   return (
     <Page>
       <PageHeader
-        back={{ href: "/review/queue", label: "Review queue" }}
+        back={{ href: "/review/queue", label: "Queue" }}
         meta={`Submitted ${formatDateTime(r.created_at)}`}
         title={
           <>
@@ -81,7 +81,7 @@ export function ReportWorkspace() {
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         <div className="space-y-6">
           <Card>
-            <CardHeader title="Photo evidence" description="Original submission with SAM 3.1 segmentation. Toggle the overlay to inspect the untouched photo." />
+            <CardHeader title="Photo evidence" />
             <CardBody>
               {r.image ? (
                 <SegmentationViewer
@@ -111,7 +111,6 @@ export function ReportWorkspace() {
           <Card>
             <CardHeader
               title="Possible duplicates"
-              description="Retrieved by distance, hazard type, time and wording. A reviewer decides."
               action={
                 <Button variant="ghost" size="sm" onClick={() => void api.rematch(r.id).then(() => setTimeout(duplicates.reload, 2500))} icon={<Refresh className="size-3.5" />}>
                   Re-run
@@ -128,7 +127,7 @@ export function ReportWorkspace() {
               <ul className="divide-y divide-line">
                 {duplicates.data?.map((s) => (
                   <li key={s.id}>
-                    <Link href={`/review/duplicates/${s.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-paper">
+                    <Link href={`/review/duplicates/${s.id}`} className="flex items-center gap-3 px-5 py-3 hover:bg-sunken/60">
                       <Thumb media={s.candidate.thumbnail} className="size-14" />
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -260,7 +259,7 @@ function CategoryCorrection({ report, onDone }: { report: ReportDetail; onDone: 
   const changed = value !== "" && value !== report.hazard_category;
   return (
     <Card>
-      <CardHeader title="Hazard category" description="Correct the category if the resident or the model got it wrong. The original values are kept." />
+      <CardHeader title="Hazard category" />
       <CardBody className="space-y-3">
         <dl className="grid grid-cols-3 gap-2 text-[13px]">
           <div><dt className="text-ink-3">Resident</dt><dd>{report.reporter_category ? CATEGORY_LABEL[report.reporter_category] : "Not set"}</dd></div>
@@ -304,7 +303,7 @@ function JobsCard({ report }: { report: ReportDetail }) {
   const label = { analyze_report: "Muse Spark analysis", segment_image: "SAM 3.1 segmentation", match_duplicates: "Duplicate matching" } as const;
   return (
     <Card>
-      <CardHeader title="Processing jobs" description="Persistent queue; failed jobs retry with backoff." />
+      <CardHeader title="Processing jobs" />
       <ul className="divide-y divide-line text-[13px]">
         {report.jobs.map((j) => (
           <li key={j.id} className="flex items-center justify-between gap-3 px-5 py-3">

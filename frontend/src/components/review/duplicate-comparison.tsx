@@ -66,7 +66,7 @@ export function DuplicateComparison() {
         <div className="space-y-6">
           {a?.location && b?.location ? (
             <Card className="overflow-hidden">
-              <CardHeader title="Locations" description={`A and B are ${formatDistance(s.signals.distance_m)} apart (PostGIS geodesic distance).`} />
+              <CardHeader title="Locations" description={`${formatDistance(s.signals.distance_m)} apart`} />
               <PairMap a={a.location} b={b.location} className="h-64" />
             </Card>
           ) : (
@@ -161,7 +161,7 @@ function EvidencePanel({ s }: { s: DuplicateSuggestionView }) {
   ];
   return (
     <Card>
-      <CardHeader title="Why this was suggested" description="Deterministic signals computed by the database. Missing signals are left out rather than guessed." />
+      <CardHeader title="Why this was suggested" />
       <CardBody className="space-y-4">
         <ul className="space-y-3">
           {rows.map((r) => (
@@ -243,7 +243,7 @@ function DecisionPanel({ s, disabled, onDone }: { s: DuplicateSuggestionView; di
 
   return (
     <Card>
-      <CardHeader title="Your decision" description="Nothing is merged automatically. Both reports keep their own evidence either way." />
+      <CardHeader title="Your decision" />
       <CardBody className="space-y-3">
         <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note, e.g. “Same kerb and power pole visible in both photos.”" className="min-h-20" aria-label="Decision note" />
         {error && <Callout tone="danger">{error}</Callout>}

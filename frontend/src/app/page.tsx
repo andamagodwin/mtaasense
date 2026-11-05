@@ -89,7 +89,7 @@ export default function HomePage() {
           <LiveStats />
         </section>
 
-        <section className="border-t border-line py-12">
+        <section id="how-it-works" className="scroll-mt-14 border-t border-line py-12">
           <h2 className="mb-6 text-xl font-semibold tracking-tight">How a report becomes an incident</h2>
           <ol className="grid gap-3 md:grid-cols-4">
             {steps.map((step, i) => (

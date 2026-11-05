@@ -58,6 +58,8 @@ const colors = {
   mask: { pothole: '#d9622b', road: '#c58a2a', drain: '#1f9aa8', water: '#3d74e0', puddle: '#5b8def' },
   // Behind photos, video and the camera.
   photo: '#0b1418',
+  // Dark sections such as the website footer: near black with a trace of the brand blue.
+  night: '#071116',
 };
 
 module.exports = { brand, colors };

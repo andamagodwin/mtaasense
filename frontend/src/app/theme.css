@@ -48,6 +48,7 @@
   --color-mask-water: #3d74e0;
   --color-mask-puddle: #5b8def;
   --color-photo: #0b1418;
+  --color-night: #071116;
 
   /* Shadows are tinted with the ink colour. */
   --shadow-card: 0 1px 2px rgb(18 35 44 / 0.04), 0 1px 1px rgb(18 35 44 / 0.03);

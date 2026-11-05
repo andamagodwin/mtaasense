@@ -65,5 +65,6 @@ export const colors = {
     "water": "#3d74e0",
     "puddle": "#5b8def"
   },
-  "photo": "#0b1418"
+  "photo": "#0b1418",
+  "night": "#071116"
 } as const;

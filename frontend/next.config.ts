@@ -20,7 +20,11 @@ const nextConfig: NextConfig = {
     return [{ source: "/api/v1/:path*", destination: `${apiBase}/api/v1/:path*` }];
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // The service worker script must stay fresh so updates propagate within a day.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
+    ];
   },
 };
 

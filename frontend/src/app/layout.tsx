@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Manrope } from "next/font/google";
+import { ServiceWorker } from "@/components/pwa/service-worker";
 import { SessionProvider } from "@/components/session";
 import { colors } from "@/lib/colors";
 import "./globals.css";
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
   title: { default: "MtaaSense · Community infrastructure intelligence", template: "%s · MtaaSense" },
   description:
     "Turn resident observations of potholes, blocked drainage and flooding into structured, evidence-backed incident records.",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
@@ -28,6 +30,7 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-icon.png",
   },
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "MtaaSense" },
 };
 
 export const viewport: Viewport = {
@@ -48,6 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         {/* The public site (app/(site)) adds the header and footer; the review dashboard (app/(dashboard)) its sidebar. */}
         <SessionProvider>{children}</SessionProvider>
+        <ServiceWorker />
       </body>
     </html>
   );

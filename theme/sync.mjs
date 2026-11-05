@@ -42,6 +42,8 @@ ${variables.map(([name, hex]) => `  --color-${name}: ${hex};`).join("\n")}
   /* Shadows are tinted with the ink colour. */
   --shadow-card: 0 1px 2px rgb(${ink} / 0.04), 0 1px 1px rgb(${ink} / 0.03);
   --shadow-pop: 0 12px 32px -12px rgb(${ink} / 0.22), 0 2px 6px rgb(${ink} / 0.06);
+  /* Review dashboard cards: a soft lift, with a hairline ring in place of the border. */
+  --shadow-panel: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
 }
 `,
 );

@@ -124,7 +124,7 @@ export function DuplicateList() {
   return (
     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {list.data.items.map((s) => (
-        <Link key={s.id} href={`/review/duplicates/${s.id}`} className="group rounded-[var(--radius-card)] border border-line bg-surface p-5 shadow-[var(--shadow-card)] transition-colors hover:border-line-strong">
+        <Link key={s.id} href={`/review/duplicates/${s.id}`} className="card group rounded-[var(--radius-card)] border border-line bg-surface p-5 shadow-[var(--shadow-card)] transition-shadow">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="rounded-md bg-ink px-1.5 py-0.5 font-mono text-[12px] text-white">match {pct(s.score)}</span>

@@ -4,7 +4,7 @@ import type { ComponentProps, ReactNode } from "react";
 export function Card({ className, ...rest }: ComponentProps<"section">) {
   return (
     <section
-      className={clsx("rounded-[var(--radius-card)] border border-line bg-surface shadow-[var(--shadow-card)]", className)}
+      className={clsx("card rounded-[var(--radius-card)] border border-line bg-surface shadow-[var(--shadow-card)]", className)}
       {...rest}
     />
   );

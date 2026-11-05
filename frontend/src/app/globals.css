@@ -74,6 +74,15 @@ body {
   }
 }
 
+/* Review dashboard cards (app/(dashboard)): the panel shadow draws the edge, so the border steps aside. */
+[data-dashboard] .card {
+  border-color: transparent;
+  box-shadow: var(--shadow-panel);
+}
+[data-dashboard] a.card:hover {
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 8px 28px 0px, rgba(0, 0, 0, 0.14) 0px 0px 0px 1px;
+}
+
 :focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;

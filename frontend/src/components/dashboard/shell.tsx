@@ -196,7 +196,7 @@ function Sidebar({ collapsed = false, onNavigate }: { collapsed?: boolean; onNav
             </li>
           ))}
         </ul>
-        <div className="mx-2.5 my-4 h-px bg-paper/10" aria-hidden />
+        <div className="-mx-3 my-4 h-px bg-paper/10" aria-hidden />
         <ul className="space-y-0.5">
           {secondary.map((item) => (
             <li key={item.href}>
@@ -256,7 +256,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <SummaryContext value={summary}>
-      <div className="flex flex-1 bg-surface">
+      <div data-dashboard className="flex flex-1 bg-surface">
         <aside
           className={clsx(
             "fixed inset-y-0 left-0 z-30 hidden bg-night transition-[width] duration-200 lg:block",

@@ -94,7 +94,7 @@ interface NavItem {
   admin?: boolean;
 }
 
-// Two groups, few choices: the work, then the map and admin.
+// Two groups, few choices: the work, then the reviewer map and admin.
 const MAIN: NavItem[] = [
   { href: "/review", label: "Overview", icon: Element3, exact: true },
   { href: "/review/queue", label: "Queue", icon: DirectInbox, count: (s) => s.reports_awaiting_review + s.processing_failures },
@@ -103,7 +103,7 @@ const MAIN: NavItem[] = [
   { href: "/review/reports", label: "Reports", icon: DocumentText },
 ];
 const SECONDARY: NavItem[] = [
-  { href: "/map", label: "Map", icon: Map1 },
+  { href: "/review/map", label: "Map", icon: Map1 },
   { href: "/admin", label: "Usage", icon: Chart, admin: true },
 ];
 

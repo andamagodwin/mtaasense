@@ -365,6 +365,15 @@ class MapFeatures(BaseModel):
     unlocated_reports: int
 
 
+class ReviewMapFeatures(BaseModel):
+    """The reviewer map: every located report with full summaries, not just unreviewed ones."""
+
+    incidents: list[IncidentSummary]
+    reports: list[ReportSummary]
+    unlocated_incidents: int
+    unlocated_reports: int
+
+
 class PublicStats(BaseModel):
     reports_total: int
     incidents_confirmed: int

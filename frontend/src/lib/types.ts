@@ -349,6 +349,13 @@ export interface MapFeatures {
   unlocated_reports: number;
 }
 
+export interface ReviewMapFeatures {
+  incidents: IncidentSummary[];
+  reports: ReportSummary[];
+  unlocated_incidents: number;
+  unlocated_reports: number;
+}
+
 export interface PublicStats {
   reports_total: number;
   incidents_confirmed: number;

@@ -6,11 +6,19 @@ from fastapi import APIRouter, Query
 from sqlalchemy import ColumnElement, func, select
 
 from app.api.dependencies import DB, Reviewer
-from app.api.serializers import incident_summary, latlon
+from app.api.serializers import incident_summary, latlon, open_suggestion_counts, report_summary
 from app.core.config import get_settings
 from app.db.models import DuplicateSuggestion, Incident, Report
 from app.db.models.enums import HazardCategory, IncidentStatus, ReportStatus, SuggestionStatus
-from app.schemas.api import AppConfig, MapFeatures, MapReport, PublicStats, RainWarningView, ReviewSummary
+from app.schemas.api import (
+    AppConfig,
+    MapFeatures,
+    MapReport,
+    PublicStats,
+    RainWarningView,
+    ReviewMapFeatures,
+    ReviewSummary,
+)
 from app.services.geo import UGANDA_BOUNDS
 from app.services.lifecycle import REVIEWABLE
 from app.services.rain import get_warning
@@ -93,6 +101,58 @@ def map_features(
     return MapFeatures(
         incidents=[incident_summary(i) for i in incidents],
         reports=reports,
+        unlocated_incidents=unlocated_incidents,
+        unlocated_reports=unlocated_reports,
+    )
+
+
+@router.get("/review/map/features", response_model=ReviewMapFeatures)
+def review_map_features(
+    db: DB,
+    _: Reviewer,
+    category: Annotated[list[HazardCategory] | None, Query()] = None,
+    status_: Annotated[list[IncidentStatus] | None, Query(alias="status")] = None,
+) -> ReviewMapFeatures:
+    """Every located report with reviewer detail (words, photos, duplicate counts), plus incidents."""
+    inc_conditions: list[ColumnElement[bool]] = []
+    if category:
+        inc_conditions.append(Incident.hazard_category.in_(category))
+    if status_:
+        inc_conditions.append(Incident.status.in_(status_))
+    incidents = (
+        db.scalars(
+            select(Incident)
+            .where(*inc_conditions, Incident.location.isnot(None))
+            .order_by(Incident.updated_at.desc())
+            .limit(1000)
+        )
+        .unique()
+        .all()
+    )
+    unlocated_incidents = (
+        db.scalar(select(func.count()).select_from(Incident).where(*inc_conditions, Incident.location.is_(None))) or 0
+    )
+
+    rep_conditions: list[ColumnElement[bool]] = []
+    if category:
+        rep_conditions.append(Report.hazard_category.in_(category))
+    rows = (
+        db.scalars(
+            select(Report)
+            .where(*rep_conditions, Report.location.isnot(None))
+            .order_by(Report.created_at.desc())
+            .limit(1000)
+        )
+        .unique()
+        .all()
+    )
+    counts = open_suggestion_counts(db, [r.id for r in rows])
+    unlocated_reports = (
+        db.scalar(select(func.count()).select_from(Report).where(*rep_conditions, Report.location.is_(None))) or 0
+    )
+    return ReviewMapFeatures(
+        incidents=[incident_summary(i) for i in incidents],
+        reports=[report_summary(r, open_suggestions=counts.get(r.id, 0)) for r in rows],
         unlocated_incidents=unlocated_incidents,
         unlocated_reports=unlocated_reports,
     )

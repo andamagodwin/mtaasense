@@ -22,6 +22,7 @@ import type {
   ReportDetail,
   ReportStatus,
   ReportSummary,
+  ReviewMapFeatures,
   ReviewSummary,
   SessionInfo,
   SegmentationView,
@@ -158,6 +159,8 @@ export const api = {
 
   mapFeatures: (query: { category?: HazardCategory[]; status?: IncidentStatus[]; include_unreviewed?: boolean }) =>
     request<MapFeatures>("/map/features", { query }),
+  reviewMapFeatures: (query: { category?: HazardCategory[]; status?: IncidentStatus[] }) =>
+    request<ReviewMapFeatures>("/review/map/features", { query }),
   incidents: (query: Query) => request<Page<IncidentSummary>>("/incidents", { query }),
   incident: (id: string) => request<IncidentDetail>(`/incidents/${id}`),
 

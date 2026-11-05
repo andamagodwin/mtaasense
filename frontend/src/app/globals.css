@@ -61,7 +61,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Darkens the home-page reel toward the copy and the lower third so text stays legible over any frame. */
+/* Darkens the home-page reel toward the copy so text stays legible over any frame. */
 .hero-scrim {
   --scrim: var(--color-photo);
   background:

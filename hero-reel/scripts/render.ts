@@ -3,19 +3,18 @@
  *
  *     pnpm render
  *
- * 1. Writes the caption timeline the site uses to label each shot as it plays.
- * 2. Renders a full-quality 1080p master with Remotion (out/master.mp4).
- * 3. Encodes the web versions (720p VP9 WebM and H.264 MP4, silent, each about 1 Mbps) plus a JPEG
+ * 1. Renders a full-quality 1080p master with Remotion (out/master.mp4).
+ * 2. Encodes the web versions (720p VP9 WebM and H.264 MP4, silent, each about 1 Mbps) plus a JPEG
  *    poster into frontend/public/hero/, using Remotion's bundled ffmpeg.
  *
- * `pnpm encode` (--encode-only) skips step 2 and re-encodes the existing master, for tuning file sizes.
+ * `pnpm encode` (--encode-only) skips step 1 and re-encodes the existing master, for tuning file sizes.
  *
  * Run `pnpm clips` first. Rendering starts a headless Chrome, so it will not run inside a restrictive sandbox.
  */
 import { spawnSync } from "node:child_process";
-import { mkdirSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { clips, durationInFrames, fps, handoverAfter, handoverFrames, posterShot, timeline } from "../src/shotlist.ts";
+import { fps, posterShot, timeline } from "../src/shotlist.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const remotion = `${root}node_modules/.bin/remotion`;
@@ -29,33 +28,6 @@ function run(args: string[]) {
 }
 
 const seconds = (frames: number) => Math.round((frames / fps) * 100) / 100;
-
-// Captions switch halfway through each transition.
-const entries = timeline();
-const captions = entries.map(({ shot, start, end }, i) => {
-  const clip = clips[shot.clip];
-  const into = i === 0 ? 0 : handoverFrames[handoverAfter(i - 1)] / 2;
-  const out = i === entries.length - 1 ? 0 : handoverFrames[handoverAfter(i)] / 2;
-  return {
-    start: seconds(start + into),
-    end: seconds(end - out),
-    place: clip.place,
-    event: clip.event,
-    date: clip.date,
-    credit: clip.author,
-    license: clip.license,
-    source: `https://commons.wikimedia.org/wiki/${encodeURI(clip.title.replaceAll(" ", "_"))}`,
-  };
-});
-mkdirSync(`${site}src/components/hero`, { recursive: true });
-writeFileSync(
-  `${site}src/components/hero/reel-timeline.json`,
-  `${JSON.stringify(
-    { duration: seconds(durationInFrames), license: "CC BY-SA 4.0", poster: posterShot, shots: captions },
-    null,
-    2,
-  )}\n`,
-);
 
 if (!process.argv.includes("--encode-only")) {
   run(["render", "src/index.ts", "HeroReel", master, "--codec=h264", "--crf=14"]);
@@ -76,7 +48,7 @@ run([
   "-profile:v", "high", "-pix_fmt", "yuv420p", "-movflags", "+faststart", `${publicDir}reel.mp4`,
 ]);
 
-const poster = entries[posterShot];
+const poster = timeline()[posterShot];
 run([
   "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
   "-ss", String(seconds((poster.start + poster.end) / 2)), "-i", master,

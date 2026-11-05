@@ -81,6 +81,14 @@ export default function HomePage() {
               news, residents see the signs: a drain that never clears, a road that floods every time it rains.
               MtaaSense makes those observations count as evidence.
             </p>
+            <a
+              href="https://github.com/andamagodwin/mtaasense/blob/main/hero-reel/ATTRIBUTION.md"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-block text-[13px] text-ink-3 underline underline-offset-2 hover:text-ink"
+            >
+              Footage credits and licences
+            </a>
           </div>
           <LiveStats />
         </section>

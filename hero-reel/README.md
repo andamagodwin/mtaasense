@@ -5,8 +5,8 @@ landslides, cut with [Remotion](https://www.remotion.dev). Every clip is openly 
 Wikimedia Commons, mostly African (Mbale, Douala, Bangui, Chad, Zambia, Somalia) with a few global news
 shots. Credits are in [`ATTRIBUTION.md`](ATTRIBUTION.md).
 
-The site shows the rendered files in `frontend/public/hero/` and labels each shot with its place, date and
-source while it plays. That data comes from `frontend/src/components/hero/reel-timeline.json`.
+The site plays the rendered files in `frontend/public/hero/` behind the home-page hero and links to the
+credits from the section below it.
 
 ## Rebuilding
 
@@ -16,7 +16,7 @@ Needs Node 22.18 or newer (the scripts are TypeScript run directly by Node).
 pnpm install
 pnpm clips     # download each shot's source window from Commons (≈150 MB, git-ignored)
 pnpm studio    # optional: preview and scrub the edit in Remotion Studio
-pnpm render    # render the master, then write the web files and caption timeline into frontend/
+pnpm render    # render the master, then write the web files into frontend/
 ```
 
 `pnpm render` starts a headless Chrome, so it needs to run outside restrictive sandboxes. If it fails with
@@ -34,7 +34,6 @@ It writes:
 | `frontend/public/hero/reel.webm` | 720p VP9, silent. Browsers that support WebM pick this first |
 | `frontend/public/hero/reel.mp4` | 720p H.264, silent, fast-start. Safari and older browsers use this |
 | `frontend/public/hero/poster.jpg` | Shown while loading, and the only image for reduced-motion and data-saver visitors |
-| `frontend/src/components/hero/reel-timeline.json` | When each shot is on screen, with its caption and credit |
 
 ## Editing the cut
 
